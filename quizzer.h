@@ -5,6 +5,7 @@
 #include <QTimer>
 
 class Text;
+class QSettings;
 
 namespace Ui {
 class Quizzer;
@@ -18,6 +19,7 @@ public:
         ~Quizzer();
 
 private:
+        QSettings* s;
         void resizeEvent(QResizeEvent *);
         Ui::Quizzer *ui;
         Text *text;
