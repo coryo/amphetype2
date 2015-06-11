@@ -43,9 +43,13 @@ FORMS    += mainwindow.ui \
     textmanager.ui \
     performancehistory.ui
 
-INCLUDEPATH += E:/local/boost_1_58_0
-
-win32 {
+macx {
+    message("mac build")
+    INCLUDEPATH += /usr/local/Cellar/boost/1.58.0/include
+    LIBS += -L/usr/local/Cellar/boost/1.58.0/lib
+    LIBS += -lboost_date_time
+} win32 {
+    INCLUDEPATH += E:/local/boost_1_58_0
     ## Windows common build here
     CONFIG(debug, debug|release):sqlPlugins.files = $$QT_BUILD_TREE/plugins/sqldrivers/qsqlited.dll
     CONFIG(release, debug|release):sqlPlugins.files = $$QT_BUILD_TREE/plugins/sqldrivers/qsqlite.dll
