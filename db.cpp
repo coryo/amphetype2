@@ -16,7 +16,9 @@ QSqlError DB::initDb(const QString& db_name)
 {
         QSettings s("Amphetype2.ini", QSettings::IniFormat);
         QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-        db.setDatabaseName(db_name);
+        db.setDatabaseName(qApp->applicationDirPath()
+                           + QDir::separator()
+                           + db_name);
         if (!db.open())
                 return db.lastError();
 
