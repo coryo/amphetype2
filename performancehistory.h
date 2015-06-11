@@ -7,7 +7,6 @@ class TreeModel;
 class QModelIndex;
 class Text;
 class QSettings;
-//class QCPDataMap;
 
 namespace Ui
 {
@@ -38,10 +37,7 @@ private slots:
         void doubleClicked(const QModelIndex&);
         void resizeColumns();
         void showPlot(int=0);
-        //void changeTimeScaled(int);
-        //void changeFullRangeY(int);
         void writeSettings();
-        //void dampenGraph(int);
 };
 
 #endif // PERFORMANCEHISTORY_H

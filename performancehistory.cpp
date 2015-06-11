@@ -66,19 +66,17 @@ PerformanceHistory::~PerformanceHistory()
         delete s;
 }
 
-// replace a QCPGraph's data with a dampened version of it
+// add a graph to the plot that is the SMA of the given graph
 // Simple moving average
 QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
 {
         QCPDataMap* data = graph->data();
+        QCPGraph* newGraph = ui->performancePlot->addGraph();
 
         if (n > data->size())
                 return 0;
 
-        QList<double> retx;
-        QList<double> rety;
-        double sx = 0;
-        double sy = 0;
+        double s = 0;
         QList<double> x;
         QList<double> y;
 
@@ -89,22 +87,18 @@ QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
                 y << it.value().value;
         }
 
-        for (int i = 0; i < n; ++i) {
-                sx += x[i];
-                sy += y[i];
-        }
-
-        //graph->clearData();
-        QCPGraph* newGraph = ui->performancePlot->addGraph();
-        //newGraph->setScatterStyle(QCPScatterStyle::ssDisc);
-        newGraph->setPen(QPen(QColor(255, 0, 0), 1));
+        for (int i = 0; i < n; ++i)
+                s += y[i];
 
         double q = 1.0 / n;
         for (int i = n; i < x.size(); ++i) {
-                newGraph->addData(x[i], sy * q);
-                sx += x[i] - x[i - n];
-                sy += y[i] - y[i - n];
+                newGraph->addData(x[i], s * q);
+                s += y[i] - y[i - n];
         }
+
+        // style the graph
+        //newGraph->setScatterStyle(QCPScatterStyle::ssDisc);
+        newGraph->setPen(QPen(QColor(255, 0, 0), 1));
 
         return newGraph;
 }

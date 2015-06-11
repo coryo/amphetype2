@@ -122,8 +122,9 @@ void Quizzer::done()
 
         // update the result label
         ui->result->setText("Last: " +
-                            QString::number(ui->typer->getTest()->wpm.back()) +
-                            "wpm (" + QString::number(accuracy * 100) + "%)");
+                QString::number(ui->typer->getTest()->wpm.back(), 'f', 1) +
+                            //QString::number(ui->typer->getTest()->wpm.back()) +
+            "wpm (" + QString::number(accuracy * 100, 'f', 1) + "%)");
 
         // get the next text.
         emit wantText();

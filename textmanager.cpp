@@ -7,7 +7,6 @@
 #include "treemodel.h"
 #include "text.h"
 
-//#include <math.h> // round
 #include <iostream>
 
 #include <QString>
@@ -105,13 +104,18 @@ void TextManager::refreshSources()
         QString l;  // the model is given a formatted string.
         while (q.next()) {
                 QString dis = (q.value(5).isNull()) ? "No" : "Yes";
+                // id
                 l.append(q.value(0).toString());
+                // name
                 l.append("\t" + q.value(1).toString() + " ");
+                // count
                 l.append("\t" + q.value(2).toString() + " ");
+                // result count
                 l.append("\t" + q.value(3).toString() + " ");
-                //double rnd = std::round(q.value(4).toDouble());
+                // wpm
                 double wpm = q.value(4).toDouble();
                 l.append("\t" + QString::number(wpm, 'f', 1) + " ");
+                // disabled
                 l.append("\t" + dis + "\n");
                 // add a dummy item so the source is expandable
                 l.append("    " + QString(".") + "\n");
