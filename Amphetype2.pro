@@ -42,7 +42,7 @@ FORMS    += mainwindow.ui \
     quizzer.ui \
     textmanager.ui \
     performancehistory.ui
-
+    
 macx {
     message("mac build")
     INCLUDEPATH += /usr/local/Cellar/boost/1.58.0/include
