@@ -15,12 +15,14 @@
 Quizzer::Quizzer(QWidget *parent) :
         QWidget(parent),
         ui(new Ui::Quizzer),
-        text(0)
+        text(0),
+        s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
+                                  "Amphetype2.ini",
+                          QSettings::IniFormat))
 {
         ui->setupUi(this);
 
-        QSettings s("Amphetype2.ini", QSettings::IniFormat);
-        ui->result->setVisible(s.value("show_last").toBool());
+        ui->result->setVisible(s->value("show_last").toBool());
         ui->result->setText("Last: 0wpm (0%)\nlast 10: 0wpm (0%)");
 
         connect(ui->typer, SIGNAL(done()), this, SLOT(done()));
@@ -144,8 +146,7 @@ void Quizzer::setText(Text* t)
 
 void Quizzer::setTyperFont() // readjust
 {
-        QSettings s("Amphetype2.ini", QSettings::IniFormat);
-        QFont f = qvariant_cast<QFont>(s.value("typer_font"));
+        QFont f = qvariant_cast<QFont>(s->value("typer_font"));
         ui->testText->setFont(f);
 }
 

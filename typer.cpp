@@ -6,8 +6,14 @@
 
 #include <QKeyEvent>
 #include <QSettings>
+#include <QSettings>
+#include <QDir>
+#include <QApplication>
 
-Typer::Typer(QWidget* parent) : QTextEdit(parent)
+Typer::Typer(QWidget* parent) : QTextEdit(parent),
+        s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
+                                  "Amphetype2.ini",
+                          QSettings::IniFormat))
 {
         test = 0;
 
@@ -31,17 +37,15 @@ void Typer::setTextTarget(const QString& t)
 
 void Typer::setPalettes()
 {
-        QSettings s("Amphetype2.ini", QSettings::IniFormat);
-
         palettes.insert("wrong",
                 QPalette(Qt::black, Qt::lightGray, Qt::lightGray, Qt::darkGray,
-                         Qt::gray, QColor(s.value("quiz_wrong_fg").toString()),
-                         Qt::white, QColor(s.value("quiz_wrong_bg").toString()),
+                         Qt::gray, QColor(s->value("quiz_wrong_fg").toString()),
+                         Qt::white, QColor(s->value("quiz_wrong_bg").toString()),
                          Qt::yellow));
         palettes.insert("right",
                 QPalette(Qt::black, Qt::lightGray, Qt::lightGray, Qt::darkGray,
-                         Qt::gray, QColor(s.value("quiz_right_fg").toString()),
-                         Qt::yellow,QColor(s.value("quiz_right_bg").toString()),
+                         Qt::gray, QColor(s->value("quiz_right_fg").toString()),
+                         Qt::yellow,QColor(s->value("quiz_right_bg").toString()),
                          Qt::yellow));
         palettes.insert("inactive",
                 QPalette(Qt::black, Qt::lightGray, Qt::lightGray,
@@ -56,8 +60,6 @@ void Typer::getWaitText()
 
 void Typer::checkText()
 {
-        QSettings s("Amphetype2.ini", QSettings::IniFormat);
-
         if (test->text == 0 || test->editFlag)
                 return;
 
@@ -67,7 +69,7 @@ void Typer::checkText()
         if (test->when[0].is_not_a_date_time()) {
                 bool space = (currentText.length() > 0) &&
                              (currentText[currentText.length() - 1].isSpace());
-                bool req = s.value("req_space").toBool();
+                bool req = s->value("req_space").toBool();
 
                 test->editFlag = true;
                 if (space) {

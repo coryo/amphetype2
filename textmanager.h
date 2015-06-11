@@ -7,6 +7,7 @@ class QModelIndex;
 class LessonMinerController;
 class Text;
 class TreeModel;
+class QSettings;
 
 namespace Ui
 {
@@ -22,6 +23,7 @@ public:
         ~TextManager();
 
 private:
+        QSettings* s;
         Ui::TextManager* ui;
         TreeModel* model;
         QStringList files;

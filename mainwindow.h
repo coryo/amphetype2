@@ -5,6 +5,7 @@
 
 class QString;
 class QSqlError;
+class QSettings;
 
 namespace Ui
 {
@@ -21,6 +22,7 @@ public:
         ~MainWindow();
 
 private:
+        QSettings* s;
         void showError(const QSqlError& err);
         void loadSettings();
         Ui::MainWindow* ui;
