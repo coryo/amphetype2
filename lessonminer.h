@@ -8,6 +8,7 @@
 class QRegularExpression;
 class QFile;
 class QString;
+class QSettings;
 
 class LessonMiner : public QObject
 {
@@ -17,6 +18,7 @@ public:
         explicit LessonMiner(QObject* parent = 0);
 
 private:
+        QSettings* s;
         void fileToParagraphs(QFile*, QList<QStringList>*);
         QStringList sentenceSplitter(const QString&);
         void makeLessons(const QList<QStringList>&, QStringList*);

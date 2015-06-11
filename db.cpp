@@ -14,7 +14,10 @@ DB::DB()
 
 QSqlError DB::initDb(const QString& db_name)
 {
-        QSettings s("Amphetype2.ini", QSettings::IniFormat);
+        QSettings s(qApp->applicationDirPath() + QDir::separator() +
+                                  "Amphetype2.ini",
+                          QSettings::IniFormat);
+
         QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
         db.setDatabaseName(qApp->applicationDirPath()
                            + QDir::separator()

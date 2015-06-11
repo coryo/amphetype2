@@ -4,6 +4,7 @@
 #include <QTextEdit>
 
 class Test;
+class QSettings;
 
 class Typer : public QTextEdit {
         Q_OBJECT
@@ -27,6 +28,7 @@ private slots:
         void checkText();
 
 private:
+        QSettings* s;
         Test* test;
         QMap<QString, QPalette> palettes;
 
