@@ -20,6 +20,8 @@ Typer::Typer(QWidget* parent) : QTextEdit(parent),
         setPalettes();
 
         connect(this, SIGNAL(textChanged()), this, SLOT(checkText()));
+
+        this->hide();
 }
 
 void Typer::setTextTarget(const QString& t)
@@ -29,10 +31,12 @@ void Typer::setTextTarget(const QString& t)
 
         test = new Test(t);
 
-        this->clear();
+        if (!this->toPlainText().isEmpty()) {
+                this->blockSignals(true);
+                this->clear();
+                this->blockSignals(false);
+        }
         this->setPalette(palettes.value("inactive"));
-        getWaitText();
-        this->selectAll();
 }
 
 void Typer::setPalettes()
@@ -53,14 +57,19 @@ void Typer::setPalettes()
                          Qt::lightGray));
 }
 void Typer::getWaitText()
-{
-        this->setText("Press SPACE and then immediately start typing the text\n"
-                      "Press ESCAPE to restart with a new text at any time");
+{       
+        if (s->value("req_space").toBool()) {
+                this->setText("Press SPACE and then immediately start typing the text\n"
+                              "Press ESCAPE to restart with a new text at any time");
+        } else {
+                this->setText("Press ESCAPE to restart with a new text at any time");
+        }
 }
 
 void Typer::checkText()
-{
-        if (test->text == 0 || test->editFlag)
+{       
+
+        if (test->text.isEmpty() || test->editFlag)
                 return;
 
         // the text in this QTextEdit
@@ -73,39 +82,49 @@ void Typer::checkText()
 
                 test->editFlag = true;
                 if (space) {
+                        //std::cout << "space" <<std::endl;
                         test->when[0] = boost::posix_time::microsec_clock::local_time();
                         this->clear();
                         this->setPalette(this->palettes.value("right"));
                         emit testStarted(test->length);
                 } else if (req) {
-                        getWaitText();
-                        this->selectAll();
+                        //std::cout << "req" <<std::endl;
                 }
 
                 test->editFlag = false;
 
                 if (req || space)
                         return;
-                else
-                        test->when[0] = boost::posix_time::neg_infin;
+                else {
+                        test->when[0] = boost::posix_time::microsec_clock::local_time();
+                        emit testStarted(test->length);
+                }
         }
 
         int pos = std::min(currentText.length(), test->text.length());
-        for (pos; pos > -1; pos--) {
+
+        for (pos; pos >= -1; pos--) {
                 if (QStringRef(&currentText, 0, pos) ==
                     QStringRef(&test->text, 0, pos)) {
                         break;
                 }
         }
 
-        QStringRef lcd(&currentText,0,pos);
+        QStringRef lcd(&currentText, 0, pos);
 
         test->currentPos = pos;
 
         if (test->when[pos].is_not_a_date_time() && pos == currentText.length()) {
                 // store when we are at this position
                 test->when[pos] = boost::posix_time::microsec_clock::local_time(); 
-                if (pos > 0) {
+
+                // dont calc between the first 2 positions if !req_space
+                // because the times will be the same
+                int check = 0;
+                if (!s->value("req_space").toBool())
+                        check = 1;
+
+                if (pos > check) {
                         // store time between keys
                         test->timeBetween[pos-1] = test->when[pos] - test->when[pos-1]; 
                         // time since the beginning
@@ -148,6 +167,8 @@ void Typer::checkText()
         if (pos < currentText.length() && pos < test->text.length()) {
                 //mistake
                 test->mistake[pos] = true;
+                test->mistakes << pos;
+                emit mistake(pos);
         }
 
         if (lcd == QStringRef(&currentText))

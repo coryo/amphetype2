@@ -19,6 +19,7 @@ public:
         ~Quizzer();
 
 private:
+        int cursorPosition;
         QSettings* s;
         void resizeEvent(QResizeEvent *);
         Ui::Quizzer *ui;
@@ -32,6 +33,10 @@ private slots:
         void done();
         void setText(Text *);
         void setTyperFont();
+        void tabActive(int);
+
+        //void updateTextColor();
+        void moveCursor();
 
         // plot related slots
         void updatePlotRangeY(int, int = 0);
@@ -40,6 +45,7 @@ private slots:
         void updatePlotAPM(double, double);
         void clearPlotData();
         void showLayers();
+
 };
 
 #endif // QUIZZER_H

@@ -5,6 +5,7 @@
 
 #include <QString>
 #include <QVector>
+#include <QList>
 
 class Test {
 public:
@@ -21,6 +22,7 @@ public:
         QVector<boost::posix_time::ptime> when;
         QVector<boost::posix_time::time_duration> timeBetween;
         QVector<bool> mistake;
+        QList<int> mistakes;
         QVector<double> wpm;
         QVector<double> apm;
 

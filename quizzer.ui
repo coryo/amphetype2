@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>752</width>
-    <height>462</height>
+    <width>719</width>
+    <height>410</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -39,8 +39,8 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>600</width>
-         <height>50</height>
+         <width>1</width>
+         <height>1</height>
         </size>
        </property>
        <property name="maximumSize">
@@ -64,20 +64,6 @@
        </property>
       </spacer>
      </item>
-     <item row="4" column="0" colspan="3">
-      <widget class="QCustomPlot" name="plot" native="true">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <zorder>typer</zorder>
-       <zorder>typer</zorder>
-       <zorder>typer</zorder>
-       <zorder>typer</zorder>
-      </widget>
-     </item>
      <item row="1" column="2">
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -93,6 +79,18 @@
      </item>
      <item row="0" column="0" rowspan="2" colspan="2">
       <widget class="QLabel" name="testText">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>600</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="text">
         <string>TextLabel</string>
        </property>
@@ -101,6 +99,16 @@
        </property>
        <property name="openExternalLinks">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0" colspan="3">
+      <widget class="QCustomPlot" name="plot" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
       </widget>
      </item>

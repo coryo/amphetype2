@@ -135,7 +135,7 @@ void PerformanceHistory::resizeColumns()
         ui->performanceView->resizeColumnToContents(3);
         ui->performanceView->resizeColumnToContents(4);
         ui->performanceView->resizeColumnToContents(5);
-        ui->performanceView->setColumnWidth(2, ui->performanceView->columnWidth(2)*1.5);
+        //ui->performanceView->setColumnWidth(2, ui->performanceView->columnWidth(2)*1.5);
 }
 
 void PerformanceHistory::refreshSources()

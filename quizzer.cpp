@@ -44,6 +44,8 @@ Quizzer::Quizzer(QWidget *parent) :
         connect(ui->typer, SIGNAL(testStarted(int)),
                 this,      SLOT(updatePlotRangeX(int)));
 
+        connect(ui->typer, SIGNAL(textChanged()), this, SLOT(moveCursor()));
+
         setTyperFont();
 
         ui->plot->addGraph();
@@ -57,6 +59,8 @@ Quizzer::Quizzer(QWidget *parent) :
         // when it times out, show the plot layer
         resizeTimer.setSingleShot(true);
         connect(&resizeTimer, SIGNAL(timeout()), this, SLOT(showLayers()));
+
+        ui->typer->grabKeyboard();
 }
 
 Quizzer::~Quizzer()
@@ -65,6 +69,14 @@ Quizzer::~Quizzer()
         delete text;
 }
 
+void Quizzer::tabActive(int i)
+{
+        if (i == 0)
+                ui->typer->grabKeyboard();
+        else
+                ui->typer->releaseKeyboard();
+                //
+}
 void Quizzer::showLayers()
 {
         ui->plot->graph(0)->setVisible(true);
@@ -84,15 +96,10 @@ void Quizzer::resizeEvent(QResizeEvent *e)
 void Quizzer::done()
 {
         // tally mistakes
-        int mistakes = 0;
-        for (bool x : ui->typer->getTest()->mistake) {
-                if (x)
-                        mistakes++;
-        }
+        int mistakes = ui->typer->getTest()->mistakes.size();
 
         // calc accuracy
-        float accuracy =
-                1.0 - (float)mistakes / ui->typer->getTest()->mistake.size();
+        double accuracy = 1.0 - (double)mistakes / ui->typer->getTest()->length;
 
         // viscocity
         boost::posix_time::time_duration total_time = ui->typer->getTest()->when.back() - ui->typer->getTest()->when.front();
@@ -138,11 +145,57 @@ void Quizzer::setText(Text* t)
                 delete text;
         text = t;
         QString te(t->getText());
-        te.replace('\n', "↵\n");
-        ui->testText->setText(te);
+        ui->testText->setTextFormat(Qt::RichText);
+
+        QString result;
+        result.append("<font color='#0055FF'><u>");
+        result.append(te.at(0));
+        result.append("</u></font>");
+        result.append(QStringRef(&te, 1, te.length()-1));
+        
+        result.replace('\n', "↵<br>");
+        ui->testText->setText(result);
+        
         ui->typer->setTextTarget(t->getText());
         ui->typer->setFocus();
+
+        cursorPosition = 0;
 }
+
+void Quizzer::moveCursor()
+{       
+        cursorPosition = ui->typer->toPlainText().length();
+        int testPosition = ui->typer->getTest()->currentPos;
+        QString& text = ui->typer->getTest()->text;
+
+        if (testPosition == 0 || cursorPosition > text.length()-1)
+                return;
+
+        int positionDiff = cursorPosition - testPosition;
+        std::cout << cursorPosition <<std::endl;
+
+        QString result;
+
+        if (positionDiff > 0) {
+                result.append(QStringRef(&text, 0, testPosition));
+                result.append("<font color='#800000'><u>");
+                for (int i = 0; i < positionDiff; ++i)
+                        result.append(text.at(testPosition + i));
+                
+                result.append(text.at(cursorPosition));
+                result.append("</u></font>");
+        } else {
+                result.append(QStringRef(&text, 0, cursorPosition));
+                result.append("<font color='#0055FF'><u>");
+                result.append(text.at(cursorPosition));
+                result.append("</u></font>");
+        }
+        result.append(QStringRef(&text, cursorPosition+1, text.length()-cursorPosition));
+        result.replace('\n', "↵<br>");
+
+        ui->testText->setText(result);
+}
+
 
 void Quizzer::setTyperFont() // readjust
 {

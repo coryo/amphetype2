@@ -18,7 +18,7 @@ public:
 signals:
         void done();
         void cancel();
-        void mistake();
+        void mistake(int);
         void newWPM(double, double);
         void newAPM(double, double);
         void characterAdded(int = 0, int = 0);
