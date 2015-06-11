@@ -1,1 +1,2 @@
 # amphetype2
+a
