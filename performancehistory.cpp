@@ -15,7 +15,9 @@
 
 PerformanceHistory::PerformanceHistory(QWidget* parent)
         : QWidget(parent), ui(new Ui::PerformanceHistory), model(0),
-          s(new QSettings("Amphetype2.ini", QSettings::IniFormat))
+          s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
+                                  "Amphetype2.ini",
+                          QSettings::IniFormat))
 {
         ui->setupUi(this);
 
