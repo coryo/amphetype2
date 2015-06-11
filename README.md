@@ -5,3 +5,4 @@ A rewrite of [Amphetype](https://code.google.com/p/amphetype/) in C++, using Qt 
 ![typer tab](http://i.imgur.com/W5K6gXQ.png)
 
 ![performance tab](http://i.imgur.com/v0GojpX.png)
+
