@@ -163,8 +163,8 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx)
 
         if (q.first()) {
                 QByteArray _id = q.value(0).toByteArray();
-                int _source = q.value(1).toInt();
-                QString _text = q.value(2).toString();
+                int _source    = q.value(1).toInt();
+                QString _text  = q.value(2).toString();
                 Text* t = new Text(_id, _source, _text);
 
                 emit setText(t);
@@ -316,7 +316,7 @@ void PerformanceHistory::showPlot(int p)
         // axis properties dependent on time scaling or not
         if (s->value("chrono_x").toBool()) {
                 ui->performancePlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-                ui->performancePlot->xAxis->setDateTimeFormat("MMMM-dd");
+                ui->performancePlot->xAxis->setDateTimeFormat("M/dd");
                 ui->performancePlot->xAxis->setAutoTickStep(true);
                 ui->performancePlot->xAxis->setLabel("Time of Result");
         } else {
