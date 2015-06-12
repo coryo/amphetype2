@@ -22,9 +22,7 @@ Quizzer::Quizzer(QWidget *parent) :
 {
         ui->setupUi(this);
 
-        ui->result->setVisible(s->value("show_last").toBool());
-        ui->result->setText("Last: 0wpm (0%)\nlast 10: 0wpm (0%)");
-
+        // finishing or cancelling signals
         connect(ui->typer, SIGNAL(done()), this, SLOT(done()));
         connect(ui->typer, SIGNAL(cancel()), this, SIGNAL(wantText()));
 
@@ -44,21 +42,36 @@ Quizzer::Quizzer(QWidget *parent) :
         connect(ui->typer, SIGNAL(testStarted(int)),
                 this,      SLOT(updatePlotRangeX(int)));
 
+        // timer stuff
+        lessonTimer.setInterval(1000);
+        connect(ui->typer, SIGNAL(testStarted(int)), &lessonTimer, SLOT(start()));
+        connect(ui->typer, SIGNAL(done()), &lessonTimer, SLOT(stop()));
+        connect(ui->typer, SIGNAL(cancel()), &lessonTimer, SLOT(stop()));
+        connect(&lessonTimer, SIGNAL(timeout()), this, SLOT(timerLabelUpdate()));
+        connect(ui->typer, SIGNAL(testStarted(int)), this, SLOT(timerLabelReset()));
+        connect(ui->typer, SIGNAL(testStarted(int)), this, SLOT(timerLabelGo()));
+        connect(ui->typer, SIGNAL(done()), this, SLOT(timerLabelStop()));
+        connect(ui->typer, SIGNAL(cancel()), this, SLOT(timerLabelStop()));
+
+        // "cursor"
         connect(ui->typer, SIGNAL(textChanged()), this, SLOT(moveCursor()));
 
+        // set defaults for ui stuff
+        timerLabelReset();
         setTyperFont();
+        ui->result->setVisible(s->value("show_last").toBool());
+        ui->result->setText("Last: 0wpm (0%)\nlast 10: 0wpm (0%)");
 
+        // create the two graphs in the plot, set colours
         ui->plot->addGraph();
         ui->plot->addGraph();
         ui->plot->graph(0)->setPen(QPen(QColor(255, 0, 0), 3));
         ui->plot->graph(1)->setPen(QPen(QColor(0, 0, 255, 80), 2));
-        ui->plot->setNoAntialiasingOnDrag(true);
-        ui->plot->setNotAntialiasedElement(QCP::aePlottables);
 
         // resize timer, singleshot so it doesnt repeat
         // when it times out, show the plot layer
         resizeTimer.setSingleShot(true);
-        connect(&resizeTimer, SIGNAL(timeout()), this, SLOT(showLayers()));
+        connect(&resizeTimer, SIGNAL(timeout()), this, SLOT(showGraphs()));
 
         ui->typer->grabKeyboard();
 }
@@ -69,6 +82,28 @@ Quizzer::~Quizzer()
         delete text;
 }
 
+void Quizzer::timerLabelUpdate()
+{
+        lessonTime = lessonTime.addSecs(1);
+        ui->timerLabel->setText(lessonTime.toString("mm:ss"));
+}
+
+void Quizzer::timerLabelGo()
+{
+        ui->timerLabel->setStyleSheet("QLabel { background-color : greenyellow; }");
+}
+
+void Quizzer::timerLabelStop()
+{
+        ui->timerLabel->setStyleSheet("QLabel { background-color : red; }");
+}
+void Quizzer::timerLabelReset()
+{
+        timerLabelStop();
+        lessonTime = QTime(0,0,0,0);
+        ui->timerLabel->setText(lessonTime.toString("mm:ss"));
+}
+
 void Quizzer::tabActive(int i)
 {
         if (i == 0)
@@ -76,7 +111,7 @@ void Quizzer::tabActive(int i)
         else
                 ui->typer->releaseKeyboard();
 }
-void Quizzer::showLayers()
+void Quizzer::showGraphs()
 {
         ui->plot->graph(0)->setVisible(true);
         ui->plot->graph(1)->setVisible(true);
@@ -168,7 +203,7 @@ void Quizzer::moveCursor()
         int testPosition = ui->typer->getTest()->currentPos;
         QString& text = ui->typer->getTest()->text;
 
-        if (testPosition == 0 || cursorPosition > text.length() - 1)
+        if (/*testPosition == 0 || */cursorPosition > text.length() - 1)
                 return;
 
         int positionDiff = cursorPosition - testPosition;

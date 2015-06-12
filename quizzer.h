@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QTimer>
+#include <QTime>
 
 class Text;
 class QSettings;
@@ -26,6 +27,8 @@ private:
         Ui::Quizzer* ui;
         Text* text;
         QTimer resizeTimer;
+        QTimer lessonTimer;
+        QTime lessonTime;
 
 signals:
         void wantText();
@@ -44,7 +47,12 @@ private slots:
         void updatePlotWPM(double, double);
         void updatePlotAPM(double, double);
         void clearPlotData();
-        void showLayers();
+        void showGraphs();
+
+        void timerLabelUpdate();
+        void timerLabelReset();
+        void timerLabelGo();
+        void timerLabelStop();
 };
 
 #endif // QUIZZER_H
