@@ -80,27 +80,28 @@ void Typer::checkText()
         QString currentText = this->toPlainText();
 
         if (test->when[0].is_not_a_date_time()) {
-                bool space = (currentText.length() > 0) &&
-                             (currentText[currentText.length() - 1].isSpace());
-                bool req = s->value("req_space").toBool();
+                //bool space = (currentText.length() > 0) &&
+                //             (currentText[currentText.length() - 1].isSpace());
+                //bool req = s->value("req_space").toBool();
 
-                test->editFlag = true;
+                //test->editFlag = true;
+                /*
                 if (space) {
                         test->when[0] = boost::posix_time::microsec_clock::local_time();
                         this->clear();
                         this->setPalette(this->palettes.value("right"));
                         emit testStarted(test->length);
                 } else if (req) {
-                }
+                }*/
 
-                test->editFlag = false;
+                //test->editFlag = false;
 
-                if (req || space)
+                /*if (req || space)
                         return;
-                else {
-                        test->when[0] = boost::posix_time::microsec_clock::local_time();
-                        emit testStarted(test->length);
-                }
+                else {*/
+                test->when[0] = boost::posix_time::microsec_clock::local_time();
+                emit testStarted(test->length);
+                //}
         }
 
         int pos = std::min(currentText.length(), test->text.length());
@@ -168,6 +169,7 @@ void Typer::checkText()
 
         if (pos < currentText.length() && pos < test->text.length()) {
                 //mistake
+                std::cout << "mistake" << std::endl;
                 test->mistake[pos] = true;
                 test->mistakes << pos;
                 emit mistake(pos);
