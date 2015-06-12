@@ -44,7 +44,11 @@ MainWindow::MainWindow(QWidget* parent)
         emit initText();
 }
 
-MainWindow::~MainWindow() { delete ui; }
+MainWindow::~MainWindow()
+{
+        delete ui;
+        delete s;
+}
 
 void MainWindow::showError(const QSqlError& err)
 {

@@ -11,9 +11,18 @@ class Typer : public QTextEdit {
 
 public:
         Typer(QWidget* parent = 0);
+        ~Typer();
         void setTextTarget(const QString&);
         void setPalettes();
         Test* getTest();
+
+private:
+        QSettings* s;
+        Test* test;
+        QMap<QString, QPalette> palettes;
+
+        void getWaitText();
+        void keyPressEvent(QKeyEvent* e);
 
 signals:
         void done();
@@ -27,13 +36,7 @@ signals:
 private slots:
         void checkText();
 
-private:
-        QSettings* s;
-        Test* test;
-        QMap<QString, QPalette> palettes;
 
-        void getWaitText();
-        void keyPressEvent(QKeyEvent* e);
 };
 
 #endif // TYPER_H

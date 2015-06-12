@@ -75,7 +75,6 @@ void Quizzer::tabActive(int i)
                 ui->typer->grabKeyboard();
         else
                 ui->typer->releaseKeyboard();
-                //
 }
 void Quizzer::showLayers()
 {
@@ -107,7 +106,7 @@ void Quizzer::done()
                      ui->typer->getTest()->text.size(); // seconds per character
         QVector<double> v;
         for (int i = 0; i < ui->typer->getTest()->timeBetween.size(); ++i) {
-                v << pow((((ui->typer->getTest()->timeBetween.at(i).total_milliseconds()*1000.0)-spc)/spc), 2); // ((keytime(s) - spc)/ spc)^2
+                v << pow((((ui->typer->getTest()->timeBetween.at(i).total_milliseconds()*1000.0)-spc)/spc), 2);
         }
         double sum = 0.0;
         for (double x : v)
@@ -130,10 +129,10 @@ void Quizzer::done()
         q.exec();
 
         // update the result label
-        ui->result->setText("Last: " +
+        ui->result->setText(
+                "Last: " +
                 QString::number(ui->typer->getTest()->wpm.back(), 'f', 1) +
-                            //QString::number(ui->typer->getTest()->wpm.back()) +
-            "wpm (" + QString::number(accuracy * 100, 'f', 1) + "%)");
+                "wpm (" + QString::number(accuracy * 100, 'f', 1) + "%)");
 
         // get the next text.
         emit wantText();
@@ -144,36 +143,36 @@ void Quizzer::setText(Text* t)
         if (text != 0)
                 delete text;
         text = t;
-        QString te(t->getText());
+        const QString& te = text->getText();
+
         ui->testText->setTextFormat(Qt::RichText);
 
         QString result;
         result.append("<font color='#0055FF'><u>");
         result.append(te.at(0));
         result.append("</u></font>");
-        result.append(QStringRef(&te, 1, te.length()-1));
-        
+        result.append(QStringRef(&te, 1, te.length() - 1));
+
         result.replace('\n', "↵<br>");
         ui->testText->setText(result);
-        
-        ui->typer->setTextTarget(t->getText());
+
+        ui->typer->setTextTarget(text->getText());
         ui->typer->setFocus();
 
         cursorPosition = 0;
 }
 
 void Quizzer::moveCursor()
-{       
+{
         cursorPosition = ui->typer->toPlainText().length();
         int testPosition = ui->typer->getTest()->currentPos;
         QString& text = ui->typer->getTest()->text;
 
-        if (testPosition == 0 || cursorPosition > text.length()-1)
+        if (testPosition == 0 || cursorPosition > text.length() - 1)
                 return;
 
         int positionDiff = cursorPosition - testPosition;
-        std::cout << cursorPosition <<std::endl;
-
+        
         QString result;
 
         if (positionDiff > 0) {
@@ -181,7 +180,7 @@ void Quizzer::moveCursor()
                 result.append("<font color='#800000'><u>");
                 for (int i = 0; i < positionDiff; ++i)
                         result.append(text.at(testPosition + i));
-                
+
                 result.append(text.at(cursorPosition));
                 result.append("</u></font>");
         } else {
@@ -190,7 +189,8 @@ void Quizzer::moveCursor()
                 result.append(text.at(cursorPosition));
                 result.append("</u></font>");
         }
-        result.append(QStringRef(&text, cursorPosition+1, text.length()-cursorPosition));
+        result.append(QStringRef(&text, cursorPosition + 1,
+                                 text.length() - cursorPosition));
         result.replace('\n', "↵<br>");
 
         ui->testText->setText(result);
@@ -205,13 +205,11 @@ void Quizzer::setTyperFont() // readjust
 
 void Quizzer::updatePlotWPM(double x, double y)
 {
-        // add a point to wpm graph
         ui->plot->graph(0)->addData(x, y);
 }
 
 void Quizzer::updatePlotAPM(double x, double y)
 {
-        // add a point to apm graph
         ui->plot->graph(1)->addData(x, y);
 }
 

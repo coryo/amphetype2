@@ -19,11 +19,12 @@ public:
         ~Quizzer();
 
 private:
+        void resizeEvent(QResizeEvent*);
+
         int cursorPosition;
         QSettings* s;
-        void resizeEvent(QResizeEvent *);
-        Ui::Quizzer *ui;
-        Text *text;
+        Ui::Quizzer* ui;
+        Text* text;
         QTimer resizeTimer;
 
 signals:
@@ -35,7 +36,6 @@ private slots:
         void setTyperFont();
         void tabActive(int);
 
-        //void updateTextColor();
         void moveCursor();
 
         // plot related slots
@@ -45,7 +45,6 @@ private slots:
         void updatePlotAPM(double, double);
         void clearPlotData();
         void showLayers();
-
 };
 
 #endif // QUIZZER_H

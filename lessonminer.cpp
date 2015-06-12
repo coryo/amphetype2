@@ -44,6 +44,9 @@ LessonMiner::LessonMiner(QObject *parent)
                 <<"eg"<<"ie"<<"1"<<"2"<<"3"<<"4"<<"5"<<"6"<<"7"<<"8"<<"9"
                 <<"10"<<"11"<<"12"<<"avg"<<"viz"<<"m"<<"mme";
 }
+
+LessonMiner::~LessonMiner() { delete s; }
+
 void LessonMiner::doWork(const QString& fname)
 {
         // open the file

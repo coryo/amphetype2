@@ -68,6 +68,7 @@ TextManager::~TextManager()
 {
         delete ui;
         delete model;
+        delete s;
 }
 
 void TextManager::changeSelectMethod(int i)

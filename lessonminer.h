@@ -16,6 +16,7 @@ class LessonMiner : public QObject
 
 public:
         explicit LessonMiner(QObject* parent = 0);
+        ~LessonMiner();
 
 private:
         QSettings* s;

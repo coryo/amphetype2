@@ -45,7 +45,7 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
 
         // double clicking an item in the list
         connect(ui->performanceView, SIGNAL(doubleClicked(const QModelIndex&)),
-                this,                SLOT(doubleClicked(const QModelIndex&)));
+                this,                SLOT  (doubleClicked(const QModelIndex&)));
 
         // settings
         connect(ui->updateButton, SIGNAL(pressed()), this, SLOT(writeSettings()));
@@ -100,7 +100,7 @@ QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
 
         // style the graph
         //newGraph->setScatterStyle(QCPScatterStyle::ssDisc);
-        newGraph->setPen(QPen(QColor(255, 0, 0), 1));
+        newGraph->setPen(QPen(QColor(255, 0, 0), 2));
 
         return newGraph;
 }
@@ -135,7 +135,6 @@ void PerformanceHistory::resizeColumns()
         ui->performanceView->resizeColumnToContents(3);
         ui->performanceView->resizeColumnToContents(4);
         ui->performanceView->resizeColumnToContents(5);
-        //ui->performanceView->setColumnWidth(2, ui->performanceView->columnWidth(2)*1.5);
 }
 
 void PerformanceHistory::refreshSources()
@@ -149,9 +148,8 @@ void PerformanceHistory::refreshSources()
         QList<QVariantList> sources;
         DB::getSourcesList(&sources);
 
-        for (QVariantList x : sources) {
+        for (QVariantList x : sources)
                 ui->sourceComboBox->addItem(x.at(1).toString(), x.at(0));
-        }
 }
 
 void PerformanceHistory::doubleClicked(const QModelIndex& idx)
@@ -205,7 +203,7 @@ void PerformanceHistory::refreshPerformance()
         QString group;
 
         QString sql;
-        QVariant g = s->value("perf_group_by");
+        int g = s->value("perf_group_by").toInt();
         QString n = ui->limitNumber->text();
         if (g == 0) {
                 sql = "select text_id,w,s.name,wpm,100.0*accuracy,viscosity "
@@ -264,7 +262,7 @@ void PerformanceHistory::refreshPerformance()
                 ui->performancePlot->graph(1)->addData(x, acc);
                 ui->performancePlot->graph(2)->addData(x, vis);
 
-                // add wpm,acc,vis, 1sinificant digit
+                // add wpm,acc,vis, 1 sigificant digit
                 result.append(QString::number(wpm, 'f', 1) + "\t");
                 result.append(QString::number(acc, 'f', 1) + "\t");
                 result.append(QString::number(vis, 'f', 1) + "\n");
@@ -316,8 +314,7 @@ void PerformanceHistory::showPlot(int p)
         }
 
         // axis properties dependent on time scaling or not
-        if (s->value("chrono_x").toBool())
-        {
+        if (s->value("chrono_x").toBool()) {
                 ui->performancePlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
                 ui->performancePlot->xAxis->setDateTimeFormat("MMMM-dd");
                 ui->performancePlot->xAxis->setAutoTickStep(true);

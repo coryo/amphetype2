@@ -23,6 +23,10 @@ Typer::Typer(QWidget* parent) : QTextEdit(parent),
 
         this->hide();
 }
+Typer::~Typer()
+{
+        delete s;
+}
 
 void Typer::setTextTarget(const QString& t)
 {
@@ -82,13 +86,11 @@ void Typer::checkText()
 
                 test->editFlag = true;
                 if (space) {
-                        //std::cout << "space" <<std::endl;
                         test->when[0] = boost::posix_time::microsec_clock::local_time();
                         this->clear();
                         this->setPalette(this->palettes.value("right"));
                         emit testStarted(test->length);
                 } else if (req) {
-                        //std::cout << "req" <<std::endl;
                 }
 
                 test->editFlag = false;
