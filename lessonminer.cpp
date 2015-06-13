@@ -67,12 +67,15 @@ void LessonMiner::doWork(const QString& fname)
         QFileInfo fi(fname);
         int id = DB::getSource(fi.fileName(), -1);
         double i = 0.0;
+        QSqlDatabase db = QSqlDatabase::database();
+        db.transaction();
         for (QString& x : lessons) {
                 DB::addTexts(id, x, -1, false);
                 i += 1.0;
                 // value from 0 to 100 for a progress bar
                 emit progress((int)(100 * (i / lessons.size())));
         }
+        db.commit();
 
         // done
         emit resultReady();

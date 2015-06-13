@@ -133,26 +133,34 @@ void Quizzer::done()
 
         QString now = QString::fromStdString(boost::posix_time::to_iso_string(
                             boost::posix_time::microsec_clock::local_time()));
+
         // tally mistakes
-        int mistakes = ui->typer->getTest()->mistakes.size();
+        int mistakes = test->mistakes.size();
 
         // calc accuracy
-        double accuracy = 1.0 - (double)mistakes / ui->typer->getTest()->length;
+        double accuracy = 1.0 - (double)mistakes / test->length;
 
         // viscocity
-        boost::posix_time::time_duration total_time = ui->typer->getTest()->when.back() - ui->typer->getTest()->when.front();
+        boost::posix_time::time_duration total_time = test->when.back() - test->when.front();
         double spc = (total_time.total_milliseconds() / 1000.0) /
-                     ui->typer->getTest()->text.size(); // seconds per character
+                     test->text.size(); // seconds per character
         QVector<double> v;
-        for (int i = 0; i < ui->typer->getTest()->timeBetween.size(); ++i) {
-                v << pow((((ui->typer->getTest()->timeBetween.at(i).total_milliseconds()/1000.0)-spc)/spc), 2);
+        for (int i = 0; i < test->timeBetween.size(); ++i) {
+                v << pow((((test->timeBetween.at(i).total_milliseconds()/1000.0)-spc)/spc), 2);
         }
         double sum = 0.0;
         for (double x : v)
                 sum += x;
-        double viscosity = sum/ui->typer->getTest()->text.size();
+        double viscosity = sum/test->text.size();
 
         // insert into db
+        QSqlDatabase db = QSqlDatabase::database();
+        if (!db.open())
+                qDebug() << "db";
+        if (db.driver()->hasFeature(QSqlDriver::Transactions))
+                qDebug() << "has transactions";
+
+        db.transaction();
         QSqlQuery q;
         q.prepare("insert into result (w,text_id,source,wpm,accuracy,viscosity)"
                   " values (:time,:id,:source,:wpm,:accuracy,:viscosity)");
@@ -160,173 +168,153 @@ void Quizzer::done()
         q.bindValue(":time", now);
         q.bindValue(":id", text->getId());
         q.bindValue(":source", text->getSource());
-        q.bindValue(":wpm", ui->typer->getTest()->wpm.back());
+        q.bindValue(":wpm", test->wpm.back());
         q.bindValue(":accuracy", accuracy);
         q.bindValue(":viscosity", viscosity);
         q.exec();
+        db.commit();
 
         // update the result label
         ui->result->setText(
                 "Last: " +
-                QString::number(ui->typer->getTest()->wpm.back(), 'f', 1) +
+                QString::number(test->wpm.back(), 'f', 1) +
                 "wpm (" + QString::number(accuracy * 100, 'f', 1) + "%)");
 
 
         //statistics
-        QMultiHash<QString, boost::posix_time::time_duration> stats;
-        QMultiHash<QString, double> visc;
-        QHash<QString, int> mistakeCount;
+        QMultiHash<QStringRef, double> stats;
+        QMultiHash<QStringRef, double> visc;
+        QMultiHash<QStringRef, int> mistakeCount;
 
         // characters
         for (int i = 0; i < text->getText().length(); ++i) {
-                QChar c = text->getText().at(i);
-                stats.insert(c, test->timeBetween.at(i));
-                visc.insert(c, pow((((test->timeBetween.at(i).total_milliseconds()/1000.0)-spc)/spc), 2));
+                // the character as a qstringref
+                QStringRef c(&(text->getText()), i, 1);
+
+                stats.insert(c, test->timeBetween.at(i).total_microseconds()*1.0e-6);
+                visc.insert(c, pow((((test->timeBetween.at(i).total_microseconds()*1.0e-6)-spc)/spc), 2));
+
                 if (test->mistakes.contains(i)) {
-                        if (mistakeCount.contains(c))
-                                mistakeCount.insert(c, mistakeCount.value(c)+1);
-                        else 
-                                mistakeCount.insert(c, 1);
+                        mistakeCount.insert(c, i);
                 }
         }
+        
         //trigrams
         for (int i = 0; i <test->length - 2; ++i) {
-                QString tri = QStringRef(&(text->getText()), i, 3).toString();
+                QStringRef tri(&(text->getText()), i, 3);
                 int start = i;
                 int end   = i + 3;
                 
-                boost::posix_time::time_duration perch(0,0,0,0);
+                double perch = 0;
                 double visco = 0;
                 // for each character in the tri
                 for (int j = start; j < end; ++j) {
-                        if (test->mistakes.contains(j)) {
-                                if (mistakeCount.contains(tri))
-                                        mistakeCount.insert(tri, mistakeCount.value(tri)+1);
-                                else 
-                                        mistakeCount.insert(tri, 1);
-                        }
-
-                        perch += test->timeBetween.at(j);
+                        if (test->mistakes.contains(j))
+                                mistakeCount.insert(tri, j);
+                        perch += test->timeBetween.at(j).total_microseconds();
                 }
-                perch = perch / (end-start);
+                perch = perch / (double)(end-start);
 
-                double tspc = perch.total_milliseconds()/1000.0;
+                double tspc = perch * 1.0e-6;
                 for (int j = start; j < end; ++j)
-                        visco += pow(((test->timeBetween.at(j).total_milliseconds()/1000.0 - tspc)/tspc), 2);
+                        visco += pow(((test->timeBetween.at(j).total_microseconds()* 1.0e-6 - tspc)/tspc), 2);
                 visco = visco/(end-start);
 
-                stats.insert(tri, perch);
+                stats.insert(tri, tspc);
                 visc.insert(tri, visco);
         }
 
         //words
         QRegularExpression re("(\\w|'(?![A-Z]))+(-\\w(\\w|')*)*");
-        QStringList list;
         QRegularExpressionMatchIterator i = re.globalMatch(text->getText());
         while (i.hasNext()) {
                 QRegularExpressionMatch match = i.next();
 
                 // ignore matches of 3characters of less
-                if (match.capturedLength() <= 3)
+                int length = match.capturedLength();
+                if (length <= 3)
                         continue;
+                
+                int start  = match.capturedStart();
+                int end    = match.capturedEnd();
+                QStringRef word = QStringRef(&(text->getText()), start, length);
 
-                QString word = match.captured();
-
-                int start = match.capturedStart();
-                int end   = match.capturedEnd();
-
-                boost::posix_time::time_duration perch(0,0,0,0);
+                double perch = 0;
                 double visco = 0;
                 // for each character in the word
                 for (int j = start; j < end; ++j) {
-                        if (test->mistakes.contains(j)) {
-                                if (mistakeCount.contains(word))
-                                        mistakeCount.insert(word, mistakeCount.value(word)+1);
-                                else 
-                                        mistakeCount.insert(word, 1);
-                        }
-
-                        perch += test->timeBetween.at(j);
+                        if (test->mistakes.contains(j))
+                                mistakeCount.insert(word, j);
+                        perch += test->timeBetween.at(j).total_microseconds();
                 }
-                perch = perch / (end-start);
+                perch = perch / (double)(end-start);
 
-                double tspc = perch.total_milliseconds()/1000.0;
+                double tspc = perch * 1.0e-6;
                 for (int j = start; j < end; ++j)
-                        visco += pow(((test->timeBetween.at(j).total_milliseconds()/1000.0 - tspc)/tspc), 2);
+                        visco += pow(((test->timeBetween.at(j).total_microseconds() * 1.0e-6 - tspc)/tspc), 2);
                 visco = visco/(end-start);
 
-                stats.insert(word, perch);
+                stats.insert(word, tspc);
                 visc.insert(word, visco);
         }
 
         // add stats to db
-        QList<QString> keys = stats.uniqueKeys();
-        q.prepare("insert into statistic (time,viscosity,w,count,mistakes,type,data) values (?,?,?,?,?,?,?)");
-        QVariantList _time, _viscosity, _w, _count, _mistakes, _type, _data;
-        for (QString k : keys) {
+        QList<QStringRef> keys = stats.uniqueKeys();
+        db.transaction();
+        q.prepare("insert into statistic (time,viscosity,w,count,mistakes,type,data) "
+                  "values (:time,:visc,:when,:count,:mistakes,:type,:data)");
+        for (QStringRef k : keys) {
                 // get the median time
-                QList<boost::posix_time::time_duration> timeValues = stats.values(k);
+                QList<double>& timeValues = stats.values(k);
                 if (timeValues.length() > 1)
-                        _time << ((timeValues[timeValues.length()/2]+timeValues[timeValues.length()/2-1])/2.0).total_milliseconds()/1000.0;
+                        q.bindValue(":time", ((timeValues[timeValues.length()/2] + (timeValues[timeValues.length()/2 - 1]))/2.0));
                 else if (timeValues.length() == 1)
-                        _time << timeValues[timeValues.length()/2].total_milliseconds()/1000.0;
+                        q.bindValue(":time", timeValues[timeValues.length()/2]);
                 else
-                        _time << timeValues.first().total_milliseconds()/1000.0;
+                        q.bindValue(":time", timeValues.first());
 
                 // get the median viscosity
-                QList<double> viscValues = visc.values(k);
+                QList<double>& viscValues = visc.values(k);
                 if (viscValues.length() > 1)
-                        _viscosity << ((viscValues[viscValues.length()/2]+viscValues[viscValues.length()/2-1])/2.0) * 100.0;
+                        q.bindValue(":visc", ((viscValues[viscValues.length()/2]+viscValues[viscValues.length()/2-1])/2.0) * 100.0);
                 else if (viscValues.length() == 1)
-                        _viscosity << viscValues[viscValues.length()/2] * 100.0;
+                        q.bindValue(":visc", viscValues[viscValues.length()/2] * 100.0);
                 else
-                        _viscosity << viscValues.first() * 100.0;
+                        q.bindValue(":visc", viscValues.first() * 100.0);
 
-                _w << now;
-                _count << stats.count(k);
-                _mistakes << mistakeCount.value(k);
+                q.bindValue(":when",     now);
+                q.bindValue(":count",    stats.count(k));
+                q.bindValue(":mistakes", mistakeCount.count(k));
                 
                 if (k.length() == 1)
-                        _type << 0;     //character
+                        q.bindValue(":type", 0);
                 else if (k.length() == 3)
-                        _type << 1;     //trigram
+                        q.bindValue(":type", 1);
                 else 
-                        _type << 2;     //word
+                        q.bindValue(":type", 2);
 
-                _data << k;
+                q.bindValue(":data", k.toString());
+                q.exec();
         }
-        q.addBindValue(_time);
-        q.addBindValue(_viscosity);
-        q.addBindValue(_w);
-        q.addBindValue(_count);
-        q.addBindValue(_mistakes);
-        q.addBindValue(_type);
-        q.addBindValue(_data);
-        q.execBatch();        
-
+        db.commit();
 
         // add mistakes to db
         QHash<QPair<QChar, QChar>, int> m = ui->typer->getTest()->getMistakes();
         QHashIterator<QPair<QChar,QChar>, int> it(m);
+        db.transaction();
         q.prepare("insert into mistake (w,target,mistake,count) values (:time,:target,:mistake,:count)");
-        QVariantList _mtime, _mtarget, _mmistake, _mcount;
         while (it.hasNext()) {
                 it.next();
-                _mtime    << now;
-                _mtarget  << it.key().first;
-                _mmistake << it.key().second;
-                _mcount   << it.value();
+                q.bindValue(":time",    now);
+                q.bindValue(":target",  it.key().first);
+                q.bindValue(":mistake", it.key().second);
+                q.bindValue(":count",   it.value());
+                q.exec(); 
         }
-        q.bindValue(":time",    _mtime);
-        q.bindValue(":target",  _mtarget);
-        q.bindValue(":mistake", _mmistake);
-        q.bindValue(":count",   _mcount);
-        q.execBatch();        
-        
+        db.commit();
+               
         // get the next text.
-        emit wantText();
-        
-       
+        emit wantText(); 
 }
 
 void Quizzer::setText(Text* t)
