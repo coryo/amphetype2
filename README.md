@@ -1,8 +1,9 @@
 # amphetype2
 
-A rewrite of [Amphetype](https://code.google.com/p/amphetype/) in C++, using Qt 5.4 and QCustomPlot for nicer plotting.
+A rewrite of [Amphetype](https://code.google.com/p/amphetype/) in C++.
 
-![typer tab](http://i.imgur.com/W5K6gXQ.png)
+using:
 
-![performance tab](http://i.imgur.com/v0GojpX.png)
-
+*   Qt 5.4
+*   QCustomPlot 1.3.1
+*   Boost 1.58.0
