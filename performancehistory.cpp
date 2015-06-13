@@ -12,9 +12,10 @@
 #include <QSettings>
 #include <QSqlQuery>
 #include <QByteArray>
+#include <QStandardItemModel>
 
 PerformanceHistory::PerformanceHistory(QWidget* parent)
-        : QWidget(parent), ui(new Ui::PerformanceHistory), model(0),
+        : QWidget(parent), ui(new Ui::PerformanceHistory), modelb(new QStandardItemModel()),
           s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
                                   "Amphetype2.ini",
                           QSettings::IniFormat))
@@ -44,7 +45,9 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         ui->limitNumber->setText(s->value("perf_items").toString());
 
         // double clicking an item in the list
-        connect(ui->performanceView, SIGNAL(doubleClicked(const QModelIndex&)),
+        //connect(ui->performanceView, SIGNAL(doubleClicked(const QModelIndex&)),
+        //        this,                SLOT  (doubleClicked(const QModelIndex&)));
+        connect(ui->tableView, SIGNAL(doubleClicked(const QModelIndex&)),
                 this,                SLOT  (doubleClicked(const QModelIndex&)));
 
         // settings
@@ -64,7 +67,7 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
 PerformanceHistory::~PerformanceHistory()
 {
         delete ui;
-        delete model;
+        delete modelb;
         delete s;
 }
 
@@ -130,11 +133,11 @@ void PerformanceHistory::writeSettings()
 
 void PerformanceHistory::resizeColumns()
 {
-        ui->performanceView->resizeColumnToContents(1);
-        ui->performanceView->resizeColumnToContents(2);
-        ui->performanceView->resizeColumnToContents(3);
-        ui->performanceView->resizeColumnToContents(4);
-        ui->performanceView->resizeColumnToContents(5);
+        ui->tableView->resizeColumnToContents(1);
+        ui->tableView->resizeColumnToContents(2);
+        ui->tableView->resizeColumnToContents(3);
+        ui->tableView->resizeColumnToContents(4);
+        ui->tableView->resizeColumnToContents(5);
 }
 
 void PerformanceHistory::refreshSources()
@@ -153,12 +156,14 @@ void PerformanceHistory::refreshSources()
 }
 
 void PerformanceHistory::doubleClicked(const QModelIndex& idx)
-{
-        model->data(idx, Qt::DisplayRole);
+{       
+        int row = idx.row();
+
+        QModelIndex& f = modelb->index(row, 0);
 
         QSqlQuery q;
         q.prepare("select id, source, text from text where id = :textid");
-        q.bindValue(":textid", model->getId(idx, Qt::DisplayRole).toByteArray());
+        q.bindValue(":textid", f.data().toByteArray());
         q.exec();
 
         if (q.first()) {
@@ -174,6 +179,25 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx)
 
 void PerformanceHistory::refreshPerformance()
 {
+        modelb->clear();
+
+        QStringList headers;
+        headers << "id"
+                 << "When"
+                 << "Source"
+                 << "WPM"
+                 << "Accuracy"
+                 << "Viscosity";
+        modelb->setHorizontalHeaderLabels(headers);
+        ui->tableView->setModel(modelb);
+        ui->tableView->setSortingEnabled(false);
+        ui->tableView->setColumnHidden(0, true);
+
+        QHeaderView* verticalHeader = ui->tableView->verticalHeader();
+        verticalHeader->sectionResizeMode(QHeaderView::Fixed);
+        verticalHeader->setDefaultSectionSize(24);
+        //
+
         QStringList query;        
         switch (ui->sourceComboBox->currentIndex()) {
         case 0:
@@ -223,31 +247,29 @@ void PerformanceHistory::refreshPerformance()
         q.prepare(sql);
         q.exec();
 
-        QString result;
+        //QString result;
 
         // clear the data in the plots
         for (int i = 0; i <ui->performancePlot->graphCount(); ++i)
                 ui->performancePlot->graph(i)->clearData();
 
+        QList<QStandardItem*> items;
         double x = 0;
         while (q.next()) {
                 // add hash id
-                result.append(q.value(0).toString() + "\t");
+                items << new QStandardItem(q.value(0).toString());
 
                 // turn the string from db into a ptime
                 boost::posix_time::ptime t = boost::posix_time::from_iso_string(
                         q.value(1).toString().toStdString());
 
                 // add time. convert it to nicer display first
-                result.append(
-                        QString::fromStdString(
-                                boost::gregorian::to_simple_string(t.date())) +
-                        "\t"); 
+                items << new QStandardItem(QString::fromStdString(
+                                boost::gregorian::to_simple_string(t.date())));
 
                 // add source
-                result.append(q.value(2).toString() + "\t");
+                items << new QStandardItem(q.value(2).toString());
 
-                
                 // add points to each of the plots
                 // if chrono x, make the x value seconds since epoch
                 if (s->value("chrono_x").toBool()) {
@@ -263,28 +285,20 @@ void PerformanceHistory::refreshPerformance()
                 ui->performancePlot->graph(2)->addData(x, vis);
 
                 // add wpm,acc,vis, 1 sigificant digit
-                result.append(QString::number(wpm, 'f', 1) + "\t");
-                result.append(QString::number(acc, 'f', 1) + "\t");
-                result.append(QString::number(vis, 'f', 1) + "\n");
+                items << new QStandardItem(QString::number(wpm, 'f', 1));
+                items << new QStandardItem(QString::number(acc, 'f', 1));
+                items << new QStandardItem(QString::number(vis, 'f', 1));
+
+                for (QStandardItem* item : items)
+                        item->setFlags(Qt::ItemIsEnabled);
+                modelb->appendRow(items);
+                items.clear();
+
                 --x;
         }
 
-        if (model != 0)
-                delete model;
-
-        QList<QVariant> rootData;
-        rootData << "id"
-                 << "When"
-                 << "Source"
-                 << "WPM"
-                 << "Accuracy"
-                 << "Viscosity";
-        model = new TreeModel(result, rootData);
-        ui->performanceView->setModel(model);
-        ui->performanceView->hideColumn(0);
         resizeColumns();  
-        ui->performanceView->show();
-
+        
         showPlot(ui->plotSelector->currentIndex());
 }
 
