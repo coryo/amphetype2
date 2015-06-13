@@ -77,7 +77,7 @@
      <item row="0" column="0" rowspan="2" colspan="2">
       <widget class="QLabel" name="testText">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>

@@ -9,6 +9,7 @@
 #include <QSettings>
 #include <QDir>
 #include <QApplication>
+#include <QMultiHash>
 
 Typer::Typer(QWidget* parent) : QTextEdit(parent),
         s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
@@ -17,7 +18,7 @@ Typer::Typer(QWidget* parent) : QTextEdit(parent),
 {
         test = 0;
 
-        setPalettes();
+        //setPalettes();
 
         connect(this, SIGNAL(textChanged()), this, SLOT(checkText()));
 
@@ -40,9 +41,9 @@ void Typer::setTextTarget(const QString& t)
                 this->clear();
                 this->blockSignals(false);
         }
-        this->setPalette(palettes.value("inactive"));
+        //this->setPalette(palettes.value("inactive"));
 }
-
+/*
 void Typer::setPalettes()
 {
         palettes.insert("wrong",
@@ -59,7 +60,7 @@ void Typer::setPalettes()
                 QPalette(Qt::black, Qt::lightGray, Qt::lightGray,
                          Qt::darkGray, Qt::gray, Qt::black,
                          Qt::lightGray));
-}
+}*/
 void Typer::getWaitText()
 {       
         if (s->value("req_space").toBool()) {
@@ -80,23 +81,24 @@ void Typer::checkText()
         QString currentText = this->toPlainText();
 
         if (test->when[0].is_not_a_date_time()) {
-                //bool space = (currentText.length() > 0) &&
-                //             (currentText[currentText.length() - 1].isSpace());
-                //bool req = s->value("req_space").toBool();
+                /*
+                bool space = (currentText.length() > 0) &&
+                             (currentText[currentText.length() - 1].isSpace());
+                bool req = s->value("req_space").toBool();
 
                 //test->editFlag = true;
-                /*
+                
                 if (space) {
                         test->when[0] = boost::posix_time::microsec_clock::local_time();
                         this->clear();
                         this->setPalette(this->palettes.value("right"));
                         emit testStarted(test->length);
                 } else if (req) {
-                }*/
+                }
 
-                //test->editFlag = false;
+                test->editFlag = false;
 
-                /*if (req || space)
+                if (req || space)
                         return;
                 else {*/
                 test->when[0] = boost::posix_time::microsec_clock::local_time();
@@ -169,16 +171,22 @@ void Typer::checkText()
 
         if (pos < currentText.length() && pos < test->text.length()) {
                 //mistake
-                std::cout << "mistake" << std::endl;
-                test->mistake[pos] = true;
                 test->mistakes << pos;
                 emit mistake(pos);
-        }
+                //std::cout << "mistake: " << QString(test->text[pos]).toStdString() << " " << QString(currentText[pos]).toStdString() <<std::endl;
+                //test->mistakeMap.insert(test->text[pos], currentText[pos]);
 
-        if (lcd == QStringRef(&currentText))
-                this->setPalette(this->palettes.value("right"));
-        else
-                this->setPalette(this->palettes.value("wrong"));
+                test->mistakeMap.insert(pos,qMakePair(test->text[pos], currentText[pos]));
+
+                for (QPair<QChar,QChar> value : test->mistakeMap.values()) {
+                        std::cout 
+                        << test->mistakeMap.key(value) << ": "
+                        << value.first.toLatin1() << "," << value.second.toLatin1()
+                        //<< test->mistakeMap.count(key)
+                        << std::endl;
+                }
+                std::cout <<std::endl;
+        }
 }
 
 void Typer::keyPressEvent(QKeyEvent* e)

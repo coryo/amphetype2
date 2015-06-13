@@ -5,7 +5,9 @@
 
 #include <QString>
 #include <QVector>
-#include <QList>
+#include <QSet>
+#include <QHash>
+
 
 class Test {
 public:
@@ -21,17 +23,21 @@ public:
 
         QVector<boost::posix_time::ptime> when;
         QVector<boost::posix_time::time_duration> timeBetween;
-        QVector<bool> mistake;
-        QList<int> mistakes;
+
+        QSet<int> mistakes;
+        QVector<QString> mistakeList;
+        QHash<int, QPair<QChar,QChar>> mistakeMap;
+        
         QVector<double> wpm;
         QVector<double> apm;
-
-        int apmWindow;
 
         double minWPM;
         double minAPM;
         double maxWPM;
         double maxAPM;
+        int apmWindow;
+
+        QHash<QPair<QChar, QChar>, int> getMistakes();
 };
 
 #endif // TEST_H

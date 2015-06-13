@@ -13,13 +13,13 @@ public:
         Typer(QWidget* parent = 0);
         ~Typer();
         void setTextTarget(const QString&);
-        void setPalettes();
+        //void setPalettes();
         Test* getTest();
 
 private:
         QSettings* s;
         Test* test;
-        QMap<QString, QPalette> palettes;
+        //QMap<QString, QPalette> palettes;
 
         void getWaitText();
         void keyPressEvent(QKeyEvent* e);
