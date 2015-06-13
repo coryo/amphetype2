@@ -153,18 +153,16 @@ void Quizzer::done()
                 sum += x;
         double viscosity = sum/test->text.size();
 
-        // insert into db
+        // DB Stuff
         QSqlDatabase db = QSqlDatabase::database();
         if (!db.open())
-                qDebug() << "db";
-        if (db.driver()->hasFeature(QSqlDriver::Transactions))
-                qDebug() << "has transactions";
+                return;
 
+        // Results transaction
         db.transaction();
         QSqlQuery q;
         q.prepare("insert into result (w,text_id,source,wpm,accuracy,viscosity)"
                   " values (:time,:id,:source,:wpm,:accuracy,:viscosity)");
-
         q.bindValue(":time", now);
         q.bindValue(":id", text->getId());
         q.bindValue(":source", text->getSource());
@@ -174,33 +172,30 @@ void Quizzer::done()
         q.exec();
         db.commit();
 
-        // update the result label
-        ui->result->setText(
-                "Last: " +
-                QString::number(test->wpm.back(), 'f', 1) +
-                "wpm (" + QString::number(accuracy * 100, 'f', 1) + "%)");
-
-
-        //statistics
+        // Generate statistics, the key is character/word/trigram
+        // stats are the time values, visc viscosity, mistakeCount values are
+        // positions in the text where a mistake occurred. mistakeCount.count(key)
+        // yields the amount of mistakes for a given key
         QMultiHash<QStringRef, double> stats;
         QMultiHash<QStringRef, double> visc;
         QMultiHash<QStringRef, int> mistakeCount;
-
         // characters
         for (int i = 0; i < text->getText().length(); ++i) {
                 // the character as a qstringref
                 QStringRef c(&(text->getText()), i, 1);
 
+                // add a time value and visc value for the key
                 stats.insert(c, test->timeBetween.at(i).total_microseconds()*1.0e-6);
                 visc.insert(c, pow((((test->timeBetween.at(i).total_microseconds()*1.0e-6)-spc)/spc), 2));
 
+                // add the mistake to the key
                 if (test->mistakes.contains(i)) {
                         mistakeCount.insert(c, i);
                 }
         }
-        
         //trigrams
         for (int i = 0; i <test->length - 2; ++i) {
+                // the trigram as a qstringref
                 QStringRef tri(&(text->getText()), i, 3);
                 int start = i;
                 int end   = i + 3;
@@ -209,13 +204,17 @@ void Quizzer::done()
                 double visco = 0;
                 // for each character in the tri
                 for (int j = start; j < end; ++j) {
+                        // add a mistake to the trigram, if it had one
                         if (test->mistakes.contains(j))
                                 mistakeCount.insert(tri, j);
+                        // sum the times for the chracters in the tri
                         perch += test->timeBetween.at(j).total_microseconds();
                 }
+                // average time per key
                 perch = perch / (double)(end-start);
-
+                // seconds per character
                 double tspc = perch * 1.0e-6;
+                // get the average viscosity
                 for (int j = start; j < end; ++j)
                         visco += pow(((test->timeBetween.at(j).total_microseconds()* 1.0e-6 - tspc)/tspc), 2);
                 visco = visco/(end-start);
@@ -223,8 +222,7 @@ void Quizzer::done()
                 stats.insert(tri, tspc);
                 visc.insert(tri, visco);
         }
-
-        //words
+        // words
         QRegularExpression re("(\\w|'(?![A-Z]))+(-\\w(\\w|')*)*");
         QRegularExpressionMatchIterator i = re.globalMatch(text->getText());
         while (i.hasNext()) {
@@ -235,8 +233,11 @@ void Quizzer::done()
                 if (length <= 3)
                         continue;
                 
+                // start and end pos of the word in the original text
                 int start  = match.capturedStart();
                 int end    = match.capturedEnd();
+
+                // the word as a qstringref
                 QStringRef word = QStringRef(&(text->getText()), start, length);
 
                 double perch = 0;
@@ -258,7 +259,7 @@ void Quizzer::done()
                 visc.insert(word, visco);
         }
 
-        // add stats to db
+        // Statistics transaction
         QList<QStringRef> keys = stats.uniqueKeys();
         db.transaction();
         q.prepare("insert into statistic (time,viscosity,w,count,mistakes,type,data) "
@@ -298,7 +299,7 @@ void Quizzer::done()
         }
         db.commit();
 
-        // add mistakes to db
+        // Mistakes transaction
         QHash<QPair<QChar, QChar>, int> m = ui->typer->getTest()->getMistakes();
         QHashIterator<QPair<QChar,QChar>, int> it(m);
         db.transaction();
@@ -313,6 +314,12 @@ void Quizzer::done()
         }
         db.commit();
                
+        // update the result label
+        ui->result->setText(
+                "Last: " +
+                QString::number(test->wpm.back(), 'f', 1) +
+                "wpm (" + QString::number(accuracy * 100, 'f', 1) + "%)");
+
         // get the next text.
         emit wantText(); 
 }
