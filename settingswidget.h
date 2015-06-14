@@ -3,8 +3,6 @@
 
 #include <QWidget>
 
-class QSettings;
-
 namespace Ui {
 class SettingsWidget;
 }
@@ -18,7 +16,6 @@ public:
         ~SettingsWidget();
 
 private:
-        QSettings* s;
         Ui::SettingsWidget *ui;
 
 signals:

@@ -6,7 +6,6 @@
 #include <QTime>
 
 class Text;
-class QSettings;
 
 namespace Ui {
 class Quizzer;
@@ -23,7 +22,6 @@ private:
         void resizeEvent(QResizeEvent*);
 
         int cursorPosition;
-        QSettings* s;
         Ui::Quizzer* ui;
         Text* text;
         QTimer resizeTimer;

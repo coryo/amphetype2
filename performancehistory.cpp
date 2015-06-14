@@ -15,24 +15,24 @@
 #include <QStandardItemModel>
 
 PerformanceHistory::PerformanceHistory(QWidget* parent)
-        : QWidget(parent), ui(new Ui::PerformanceHistory), modelb(new QStandardItemModel()),
-          s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
-                                  "Amphetype2.ini",
-                          QSettings::IniFormat))
+        : QWidget(parent), ui(new Ui::PerformanceHistory),
+          modelb(new QStandardItemModel())
 {
         ui->setupUi(this);
 
+        QSettings s;
+
         // set states of checkboxes based on settings file
-        if (s->value("chrono_x").toBool())
+        if (s.value("chrono_x").toBool())
                 ui->timeScaleCheckBox->setCheckState(Qt::Checked);
 
-        if (s->value("show_xaxis").toBool())
+        if (s.value("show_xaxis").toBool())
                 ui->fullRangeYCheckBox->setCheckState(Qt::Checked);
 
-        if (s->value("dampen_graph").toBool())
+        if (s.value("dampen_graph").toBool())
                 ui->dampenCheckBox->setCheckState(Qt::Checked);        
 
-        ui->smaWindowSpinBox->setValue(s->value("dampen_average").toInt());
+        ui->smaWindowSpinBox->setValue(s.value("dampen_average").toInt());
 
         // add the 3 graphs we will use
         ui->performancePlot->addGraph();
@@ -42,7 +42,7 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         ui->performancePlot->graph(1)->setScatterStyle(QCPScatterStyle::ssDisc);
         ui->performancePlot->graph(2)->setScatterStyle(QCPScatterStyle::ssDisc);
 
-        ui->limitNumber->setText(s->value("perf_items").toString());
+        ui->limitNumber->setText(s.value("perf_items").toString());
 
         refreshSources();
 
@@ -63,7 +63,6 @@ PerformanceHistory::~PerformanceHistory()
 {
         delete ui;
         delete modelb;
-        delete s;
 }
 
 // add a graph to the plot that is the SMA of the given graph
@@ -105,23 +104,24 @@ QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
 
 void PerformanceHistory::writeSettings()
 {
-        s->setValue("perf_items", ui->limitNumber->text().toInt());
+        QSettings s;
+        s.setValue("perf_items", ui->limitNumber->text().toInt());
 
         if (ui->timeScaleCheckBox->checkState() == Qt::Unchecked)
-                s->setValue("chrono_x", false);
+                s.setValue("chrono_x", false);
         else
-                s->setValue("chrono_x", true);
+                s.setValue("chrono_x", true);
 
         if (ui->fullRangeYCheckBox->checkState() == Qt::Unchecked)
-                s->setValue("show_xaxis", false);
+                s.setValue("show_xaxis", false);
         else
-                s->setValue("show_xaxis", true);
+                s.setValue("show_xaxis", true);
 
         if (ui->dampenCheckBox->checkState() == Qt::Unchecked)
-                s->setValue("dampen_graph", false);
+                s.setValue("dampen_graph", false);
         else
-                s->setValue("dampen_graph", true);
-        s->setValue("dampen_average", ui->smaWindowSpinBox->value());
+                s.setValue("dampen_graph", true);
+        s.setValue("dampen_average", ui->smaWindowSpinBox->value());
 
         refreshPerformance();
 }
@@ -174,6 +174,8 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx)
 
 void PerformanceHistory::refreshPerformance()
 {
+        QSettings s;
+
         ui->tableView->hide();
         
         modelb->clear();
@@ -223,7 +225,7 @@ void PerformanceHistory::refreshPerformance()
         QString group;
 
         QString sql;
-        int g = s->value("perf_group_by").toInt();
+        int g = s.value("perf_group_by").toInt();
         QString n = ui->limitNumber->text();
         if (g == 0) {
                 sql = "select text_id,w,s.name,wpm,100.0*accuracy,viscosity "
@@ -267,7 +269,7 @@ void PerformanceHistory::refreshPerformance()
 
                 // add points to each of the plots
                 // if chrono x, make the x value seconds since epoch
-                if (s->value("chrono_x").toBool()) {
+                if (s.value("chrono_x").toBool()) {
                         boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1));
                         boost::posix_time::time_duration::sec_type sec = (t - epoch).total_seconds();
                         x = time_t(sec);
@@ -302,6 +304,8 @@ void PerformanceHistory::showPlot(int p)
         if (p >= ui->performancePlot->graphCount())
                 return;
 
+        QSettings s;
+
         // hide all the plots
         for (int i = 0; i < ui->performancePlot->graphCount(); i++)
                 ui->performancePlot->graph(i)->setVisible(false);
@@ -323,7 +327,7 @@ void PerformanceHistory::showPlot(int p)
         }
 
         // axis properties dependent on time scaling or not
-        if (s->value("chrono_x").toBool()) {
+        if (s.value("chrono_x").toBool()) {
                 ui->performancePlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
                 ui->performancePlot->xAxis->setDateTimeFormat("M/dd");
                 ui->performancePlot->xAxis->setAutoTickStep(true);
@@ -337,8 +341,8 @@ void PerformanceHistory::showPlot(int p)
         }
 
         // make a SMA graph out of the current one and show it
-        if (s->value("dampen_graph").toBool()) {
-                QCPGraph* sma = dampen(ui->performancePlot->graph(p), s->value("dampen_average").toInt()); 
+        if (s.value("dampen_graph").toBool()) {
+                QCPGraph* sma = dampen(ui->performancePlot->graph(p), s.value("dampen_average").toInt()); 
                 if (sma != 0)
                         sma->setVisible(true); 
         }
@@ -346,7 +350,7 @@ void PerformanceHistory::showPlot(int p)
         ui->performancePlot->rescaleAxes(true);
 
         // set the min or max of the y axis if needed
-        if (s->value("show_xaxis").toBool()) {
+        if (s.value("show_xaxis").toBool()) {
                 if (p == 1) // accuracy plot
                         ui->performancePlot->yAxis->setRangeUpper(100);
                 else

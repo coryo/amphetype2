@@ -6,15 +6,11 @@
 
 #include <QKeyEvent>
 #include <QSettings>
-#include <QSettings>
 #include <QDir>
 #include <QApplication>
 #include <QMultiHash>
 
-Typer::Typer(QWidget* parent) : QTextEdit(parent),
-        s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
-                                  "Amphetype2.ini",
-                          QSettings::IniFormat))
+Typer::Typer(QWidget* parent) : QTextEdit(parent)
 {
         test = 0;
 
@@ -24,7 +20,6 @@ Typer::Typer(QWidget* parent) : QTextEdit(parent),
 }
 Typer::~Typer()
 {
-        delete s;
 }
 
 void Typer::setTextTarget(const QString& t)
@@ -40,22 +35,13 @@ void Typer::setTextTarget(const QString& t)
                 this->blockSignals(false);
         }
 }
-/*
-void Typer::getWaitText()
-{       
-        if (s->value("req_space").toBool()) {
-                this->setText("Press SPACE and then immediately start typing the text\n"
-                              "Press ESCAPE to restart with a new text at any time");
-        } else {
-                this->setText("Press ESCAPE to restart with a new text at any time");
-        }
-}*/
 
 void Typer::checkText()
 {       
-
         if (test->text.isEmpty() || test->editFlag)
                 return;
+
+        QSettings s;
 
         // the text in this QTextEdit
         QString currentText = this->toPlainText();
@@ -106,7 +92,7 @@ void Typer::checkText()
                 // dont calc between the first 2 positions if !req_space
                 // because the times will be the same
                 int check = 0;
-                if (!s->value("req_space").toBool())
+                if (!s.value("req_space").toBool())
                         check = 1;
 
                 if (pos > check) {

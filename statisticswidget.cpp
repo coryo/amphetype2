@@ -18,12 +18,11 @@
 StatisticsWidget::StatisticsWidget(QWidget *parent) :
         QWidget(parent),
         ui(new Ui::StatisticsWidget),
-        model(new QStandardItemModel),
-        s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
-                                  "Amphetype2.ini",
-                          QSettings::IniFormat))
+        model(new QStandardItemModel)
 {
         ui->setupUi(this);
+
+        QSettings s;
 
         ui->orderComboBox->setItemData(0, "wpm asc");
         ui->orderComboBox->setItemData(1, "wpm desc");
@@ -34,11 +33,11 @@ StatisticsWidget::StatisticsWidget(QWidget *parent) :
         ui->orderComboBox->setItemData(6, "total desc");
         ui->orderComboBox->setItemData(7, "damage desc");
 
-        ui->limitEdit->setText(s->value("ana_many").toString());
-        ui->minCountEdit->setText(s->value("ana_count").toString());
+        ui->limitEdit->setText(s.value("ana_many").toString());
+        ui->minCountEdit->setText(s.value("ana_count").toString());
 
-        ui->orderComboBox->setCurrentIndex(ui->orderComboBox->findData(s->value("ana_which")));
-        ui->typeComboBox->setCurrentIndex(s->value("ana_what").toInt());
+        ui->orderComboBox->setCurrentIndex(ui->orderComboBox->findData(s.value("ana_which")));
+        ui->typeComboBox->setCurrentIndex(s.value("ana_what").toInt());
 
         connect(ui->orderComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
         connect(ui->typeComboBox,  SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
@@ -50,15 +49,15 @@ StatisticsWidget::~StatisticsWidget()
 {
         delete ui;
         delete model;
-        delete s;
 }
 
 void StatisticsWidget::writeSettings()
 {
-        s->setValue("ana_which", ui->orderComboBox->itemData(ui->orderComboBox->currentIndex()).toString());
-        s->setValue("ana_what", ui->typeComboBox->currentIndex());
-        s->setValue("ana_many", ui->limitEdit->text().toInt());
-        s->setValue("ana_count", ui->minCountEdit->text().toInt());
+        QSettings s;
+        s.setValue("ana_which", ui->orderComboBox->itemData(ui->orderComboBox->currentIndex()).toString());
+        s.setValue("ana_what", ui->typeComboBox->currentIndex());
+        s.setValue("ana_many", ui->limitEdit->text().toInt());
+        s.setValue("ana_count", ui->minCountEdit->text().toInt());
         refreshStatistics();
 }
 
@@ -75,6 +74,8 @@ void StatisticsWidget::resizeColumns()
 
 void StatisticsWidget::refreshStatistics()
 {
+        QSettings s;
+
         model->clear();
 
         QStringList headers;
@@ -101,10 +102,10 @@ void StatisticsWidget::refreshStatistics()
         boost::posix_time::ptime history =
                 boost::posix_time::microsec_clock::local_time();
 
-        history = history - boost::posix_time::seconds(s->value("history").toInt()*86400);        
+        history = history - boost::posix_time::seconds(s.value("history").toInt()*86400);        
 
         // get the data and populate the model
-        sqlite3pp::database* db = DB::openDB(s->value("db_name").toString());
+        sqlite3pp::database* db = DB::openDB(s.value("db_name").toString());
         DB::addFunctions(db);
 
         QString query = "select data, "

@@ -1,10 +1,9 @@
 #include "quizzer.h"
 #include "ui_quizzer.h"
+
 #include "typer.h"
 #include "text.h"
 #include "test.h"
-
-//#include <math.h>
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 
@@ -15,12 +14,10 @@
 Quizzer::Quizzer(QWidget *parent) :
         QWidget(parent),
         ui(new Ui::Quizzer),
-        text(0),
-        s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
-                                  "Amphetype2.ini",
-                          QSettings::IniFormat))
+        text(0)
 {
         ui->setupUi(this);
+        QSettings s;
 
         // finishing or cancelling signals
         connect(ui->typer, SIGNAL(done()), this, SLOT(done()));
@@ -59,7 +56,7 @@ Quizzer::Quizzer(QWidget *parent) :
         // set defaults for ui stuff
         timerLabelReset();
         setTyperFont();
-        ui->result->setVisible(s->value("show_last").toBool());
+        ui->result->setVisible(s.value("show_last").toBool());
         ui->result->setText("Last: 0wpm (0%)\nlast 10: 0wpm (0%)");
 
         // create the two graphs in the plot, set colours
@@ -393,7 +390,8 @@ void Quizzer::moveCursor()
 
 void Quizzer::setTyperFont() // readjust
 {
-        QFont f = qvariant_cast<QFont>(s->value("typer_font"));
+        QSettings s;
+        QFont f = qvariant_cast<QFont>(s.value("typer_font"));
         ui->testText->setFont(f);
 }
 

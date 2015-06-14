@@ -3,10 +3,9 @@
 
 #include <QWidget>
 #include "inc/qcustomplot.h"
-//class TreeModel;
+
 class QModelIndex;
 class Text;
-class QSettings;
 class QStandardItemModel;
 
 namespace Ui
@@ -24,9 +23,7 @@ public:
 
 private:
         Ui::PerformanceHistory* ui;
-        //TreeModel* model;
         QStandardItemModel* modelb;
-        QSettings* s;
         QCPGraph* dampen(QCPGraph*, int n = 10);
 
 signals:

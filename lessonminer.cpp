@@ -14,13 +14,10 @@
 #include <QtSql>
 
 LessonMiner::LessonMiner(QObject *parent)
-        : QObject(parent),
-        s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
-                                  "Amphetype2.ini",
-                          QSettings::IniFormat))
+        : QObject(parent)
 {
-        //QSettings q("Amphetype2.ini", QSettings::IniFormat);
-        min_chars = s->value("min_chars").toInt();
+        QSettings s;
+        min_chars = s.value("min_chars").toInt();
 
         // things to ignore as sentence enders.
         // ie "Mr. Smith." is shouldn't be 2 sentences
@@ -45,7 +42,7 @@ LessonMiner::LessonMiner(QObject *parent)
                 <<"10"<<"11"<<"12"<<"avg"<<"viz"<<"m"<<"mme";
 }
 
-LessonMiner::~LessonMiner() { delete s; }
+LessonMiner::~LessonMiner() { }
 
 void LessonMiner::doWork(const QString& fname)
 {

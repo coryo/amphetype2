@@ -23,12 +23,11 @@ TextManager::TextManager(QWidget *parent) :
         QWidget(parent),
         ui(new Ui::TextManager),
         model(0),
-        refreshed(false),
-        s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
-                                  "Amphetype2.ini",
-                          QSettings::IniFormat))
+        refreshed(false)
 {
         ui->setupUi(this);
+
+        QSettings s;
 
         QList<QVariant> rootData;
         rootData << "id"
@@ -44,7 +43,7 @@ TextManager::TextManager(QWidget *parent) :
         ui->progress->hide();
         ui->progressText->hide();
 
-        ui->selectionMethod->setCurrentIndex(s->value("select_method").toInt());
+        ui->selectionMethod->setCurrentIndex(s.value("select_method").toInt());
 
         connect(ui->importButton, SIGNAL(clicked()),
                 this,             SLOT(addFiles()));
@@ -68,13 +67,13 @@ TextManager::~TextManager()
 {
         delete ui;
         delete model;
-        delete s;
 }
 
 void TextManager::changeSelectMethod(int i)
 {
-        if (s->value("select_method").toInt() != i)
-                s->setValue("select_method", i);
+        QSettings s;
+        if (s.value("select_method").toInt() != i)
+                s.setValue("select_method", i);
 }
 
 void TextManager::tabActive(int i)
@@ -234,9 +233,10 @@ void TextManager::doubleClicked(const QModelIndex& idx)
 
 void TextManager::nextText()
 {
+        QSettings s;
         Text* t = 0;
 
-        int type = s->value("select_method").toInt();
+        int type = s.value("select_method").toInt();
 
         QSqlQuery q;
         if (type != 1) {
@@ -244,7 +244,7 @@ void TextManager::nextText()
                 q.prepare("select id,source,text from text "
                         "where disabled is null "
                         "order by random() limit ?");
-                q.addBindValue(s->value("num_rand"));
+                q.addBindValue(s.value("num_rand"));
                 q.exec();
                 q.first();
                 if (!q.isValid()) {

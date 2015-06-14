@@ -4,7 +4,6 @@
 #include <QTextEdit>
 
 class Test;
-class QSettings;
 
 class Typer : public QTextEdit {
         Q_OBJECT
@@ -17,8 +16,6 @@ public:
 
 private:
         void keyPressEvent(QKeyEvent* e);
-
-        QSettings* s;
         Test* test;     
 
 signals:

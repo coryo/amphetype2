@@ -4,7 +4,6 @@
 #include <QWidget>
 
 class QStandardItemModel;
-class QSettings;
 
 namespace Ui {
 class StatisticsWidget;
@@ -21,7 +20,6 @@ public:
 private:
         Ui::StatisticsWidget *ui;
         QStandardItemModel* model;
-        QSettings* s;
 
 private slots:
         void refreshStatistics();
