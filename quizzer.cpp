@@ -266,7 +266,7 @@ void Quizzer::done()
                   "values (:time,:visc,:when,:count,:mistakes,:type,:data)");
         for (QStringRef k : keys) {
                 // get the median time
-                QList<double>& timeValues = stats.values(k);
+                const QList<double>& timeValues = stats.values(k);
                 if (timeValues.length() > 1)
                         q.bindValue(":time", ((timeValues[timeValues.length()/2] + (timeValues[timeValues.length()/2 - 1]))/2.0));
                 else if (timeValues.length() == 1)
@@ -275,7 +275,7 @@ void Quizzer::done()
                         q.bindValue(":time", timeValues.first());
 
                 // get the median viscosity
-                QList<double>& viscValues = visc.values(k);
+                const QList<double>& viscValues = visc.values(k);
                 if (viscValues.length() > 1)
                         q.bindValue(":visc", ((viscValues[viscValues.length()/2]+viscValues[viscValues.length()/2-1])/2.0) * 100.0);
                 else if (viscValues.length() == 1)

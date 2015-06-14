@@ -51,6 +51,8 @@ FORMS    += mainwindow.ui \
     performancehistory.ui \
     statisticswidget.ui
     
+QMAKE_CXXFLAGS += -std=c++1y -stdlib=libc++
+
 macx {
     message("mac build")
     INCLUDEPATH += /usr/local/Cellar/boost/1.58.0/include

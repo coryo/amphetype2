@@ -154,7 +154,7 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx)
 {       
         int row = idx.row();
 
-        QModelIndex& f = modelb->index(row, 0);
+        const QModelIndex& f = modelb->index(row, 0);
 
         QSqlQuery q;
         q.prepare("select id, source, text from text where id = :textid");
