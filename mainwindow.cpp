@@ -8,6 +8,8 @@
 #include <QMessageBox>
 #include <iostream>
 
+
+
 MainWindow::MainWindow(QWidget* parent)
         : QMainWindow(parent), ui(new Ui::MainWindow),
           s(new QSettings(qApp->applicationDirPath() + QDir::separator() +
@@ -15,6 +17,7 @@ MainWindow::MainWindow(QWidget* parent)
                           QSettings::IniFormat))
 {
         loadSettings();
+
         if (!QSqlDatabase::drivers().contains("QSQLITE"))
                 QMessageBox::critical(this, "Unable to load database",
                                       "This demo needs the SQLITE driver");
@@ -25,6 +28,7 @@ MainWindow::MainWindow(QWidget* parent)
                 showError(err);
                 return;
         }
+
 
         ui->setupUi(this);
 

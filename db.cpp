@@ -7,9 +7,62 @@
 #include <QtSql>
 
 #include <iostream>
+#include <QSqlDriver>
+#include "inc/sqlite3pp.h"
+
+#include <vector>
+#include <algorithm>
 
 DB::DB()
 {
+}
+
+struct agg_median
+{
+        void step(double x) {
+                l.push_back(x);
+        }
+        double finish() {
+                std::sort(l.begin(), l.end());
+                double median;
+                int length = l.size();
+                if (length % 2 == 0)
+                        median = (l[length / 2] + l[length / 2 - 1]) / 2;
+                else
+                        median = l[length / 2];
+                return median;
+        }
+        std::vector<double> l;
+};
+
+void DB::addFunctions(sqlite3pp::database* db)
+{
+        sqlite3pp::ext::aggregate aggr(*db);
+        aggr.create<agg_median, double>("agg_median");  
+}
+
+sqlite3pp::database* DB::openDB(const QString& db_name)
+{
+        QString dir = qApp->applicationDirPath() + QDir::separator() + db_name;
+        sqlite3pp::database* db = new sqlite3pp::database(dir.toStdString().c_str());
+        return db;
+}
+
+void DB::query(sqlite3pp::database* db)
+{
+        sqlite3pp::query qry(*db, "select agg_median(viscosity) from (select viscosity as viscosity from statistic limit 5)");
+        
+        for (int i = 0; i<qry.column_count(); ++i)
+                std::cout << qry.column_name(i) << "\t";
+
+        std::cout << std::endl;
+        
+        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
+                for (int j = 0; j < qry.column_count(); ++j) {
+                        std::cout << (*i).get<char const*>(j) << "\t";
+                }
+                std::cout << std::endl;
+        }        
 }
 
 QSqlError DB::initDb(const QString& db_name)
@@ -24,6 +77,8 @@ QSqlError DB::initDb(const QString& db_name)
                            + db_name);
         if (!db.open())
                 return db.lastError();
+
+
 
         QStringList tables = db.tables();
         if (tables.contains("source", Qt::CaseInsensitive) &&

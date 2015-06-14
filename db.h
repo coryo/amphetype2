@@ -4,6 +4,8 @@
 #include <QSqlError>
 #include <QVariantList>
 
+#include "inc/sqlite3pp.h"
+#include "inc/sqlite3ppext.h"
 class QString;
 class QStringList;
 
@@ -16,6 +18,15 @@ public:
         static int getSource(const QString&, int = -1);
         static void addTexts(int, const QString&, int = -1, bool = true);
         static void getSourcesList(QList<QVariantList>*);
+
+
+        static void addFunctions(sqlite3pp::database*);
+        static sqlite3pp::database* openDB(const QString&);
+        static void query(sqlite3pp::database*);
+
+private:
+        void med_step(sqlite3pp::ext::context&);
+        void med_finalize(sqlite3pp::ext::context&);
 };
 
 #endif // DB_H

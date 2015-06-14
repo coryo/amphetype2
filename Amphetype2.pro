@@ -23,7 +23,10 @@ SOURCES += main.cpp\
     inc/qcustomplot.cpp \
     treemodel.cpp \
     performancehistory.cpp \
-    statisticswidget.cpp
+    statisticswidget.cpp \
+    inc/sqlite3pp.cpp \
+    inc/sqlite3ppext.cpp \
+    inc/sqlite3.c
 
 HEADERS  += mainwindow.h \
     typer.h \
@@ -37,7 +40,10 @@ HEADERS  += mainwindow.h \
     treemodel.h \
     lessonminercontroller.h \
     performancehistory.h \
-    statisticswidget.h
+    statisticswidget.h \
+    inc/sqlite3pp.h \
+    inc/sqlite3ppext.h \
+    inc/sqlite3.h
 
 FORMS    += mainwindow.ui \
     quizzer.ui \

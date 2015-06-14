@@ -1,13 +1,19 @@
 #include "statisticswidget.h"
 #include "ui_statisticswidget.h"
+#include "db.h"
 
 #include "boost/date_time/posix_time/posix_time.hpp"
+
+#include "inc/sqlite3pp.h"
+
+#include <vector>
+#include <algorithm>
+#include <string>
 
 #include <QStandardItemModel>
 #include <QSettings>
 #include <QApplication>
 #include <QDir>
-#include <QSqlQuery>
 
 StatisticsWidget::StatisticsWidget(QWidget *parent) :
         QWidget(parent),
@@ -97,53 +103,56 @@ void StatisticsWidget::refreshStatistics()
 
         history = history - boost::posix_time::seconds(s->value("history").toInt()*86400);        
 
-        QSqlQuery q;
-        q.prepare(QString("select data, "
+        // get the data and populate the model
+        sqlite3pp::database* db = DB::openDB(s->value("db_name").toString());
+        DB::addFunctions(db);
+
+        QString query = "select data, "
                   "12.0/time as wpm, "
                   "100.0-100.0*misses/cast(total as real) as accuracy, "
                   "viscosity, "
                   "total, "
                   "misses, "
                   "total*time*time*(1.0+misses/total) as damage "
-                        "from ("
-                                "select data, "
-                                "min(time) as time, "
-                                "min(viscosity) as viscosity, "
-                                "sum(count) as total, "
-                                "sum(mistakes) as misses "
-                                "from statistic where datetime(w) >= datetime(:when) "
-                                        "and type = :type group by data) "
-                "where total >= :total "
-                "order by %1 limit :limit").arg(ord));
-                // order is not a value so it needs to be an arg, not bound value
+                        "from (select data, "
+                               "agg_median(time) as time, "
+                               "agg_median(viscosity) as viscosity, "
+                               "sum(count) as total, "
+                               "sum(mistakes) as misses "
+                               "from statistic "
+                               "where datetime(w) >= datetime('"+QString::fromStdString(boost::posix_time::to_iso_extended_string(history))+"') "
+                                "and type = "+QString::number(cat)+" group by data) "
+                "where total >= "+QString::number(count)+" "
+                "order by "+ord+" limit "+QString::number(limit);
 
-        q.bindValue(":when", QString::fromStdString(boost::posix_time::to_iso_extended_string(history)));
-        q.bindValue(":type", cat);
-        q.bindValue(":total", count);
-        q.bindValue(":limit", limit);
-        q.exec();
+        sqlite3pp::query qry(*db, query.toStdString().c_str());
 
         QList<QStandardItem*> items;
-        while(q.next()) {
-                // item
-                items << new QStandardItem(q.value(0).toString());
+        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
+                QList<QByteArray> cols;
+                for (int j = 0; j < qry.column_count(); ++j)
+                        cols << (*i).get<char const*>(j);
+                // data
+                items << new QStandardItem(QString(cols[0]));
                 // speed
-                items << new QStandardItem(QString::number(q.value(1).toDouble(), 'f', 1) + QString(" wpm"));
+                items << new QStandardItem(QString::number(cols[1].toDouble(), 'f', 1) + " wpm");
                 // accuracy
-                items << new QStandardItem(QString::number(q.value(2).toDouble(), 'f', 1) + QString("%"));
+                items << new QStandardItem(QString::number(cols[2].toDouble(), 'f', 1) + "%");
                 // viscosity
-                items << new QStandardItem(QString::number(q.value(3).toDouble(), 'f', 1));
+                items << new QStandardItem(QString::number(cols[3].toDouble(), 'f', 1));
                 //count
-                items << new QStandardItem(q.value(4).toString());
+                items << new QStandardItem(QString::number(cols[4].toInt()));
                 //mistakes
-                items << new QStandardItem(q.value(5).toString());
+                items << new QStandardItem(QString::number(cols[5].toInt()));
                 //impact
-                items << new QStandardItem(QString::number(q.value(6).toDouble(), 'f', 1));
+                items << new QStandardItem(QString::number(cols[6].toDouble(), 'f', 1));
 
                 for (QStandardItem* item : items)
                         item->setFlags(Qt::ItemIsEnabled);
                 model->appendRow(items);
                 items.clear();
         }
+        delete db;
+
         resizeColumns();
 }
