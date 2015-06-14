@@ -7,3 +7,5 @@ using:
 *   Qt 5.4
 *   QCustomPlot 1.3.1
 *   Boost 1.58.0
+*   SQLite 3.8.10.2
+*   sqlite3pp
