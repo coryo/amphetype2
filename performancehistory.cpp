@@ -44,24 +44,19 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
 
         ui->limitNumber->setText(s->value("perf_items").toString());
 
-        // double clicking an item in the list
-        //connect(ui->performanceView, SIGNAL(doubleClicked(const QModelIndex&)),
-        //        this,                SLOT  (doubleClicked(const QModelIndex&)));
-        connect(ui->tableView, SIGNAL(doubleClicked(const QModelIndex&)),
-                this,                SLOT  (doubleClicked(const QModelIndex&)));
-
-        // settings
-        connect(ui->updateButton, SIGNAL(pressed()), this, SLOT(writeSettings()));
-        connect(ui->sourceComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
-        connect(ui->plotSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(showPlot(int)));
-            
-        // checkboxes for plot settings
-        connect(ui->timeScaleCheckBox, SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
-        connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
-        connect(ui->dampenCheckBox, SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
-        connect(ui->smaWindowSpinBox, SIGNAL(valueChanged(int)), this, SLOT(writeSettings()));
-
         refreshSources();
+
+        // double clicking an item in the list
+        connect(ui->tableView, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(doubleClicked(const QModelIndex&)));
+        // settings
+        connect(ui->updateButton,   SIGNAL(pressed()),                this, SLOT(writeSettings()));
+        connect(ui->sourceComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->plotSelector,   SIGNAL(currentIndexChanged(int)), this, SLOT(showPlot(int)));
+        // checkboxes for plot settings
+        connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->dampenCheckBox,     SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->smaWindowSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(writeSettings()));
 }
 
 PerformanceHistory::~PerformanceHistory()
@@ -233,21 +228,19 @@ void PerformanceHistory::refreshPerformance()
                 sql = "select text_id,w,s.name,wpm,100.0*accuracy,viscosity "
                       "from result as r left join source as s on(r.source = "
                       "s.rowid) " +
-                      where + " " + group + " order by w desc limit " + n;
+                      where + " " + group + " order by datetime(w) DESC limit " + n;
         } else {
                 sql = "select agg_first(text_id),avg(r.w) as w,count(r.rowid) "
                       "|| ' result(s)',agg_median(r.wpm), 100.0 * "
                       "agg_median(r.accuracy), agg_median(r.viscosity) from "
                       "result as r left join source as s on(r.source = "
                       "s.rowid) " +
-                      where + " " + group + " order by w desc limit " + n;
+                      where + " " + group + " order by datetime(w) DESC limit " + n;
         }
 
         QSqlQuery q;
         q.prepare(sql);
         q.exec();
-
-        //QString result;
 
         // clear the data in the plots
         for (int i = 0; i <ui->performancePlot->graphCount(); ++i)
@@ -260,8 +253,9 @@ void PerformanceHistory::refreshPerformance()
                 items << new QStandardItem(q.value(0).toString());
 
                 // turn the string from db into a ptime
-                boost::posix_time::ptime t = boost::posix_time::from_iso_string(
-                        q.value(1).toString().toStdString());
+                // its stored as delimited extended iso
+                boost::posix_time::ptime t;
+                t = boost::date_time::parse_delimited_time<boost::posix_time::ptime>(q.value(1).toString().toStdString(), 'T');
 
                 // add time. convert it to nicer display first
                 items << new QStandardItem(QString::fromStdString(
@@ -298,7 +292,7 @@ void PerformanceHistory::refreshPerformance()
         }
 
         resizeColumns();  
-        
+
         showPlot(ui->plotSelector->currentIndex());
 }
 

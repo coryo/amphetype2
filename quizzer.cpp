@@ -131,7 +131,7 @@ void Quizzer::done()
 {
         Test* test = ui->typer->getTest();
 
-        QString now = QString::fromStdString(boost::posix_time::to_iso_string(
+        QString now = QString::fromStdString(boost::posix_time::to_iso_extended_string(
                             boost::posix_time::microsec_clock::local_time()));
 
         // tally mistakes
@@ -180,7 +180,7 @@ void Quizzer::done()
         QMultiHash<QStringRef, double> visc;
         QMultiHash<QStringRef, int> mistakeCount;
         // characters
-        for (int i = 0; i < text->getText().length(); ++i) {
+        for (int i = 1; i < text->getText().length(); ++i) {
                 // the character as a qstringref
                 QStringRef c(&(text->getText()), i, 1);
 
@@ -194,7 +194,7 @@ void Quizzer::done()
                 }
         }
         //trigrams
-        for (int i = 0; i <test->length - 2; ++i) {
+        for (int i = 1; i <test->length - 2; ++i) {
                 // the trigram as a qstringref
                 QStringRef tri(&(text->getText()), i, 3);
                 int start = i;
