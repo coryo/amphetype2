@@ -31,18 +31,20 @@ TextManager::TextManager(QWidget *parent) :
         ui->setupUi(this);
 
         QList<QVariant> rootData;
-                rootData << "id"
-                         << "Source"
-                         << "Length"
-                         << "Results"
-                         << "WPM"
-                         << "Enabled";
-                model = new TreeModel("", rootData);
+        rootData << "id"
+                 << "Source"
+                 << "Length"
+                 << "Results"
+                 << "WPM"
+                 << "Enabled";
+        model = new TreeModel("", rootData);
 
         // progress bar/text setup
         ui->progress->setRange(0,100);
         ui->progress->hide();
         ui->progressText->hide();
+
+        ui->selectionMethod->setCurrentIndex(s->value("select_method").toInt());
 
         connect(ui->importButton, SIGNAL(clicked()),
                 this,             SLOT(addFiles()));
@@ -59,9 +61,7 @@ TextManager::TextManager(QWidget *parent) :
                 this,            SLOT(populateTexts(const QModelIndex&)));
 
         connect(ui->selectionMethod, SIGNAL(currentIndexChanged(int)),
-                this,                SLOT(changeSelectMethod(int)));
-
-        ui->selectionMethod->setCurrentIndex(s->value("select_method").toInt());
+                this,                SLOT(changeSelectMethod(int)));      
 }
 
 TextManager::~TextManager()
