@@ -45,6 +45,8 @@ MainWindow::MainWindow(QWidget* parent)
         connect(ui->tabWidget, SIGNAL(currentChanged(int)), ui->textManager, SLOT(tabActive(int)));
         connect(ui->tabWidget, SIGNAL(currentChanged(int)), ui->quizzer, SLOT(tabActive(int)));
 
+        connect(ui->settingsWidget, SIGNAL(settingsChanged()), ui->quizzer, SLOT(setTyperFont()));
+
         emit initText();
 }
 
@@ -66,7 +68,9 @@ void MainWindow::loadSettings()
                 // std::cout<< "settings found" << std::endl;
         } else {
                 // so settings found, write defaults
-                s->setValue("typer_font", QFont("Consolas", 12));
+                QFont defaultFont("Consolas", -1);
+                defaultFont.setStyleHint(QFont::TypeWriter);
+                s->setValue("typer_font", defaultFont);
                 s->setValue("history", 30.0);
                 s->setValue("min_chars", 220);
                 s->setValue("max_chars", 600);

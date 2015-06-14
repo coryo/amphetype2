@@ -18,61 +18,36 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
-      <widget class="QWidget" name="tab">
+      <widget class="Quizzer" name="quizzer">
        <attribute name="title">
         <string>Typer</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <widget class="Quizzer" name="quizzer" native="true"/>
-        </item>
-       </layout>
       </widget>
-      <widget class="QWidget" name="tab_2">
+      <widget class="TextManager" name="textManager">
        <attribute name="title">
         <string>Sources</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <item>
-         <widget class="TextManager" name="textManager" native="true"/>
-        </item>
-       </layout>
       </widget>
-      <widget class="QWidget" name="tab_3">
+      <widget class="PerformanceHistory" name="performanceHistory">
        <attribute name="title">
         <string>Performance</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item>
-         <widget class="PerformanceHistory" name="performanceHistory" native="true"/>
-        </item>
-       </layout>
       </widget>
-      <widget class="QWidget" name="tab_4">
+      <widget class="StatisticsWidget" name="statisticsWidget">
        <attribute name="title">
         <string>Analysis</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_5">
-        <item>
-         <widget class="StatisticsWidget" name="widget" native="true"/>
-        </item>
-       </layout>
+      </widget>
+      <widget class="SettingsWidget" name="settingsWidget">
+       <attribute name="title">
+        <string>Settings</string>
+       </attribute>
       </widget>
      </widget>
     </item>
    </layout>
-  </widget>
-  <widget class="QMenuBar" name="menuBar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>786</width>
-     <height>20</height>
-    </rect>
-   </property>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
@@ -99,6 +74,12 @@
    <class>StatisticsWidget</class>
    <extends>QWidget</extends>
    <header>statisticswidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SettingsWidget</class>
+   <extends>QWidget</extends>
+   <header>settingswidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

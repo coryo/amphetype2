@@ -26,7 +26,8 @@ SOURCES += main.cpp\
     statisticswidget.cpp \
     inc/sqlite3pp.cpp \
     inc/sqlite3ppext.cpp \
-    inc/sqlite3.c
+    inc/sqlite3.c \
+    settingswidget.cpp
 
 HEADERS  += mainwindow.h \
     typer.h \
@@ -43,18 +44,21 @@ HEADERS  += mainwindow.h \
     statisticswidget.h \
     inc/sqlite3pp.h \
     inc/sqlite3ppext.h \
-    inc/sqlite3.h
+    inc/sqlite3.h \
+    settingswidget.h
 
 FORMS    += mainwindow.ui \
     quizzer.ui \
     textmanager.ui \
     performancehistory.ui \
-    statisticswidget.ui
+    statisticswidget.ui \
+    settingswidget.ui
     
-QMAKE_CXXFLAGS += -std=c++1y -stdlib=libc++
+
 
 macx {
     message("mac build")
+    QMAKE_CXXFLAGS += -std=c++1y -stdlib=libc++
     INCLUDEPATH += /usr/local/Cellar/boost/1.58.0/include
     LIBS += -L/usr/local/Cellar/boost/1.58.0/lib
     LIBS += -lboost_date_time
