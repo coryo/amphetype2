@@ -11,7 +11,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 TARGET = Amphetype2
 TEMPLATE = app
 
-
 SOURCES += main.cpp\
         mainwindow.cpp \
     typer.cpp \
@@ -23,7 +22,8 @@ SOURCES += main.cpp\
     text.cpp \
     inc/qcustomplot.cpp \
     treemodel.cpp \
-    performancehistory.cpp
+    performancehistory.cpp \
+    statisticswidget.cpp
 
 HEADERS  += mainwindow.h \
     typer.h \
@@ -36,12 +36,14 @@ HEADERS  += mainwindow.h \
     inc/qcustomplot.h \
     treemodel.h \
     lessonminercontroller.h \
-    performancehistory.h
+    performancehistory.h \
+    statisticswidget.h
 
 FORMS    += mainwindow.ui \
     quizzer.ui \
     textmanager.ui \
-    performancehistory.ui
+    performancehistory.ui \
+    statisticswidget.ui
     
 macx {
     message("mac build")

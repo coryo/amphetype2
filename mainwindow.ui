@@ -14,7 +14,7 @@
    <string>Amphetype2</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout_4">
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
@@ -47,6 +47,16 @@
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <widget class="PerformanceHistory" name="performanceHistory" native="true"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_4">
+       <attribute name="title">
+        <string>Analysis</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <widget class="StatisticsWidget" name="widget" native="true"/>
         </item>
        </layout>
       </widget>
@@ -83,6 +93,12 @@
    <class>PerformanceHistory</class>
    <extends>QWidget</extends>
    <header>performancehistory.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>StatisticsWidget</class>
+   <extends>QWidget</extends>
+   <header>statisticswidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
