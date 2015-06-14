@@ -9,7 +9,7 @@ void loadSettings()
         if (s.contains("typer_font")) {
                 // std::cout<< "settings found" << std::endl;
         } else {
-                // so settings found, write defaults
+                // no settings found, write defaults
                 QFont defaultFont("Consolas", -1);
                 defaultFont.setStyleHint(QFont::TypeWriter);
                 s.setValue("typer_font", defaultFont);
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
         QCoreApplication::setOrganizationName("coryo");
         QCoreApplication::setOrganizationDomain("coryo");
         QCoreApplication::setApplicationName("Amphetype2");
-        
+
         QSettings::setDefaultFormat(QSettings::IniFormat);
 
         loadSettings();
