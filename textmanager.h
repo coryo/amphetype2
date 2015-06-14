@@ -45,6 +45,7 @@ private slots:
         void processNextFile();
         void changeSelectMethod(int);
         void populateTexts(const QModelIndex&);
+        void clearModel();
 };
 
 #endif // TEXTMANAGER_H

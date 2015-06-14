@@ -174,8 +174,10 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx)
 
 void PerformanceHistory::refreshPerformance()
 {
+        ui->tableView->hide();
+        
         modelb->clear();
-
+        
         QStringList headers;
         headers << "id"
                  << "When"
@@ -191,7 +193,6 @@ void PerformanceHistory::refreshPerformance()
         QHeaderView* verticalHeader = ui->tableView->verticalHeader();
         verticalHeader->sectionResizeMode(QHeaderView::Fixed);
         verticalHeader->setDefaultSectionSize(24);
-        //
 
         QStringList query;        
         switch (ui->sourceComboBox->currentIndex()) {
@@ -290,9 +291,9 @@ void PerformanceHistory::refreshPerformance()
 
                 --x;
         }
-
         resizeColumns();  
 
+        ui->tableView->show();
         showPlot(ui->plotSelector->currentIndex());
 }
 

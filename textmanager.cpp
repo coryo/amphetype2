@@ -84,6 +84,27 @@ void TextManager::tabActive(int i)
                 // loaded
                 refreshSources();
         }
+        if (i != 1 && refreshed) {
+                clearModel();     
+                refreshed = false;   
+        }
+
+}
+
+void TextManager::clearModel()
+{
+        if (model != 0)
+                delete model;
+        QList<QVariant> rootData;
+        rootData << "id"
+                 << "Source"
+                 << "Length"
+                 << "Results"
+                 << "WPM"
+                 << "Enabled";
+        model = new TreeModel("", rootData);
+
+        ui->sourcesView->setModel(model);    
 }
 
 void TextManager::refreshSources()

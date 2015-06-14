@@ -18,8 +18,6 @@ Typer::Typer(QWidget* parent) : QTextEdit(parent),
 {
         test = 0;
 
-        //setPalettes();
-
         connect(this, SIGNAL(textChanged()), this, SLOT(checkText()));
 
         this->hide();
@@ -41,26 +39,8 @@ void Typer::setTextTarget(const QString& t)
                 this->clear();
                 this->blockSignals(false);
         }
-        //this->setPalette(palettes.value("inactive"));
 }
 /*
-void Typer::setPalettes()
-{
-        palettes.insert("wrong",
-                QPalette(Qt::black, Qt::lightGray, Qt::lightGray, Qt::darkGray,
-                         Qt::gray, QColor(s->value("quiz_wrong_fg").toString()),
-                         Qt::white, QColor(s->value("quiz_wrong_bg").toString()),
-                         Qt::yellow));
-        palettes.insert("right",
-                QPalette(Qt::black, Qt::lightGray, Qt::lightGray, Qt::darkGray,
-                         Qt::gray, QColor(s->value("quiz_right_fg").toString()),
-                         Qt::yellow,QColor(s->value("quiz_right_bg").toString()),
-                         Qt::yellow));
-        palettes.insert("inactive",
-                QPalette(Qt::black, Qt::lightGray, Qt::lightGray,
-                         Qt::darkGray, Qt::gray, Qt::black,
-                         Qt::lightGray));
-}*/
 void Typer::getWaitText()
 {       
         if (s->value("req_space").toBool()) {
@@ -69,7 +49,7 @@ void Typer::getWaitText()
         } else {
                 this->setText("Press ESCAPE to restart with a new text at any time");
         }
-}
+}*/
 
 void Typer::checkText()
 {       
@@ -172,20 +152,9 @@ void Typer::checkText()
         if (pos < currentText.length() && pos < test->text.length()) {
                 //mistake
                 test->mistakes << pos;
+                // (position, (targetChar, mistakenChar))
+                test->mistakeMap.insert(pos, qMakePair(test->text[pos], currentText[pos]));
                 emit mistake(pos);
-                //std::cout << "mistake: " << QString(test->text[pos]).toStdString() << " " << QString(currentText[pos]).toStdString() <<std::endl;
-                //test->mistakeMap.insert(test->text[pos], currentText[pos]);
-
-                test->mistakeMap.insert(pos,qMakePair(test->text[pos], currentText[pos]));
-
-                for (QPair<QChar,QChar> value : test->mistakeMap.values()) {
-                        std::cout 
-                        << test->mistakeMap.key(value) << ": "
-                        << value.first.toLatin1() << "," << value.second.toLatin1()
-                        //<< test->mistakeMap.count(key)
-                        << std::endl;
-                }
-                std::cout <<std::endl;
         }
 }
 

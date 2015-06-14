@@ -11,7 +11,6 @@ Test::Test(const QString& t)
         timeBetween.resize(text.length());
         wpm.resize(text.length());
         apm.resize(text.length());
-        //mistakeList.resize(text.length());
 
         maxWPM = 0;
         maxAPM = 0;
@@ -32,5 +31,6 @@ QHash<QPair<QChar, QChar>, int> Test::getMistakes()
                 else
                         mis.insert(value, 1);
         }
+        // ((targetChar, mistakenChar), count)
         return mis;
 }

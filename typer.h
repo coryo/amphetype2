@@ -13,16 +13,13 @@ public:
         Typer(QWidget* parent = 0);
         ~Typer();
         void setTextTarget(const QString&);
-        //void setPalettes();
         Test* getTest();
 
 private:
-        QSettings* s;
-        Test* test;
-        //QMap<QString, QPalette> palettes;
-
-        void getWaitText();
         void keyPressEvent(QKeyEvent* e);
+
+        QSettings* s;
+        Test* test;     
 
 signals:
         void done();
@@ -35,8 +32,6 @@ signals:
 
 private slots:
         void checkText();
-
-
 };
 
 #endif // TYPER_H
