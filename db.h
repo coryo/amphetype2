@@ -19,10 +19,8 @@ public:
         static void addTexts(int, const QString&, int = -1, bool = true);
         static void getSourcesList(QList<QVariantList>*);
 
-
         static void addFunctions(sqlite3pp::database*);
         static sqlite3pp::database* openDB(const QString&);
-        static void query(sqlite3pp::database*);
 
 private:
         void med_step(sqlite3pp::ext::context&);

@@ -42,25 +42,9 @@ void DB::addFunctions(sqlite3pp::database* db)
 sqlite3pp::database* DB::openDB(const QString& db_name)
 {
         QString dir = qApp->applicationDirPath() + QDir::separator() + db_name;
+
         sqlite3pp::database* db = new sqlite3pp::database(dir.toStdString().c_str());
         return db;
-}
-
-void DB::query(sqlite3pp::database* db)
-{
-        sqlite3pp::query qry(*db, "select agg_median(viscosity) from (select viscosity as viscosity from statistic limit 5)");
-        
-        for (int i = 0; i<qry.column_count(); ++i)
-                std::cout << qry.column_name(i) << "\t";
-
-        std::cout << std::endl;
-        
-        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                for (int j = 0; j < qry.column_count(); ++j) {
-                        std::cout << (*i).get<char const*>(j) << "\t";
-                }
-                std::cout << std::endl;
-        }        
 }
 
 QSqlError DB::initDb(const QString& db_name)
