@@ -24,7 +24,6 @@ private:
 private slots:
         void refreshStatistics();
         void writeSettings();
-        void resizeColumns();
 };
 
 #endif // STATISTICSWIDGET_H

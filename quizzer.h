@@ -46,6 +46,7 @@ private slots:
         void updatePlotAPM(double, double);
         void clearPlotData();
         void showGraphs();
+        void setPlotVisible(int);
 
         void timerLabelUpdate();
         void timerLabelReset();

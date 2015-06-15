@@ -61,17 +61,6 @@ void StatisticsWidget::writeSettings()
         refreshStatistics();
 }
 
-void StatisticsWidget::resizeColumns()
-{
-        ui->tableView->resizeColumnToContents(0);
-        ui->tableView->resizeColumnToContents(1);
-        ui->tableView->resizeColumnToContents(2);
-        ui->tableView->resizeColumnToContents(3);
-        ui->tableView->resizeColumnToContents(4);
-        ui->tableView->resizeColumnToContents(5);
-        ui->tableView->resizeColumnToContents(6);
-}
-
 void StatisticsWidget::refreshStatistics()
 {
         QSettings s;
@@ -155,5 +144,8 @@ void StatisticsWidget::refreshStatistics()
         }
         delete db;
 
-        resizeColumns();
+        ui->tableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+        ui->tableView->resizeColumnsToContents();
+        //ui->tableView->horizontalHeader()->setStretchLastSection(true);
+        
 }

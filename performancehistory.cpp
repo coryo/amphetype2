@@ -126,15 +126,6 @@ void PerformanceHistory::writeSettings()
         refreshPerformance();
 }
 
-void PerformanceHistory::resizeColumns()
-{
-        ui->tableView->resizeColumnToContents(1);
-        ui->tableView->resizeColumnToContents(2);
-        ui->tableView->resizeColumnToContents(3);
-        ui->tableView->resizeColumnToContents(4);
-        ui->tableView->resizeColumnToContents(5);
-}
-
 void PerformanceHistory::refreshSources()
 {
         ui->sourceComboBox->clear();
@@ -293,7 +284,9 @@ void PerformanceHistory::refreshPerformance()
 
                 --x;
         }
-        resizeColumns();  
+
+        ui->tableView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+        ui->tableView->resizeColumnsToContents();
 
         ui->tableView->show();
         showPlot(ui->plotSelector->currentIndex());

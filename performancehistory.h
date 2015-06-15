@@ -34,7 +34,6 @@ private slots:
         void refreshSources();
         void refreshPerformance();
         void doubleClicked(const QModelIndex&);
-        void resizeColumns();
         void showPlot(int=0);
         void writeSettings();
 };

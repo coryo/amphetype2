@@ -4,6 +4,9 @@
 #include "typer.h"
 #include "text.h"
 #include "test.h"
+#include "db.h"
+
+#include "inc/sqlite3pp.h"
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 
@@ -18,6 +21,8 @@ Quizzer::Quizzer(QWidget *parent) :
 {
         ui->setupUi(this);
         QSettings s;
+
+        ui->plotCheckBox->setCheckState(Qt::Checked);
 
         // finishing or cancelling signals
         connect(ui->typer, SIGNAL(done()), this, SLOT(done()));
@@ -39,6 +44,8 @@ Quizzer::Quizzer(QWidget *parent) :
         connect(ui->typer, SIGNAL(testStarted(int)),
                 this,      SLOT(updatePlotRangeX(int)));
 
+        connect(ui->plotCheckBox, SIGNAL(stateChanged(int)), this, SLOT(setPlotVisible(int)));
+
         // timer stuff
         lessonTimer.setInterval(1000);
         connect(ui->typer, SIGNAL(testStarted(int)), &lessonTimer, SLOT(start()));
@@ -57,7 +64,8 @@ Quizzer::Quizzer(QWidget *parent) :
         timerLabelReset();
         setTyperFont();
         ui->result->setVisible(s.value("show_last").toBool());
-        ui->result->setText("Last: 0wpm (0%)\nlast 10: 0wpm (0%)");
+        ui->result->setText("Last: 0wpm (0%)\n"
+                            "last "+s.value("def_group_by").toString()+": 0wpm (0%)");
 
         // create the two graphs in the plot, set colours
         ui->plot->addGraph();
@@ -77,6 +85,14 @@ Quizzer::~Quizzer()
 {
         delete ui;
         delete text;
+}
+
+void Quizzer::setPlotVisible(int s)
+{
+        if (s == 0)
+                ui->plot->hide();
+        else
+                ui->plot->show();
 }
 
 void Quizzer::timerLabelUpdate()
@@ -127,6 +143,8 @@ void Quizzer::resizeEvent(QResizeEvent *e)
 void Quizzer::done()
 {
         Test* test = ui->typer->getTest();
+
+        QSettings s;
 
         QString now = QString::fromStdString(boost::posix_time::to_iso_extended_string(
                             boost::posix_time::microsec_clock::local_time()));
@@ -310,12 +328,29 @@ void Quizzer::done()
                 q.exec(); 
         }
         db.commit();
-               
+        
+        ////
+        sqlite3pp::database* db2 = DB::openDB(s.value("db_name").toString());
+        DB::addFunctions(db2);
+        QString query = "select agg_median(wpm), agg_median(acc) from "
+            "(select wpm,100.0*accuracy as acc from result order by datetime(w) desc limit "+s.value("def_group_by").toString()+")";
+        sqlite3pp::query qry(*db2, query.toStdString().c_str());
+        QByteArray lastWpm, lastAcc;
+        QList<QByteArray> cols;
+        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
+                for (int j = 0; j < qry.column_count(); ++j) {
+                        cols << (*i).get<char const*>(j);
+                }
+        }
+        delete db2;
+
         // update the result label
         ui->result->setText(
                 "Last: " +
                 QString::number(test->wpm.back(), 'f', 1) +
-                "wpm (" + QString::number(accuracy * 100, 'f', 1) + "%)");
+                "wpm (" + QString::number(accuracy * 100, 'f', 1) + "%)\n" +
+                "Last "+s.value("def_group_by").toString()+": " + QString::number(cols[0].toDouble(), 'f', 1) +
+                "wpm (" + QString::number(cols[1].toDouble(), 'f', 1)+ "%)");
 
         // get the next text.
         emit wantText(); 
@@ -332,7 +367,7 @@ void Quizzer::setText(Text* t)
 
         const QString& te = text->getText();
 
-        ui->testText->setTextFormat(Qt::RichText);
+        //ui->testText->setTextFormat(Qt::RichText);
 
         QString result;
         result.append("<span style='background-color: #99D6FF'>");

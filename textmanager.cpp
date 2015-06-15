@@ -191,6 +191,7 @@ void TextManager::populateTexts(const QModelIndex& index)
                         data << item;
                 }
                 model->populateData(index, data); 
+
                 resizeColumns();
 
                 // collapse and expand it, to show the new data
