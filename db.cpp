@@ -13,9 +13,7 @@
 #include <vector>
 #include <algorithm>
 
-DB::DB()
-{
-}
+DB::DB() {}
 
 struct agg_median
 {
@@ -77,8 +75,6 @@ QSqlError DB::initDb(const QString& db_name)
                            + db_name);
         if (!db.open())
                 return db.lastError();
-
-
 
         QStringList tables = db.tables();
         if (tables.contains("source", Qt::CaseInsensitive) &&

@@ -25,7 +25,6 @@ public:
         QVector<boost::posix_time::time_duration> timeBetween;
 
         QSet<int> mistakes;
-        //QVector<QString> mistakeList;
         QHash<int, QPair<QChar,QChar>> mistakeMap;
         
         QVector<double> wpm;

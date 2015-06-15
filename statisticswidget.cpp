@@ -42,7 +42,6 @@ StatisticsWidget::StatisticsWidget(QWidget *parent) :
         connect(ui->orderComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
         connect(ui->typeComboBox,  SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
         connect(ui->updateButton,  SIGNAL(pressed()),                this, SLOT(writeSettings()));
-
 }
 
 StatisticsWidget::~StatisticsWidget()
@@ -145,7 +144,5 @@ void StatisticsWidget::refreshStatistics()
         delete db;
 
         ui->tableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-        ui->tableView->resizeColumnsToContents();
-        //ui->tableView->horizontalHeader()->setStretchLastSection(true);
-        
+        ui->tableView->resizeColumnsToContents();       
 }

@@ -23,10 +23,10 @@ private:
 
         int cursorPosition;
         Ui::Quizzer* ui;
-        Text* text;
+        Text*  text;
         QTimer resizeTimer;
         QTimer lessonTimer;
-        QTime lessonTime;
+        QTime  lessonTime;
 
 signals:
         void wantText();

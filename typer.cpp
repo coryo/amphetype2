@@ -47,29 +47,8 @@ void Typer::checkText()
         QString currentText = this->toPlainText();
 
         if (test->when[0].is_not_a_date_time()) {
-                /*
-                bool space = (currentText.length() > 0) &&
-                             (currentText[currentText.length() - 1].isSpace());
-                bool req = s->value("req_space").toBool();
-
-                //test->editFlag = true;
-                
-                if (space) {
-                        test->when[0] = boost::posix_time::microsec_clock::local_time();
-                        this->clear();
-                        this->setPalette(this->palettes.value("right"));
-                        emit testStarted(test->length);
-                } else if (req) {
-                }
-
-                test->editFlag = false;
-
-                if (req || space)
-                        return;
-                else {*/
                 test->when[0] = boost::posix_time::microsec_clock::local_time();
                 emit testStarted(test->length);
-                //}
         }
 
         int pos = std::min(currentText.length(), test->text.length());
@@ -127,7 +106,6 @@ void Typer::checkText()
                 int min = std::min(test->minWPM, test->minAPM);
                 int max = std::max(test->maxWPM, test->maxAPM);
                 emit characterAdded(max, min);
-
         }
 
         if (lcd == QStringRef(&test->text)) {

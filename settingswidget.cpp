@@ -17,7 +17,6 @@ SettingsWidget::SettingsWidget(QWidget *parent) :
         ui->fontLabel->setFont(qvariant_cast<QFont>(s.value("typer_font")));
 
         connect(ui->fontButton, SIGNAL(pressed()), this, SLOT(selectFont()));
-
 }
 
 SettingsWidget::~SettingsWidget()

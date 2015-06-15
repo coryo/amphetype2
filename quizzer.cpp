@@ -20,14 +20,27 @@ Quizzer::Quizzer(QWidget *parent) :
         text(0)
 {
         ui->setupUi(this);
+
         QSettings s;
 
+        ui->typer->grabKeyboard();
+
+        // set defaults for ui stuff
+        timerLabelReset();
+        setTyperFont();
         ui->plotCheckBox->setCheckState(Qt::Checked);
+        ui->result->setVisible(s.value("show_last").toBool());
+        ui->result->setText("Last: 0wpm (0%)\n"
+                            "last "+s.value("def_group_by").toString()+": 0wpm (0%)");
+        // create the two graphs in the plot, set colours
+        ui->plot->addGraph();
+        ui->plot->addGraph();
+        ui->plot->graph(0)->setPen(QPen(QColor(255, 0, 0), 3));
+        ui->plot->graph(1)->setPen(QPen(QColor(0, 0, 255, 80), 2));        
 
         // finishing or cancelling signals
-        connect(ui->typer, SIGNAL(done()), this, SLOT(done()));
+        connect(ui->typer, SIGNAL(done()),   this, SLOT(done()));
         connect(ui->typer, SIGNAL(cancel()), this, SIGNAL(wantText()));
-
         // plot related signal connections
         connect(ui->typer, SIGNAL(newWPM(double, double)),
                 this,      SLOT(updatePlotWPM(double, double)));
@@ -43,9 +56,7 @@ Quizzer::Quizzer(QWidget *parent) :
                 this,      SLOT(clearPlotData()));
         connect(ui->typer, SIGNAL(testStarted(int)),
                 this,      SLOT(updatePlotRangeX(int)));
-
         connect(ui->plotCheckBox, SIGNAL(stateChanged(int)), this, SLOT(setPlotVisible(int)));
-
         // timer stuff
         lessonTimer.setInterval(1000);
         connect(ui->typer, SIGNAL(testStarted(int)), &lessonTimer, SLOT(start()));
@@ -56,29 +67,12 @@ Quizzer::Quizzer(QWidget *parent) :
         connect(ui->typer, SIGNAL(testStarted(int)), this, SLOT(timerLabelGo()));
         connect(ui->typer, SIGNAL(done()), this, SLOT(timerLabelStop()));
         connect(ui->typer, SIGNAL(cancel()), this, SLOT(timerLabelStop()));
-
         // "cursor"
         connect(ui->typer, SIGNAL(textChanged()), this, SLOT(moveCursor()));
-
-        // set defaults for ui stuff
-        timerLabelReset();
-        setTyperFont();
-        ui->result->setVisible(s.value("show_last").toBool());
-        ui->result->setText("Last: 0wpm (0%)\n"
-                            "last "+s.value("def_group_by").toString()+": 0wpm (0%)");
-
-        // create the two graphs in the plot, set colours
-        ui->plot->addGraph();
-        ui->plot->addGraph();
-        ui->plot->graph(0)->setPen(QPen(QColor(255, 0, 0), 3));
-        ui->plot->graph(1)->setPen(QPen(QColor(0, 0, 255, 80), 2));
-
         // resize timer, singleshot so it doesnt repeat
         // when it times out, show the plot layer
         resizeTimer.setSingleShot(true);
-        connect(&resizeTimer, SIGNAL(timeout()), this, SLOT(showGraphs()));
-
-        ui->typer->grabKeyboard();
+        connect(&resizeTimer, SIGNAL(timeout()), this, SLOT(showGraphs()));    
 }
 
 Quizzer::~Quizzer()
@@ -367,8 +361,6 @@ void Quizzer::setText(Text* t)
 
         const QString& te = text->getText();
 
-        //ui->testText->setTextFormat(Qt::RichText);
-
         QString result;
         result.append("<span style='background-color: #99D6FF'>");
         result.append(te.at(0));
@@ -380,9 +372,6 @@ void Quizzer::setText(Text* t)
         ui->testText->setText(result);
 
         ui->typer->setTextTarget(text->getText());
-        ui->typer->setFocus();
-
-        
 }
 
 void Quizzer::moveCursor()
