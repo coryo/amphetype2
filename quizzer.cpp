@@ -36,7 +36,8 @@ Quizzer::Quizzer(QWidget *parent) :
         ui->plot->addGraph();
         ui->plot->addGraph();
         ui->plot->graph(0)->setPen(QPen(QColor(255, 0, 0), 3));
-        ui->plot->graph(1)->setPen(QPen(QColor(0, 0, 255, 80), 2));        
+        ui->plot->graph(1)->setPen(QPen(QColor(0, 0, 255, 80), 2));      
+        ui->plot->xAxis->setVisible(false);  
 
         // finishing or cancelling signals
         connect(ui->typer, SIGNAL(done()),   this, SLOT(done()));

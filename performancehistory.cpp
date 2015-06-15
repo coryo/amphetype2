@@ -38,9 +38,12 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         ui->performancePlot->addGraph();
         ui->performancePlot->addGraph();
         ui->performancePlot->addGraph();
-        ui->performancePlot->graph(0)->setScatterStyle(QCPScatterStyle::ssDisc);
-        ui->performancePlot->graph(1)->setScatterStyle(QCPScatterStyle::ssDisc);
-        ui->performancePlot->graph(2)->setScatterStyle(QCPScatterStyle::ssDisc);
+        ui->performancePlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc,3));
+        ui->performancePlot->graph(0)->setPen(QPen(QColor(0, 20, 255,100), 1));
+        ui->performancePlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc,3));
+        ui->performancePlot->graph(1)->setPen(QPen(QColor(0, 20, 255,100), 1));
+        ui->performancePlot->graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc,3));
+        ui->performancePlot->graph(2)->setPen(QPen(QColor(0, 20, 255,100), 1));
 
         ui->limitNumber->setText(s.value("perf_items").toString());
 
@@ -57,12 +60,22 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
         connect(ui->dampenCheckBox,     SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
         connect(ui->smaWindowSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
 }
 
 PerformanceHistory::~PerformanceHistory()
 {
         delete ui;
         delete modelb;
+}
+
+void PerformanceHistory::togglePlot(int i)
+{
+        if (i == 0)
+                ui->performancePlot->graph(ui->plotSelector->currentIndex())->setVisible(true);
+        else
+                ui->performancePlot->graph(ui->plotSelector->currentIndex())->setVisible(false);
+        ui->performancePlot->replot();
 }
 
 // add a graph to the plot that is the SMA of the given graph
@@ -241,7 +254,7 @@ void PerformanceHistory::refreshPerformance()
                 ui->performancePlot->graph(i)->clearData();
 
         QList<QStandardItem*> items;
-        double x = 0;
+        double x = -1;
         while (q.next()) {
                 // add hash id
                 items << new QStandardItem(q.value(0).toString());
@@ -304,7 +317,8 @@ void PerformanceHistory::showPlot(int p)
                 ui->performancePlot->graph(i)->setVisible(false);
 
         // show the plot we want
-        ui->performancePlot->graph(p)->setVisible(true);
+        if (ui->plotCheckBox->checkState() == 0)
+                ui->performancePlot->graph(p)->setVisible(true);
 
         // set correct y axis label
         switch (p) {

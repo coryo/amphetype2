@@ -36,6 +36,7 @@ private slots:
         void doubleClicked(const QModelIndex&);
         void showPlot(int=0);
         void writeSettings();
+        void togglePlot(int);
 };
 
 #endif // PERFORMANCEHISTORY_H
