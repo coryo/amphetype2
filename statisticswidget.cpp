@@ -116,13 +116,19 @@ void StatisticsWidget::refreshStatistics()
 
         sqlite3pp::query qry(*db, query.toStdString().c_str());
 
+        QFont font("Monospace");
+        font.setStyleHint(QFont::Monospace);
+
         QList<QStandardItem*> items;
         for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
                 QList<QByteArray> cols;
                 for (int j = 0; j < qry.column_count(); ++j)
                         cols << (*i).get<char const*>(j);
                 // data
-                items << new QStandardItem(QString(cols[0]));
+                QString data(cols[0]);
+                data.replace(" ", "␣"); // UNICODE U+2423 OPEN BOX (visible space)
+                items << new QStandardItem(data);
+                items.last()->setFont(font);
                 // speed
                 items << new QStandardItem(QString::number(cols[1].toDouble(), 'f', 1) + " wpm");
                 // accuracy
