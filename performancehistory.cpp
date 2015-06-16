@@ -321,6 +321,7 @@ void PerformanceHistory::showPlot(int p)
                 ui->performancePlot->graph(p)->setVisible(true);
 
         // set correct y axis label
+        /*
         switch (p) {
         case 0:
                 ui->performancePlot->yAxis->setLabel("Words per Minute (wpm)");
@@ -331,20 +332,20 @@ void PerformanceHistory::showPlot(int p)
         case 2:
                 ui->performancePlot->yAxis->setLabel("viscosity");
                 break;
-        }
+        }*/
 
         // axis properties dependent on time scaling or not
         if (s.value("chrono_x").toBool()) {
                 ui->performancePlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
                 ui->performancePlot->xAxis->setDateTimeFormat("M/dd");
                 ui->performancePlot->xAxis->setAutoTickStep(true);
-                ui->performancePlot->xAxis->setLabel("Time of Result");
+                //ui->performancePlot->xAxis->setLabel("Time of Result");
         } else {
                 ui->performancePlot->xAxis->setTickLabelType(QCPAxis::ltNumber);
                 ui->performancePlot->xAxis->setAutoTickStep(false);
                 ui->performancePlot->xAxis->setTickStep(ui->performancePlot->graph(p)->data()->size()/10);
                 ui->performancePlot->xAxis->setSubTickCount(ui->performancePlot->graph(p)->data()->size()/100);   
-                ui->performancePlot->xAxis->setLabel("Test Result #");
+                //ui->performancePlot->xAxis->setLabel("Test Result #");
         }
 
         // make a SMA graph out of the current one and show it
