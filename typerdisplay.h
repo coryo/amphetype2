@@ -24,8 +24,6 @@ private:
 private slots:
         void wordWrap(int);
         void moveCursor(int,int);
-
-
 };
 
 #endif // TYPERDISPLAY_H

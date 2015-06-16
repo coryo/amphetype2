@@ -46,21 +46,21 @@ TextManager::TextManager(QWidget *parent) :
         ui->selectionMethod->setCurrentIndex(s.value("select_method").toInt());
 
         connect(ui->importButton, SIGNAL(clicked()),
-                this,             SLOT(addFiles()));
+                this,             SLOT  (addFiles()));
         // source tree signals
         connect(ui->refreshSources, SIGNAL(clicked()),
-                this,               SLOT(refreshSources()));
+                this,               SLOT  (refreshSources()));
         connect(ui->sourcesView, SIGNAL(doubleClicked(const QModelIndex&)),
-                this,            SLOT(doubleClicked(const QModelIndex&)));
+                this,            SLOT  (doubleClicked(const QModelIndex&)));
         connect(ui->sourcesView, SIGNAL(expanded(QModelIndex)),
-                this,            SLOT(resizeColumns()));
+                this,            SLOT  (resizeColumns()));
         connect(ui->sourcesView, SIGNAL(collapsed(QModelIndex)),
-                this,            SLOT(resizeColumns()));
+                this,            SLOT  (resizeColumns()));
         connect(ui->sourcesView, SIGNAL(expanded(const QModelIndex&)),
-                this,            SLOT(populateTexts(const QModelIndex&)));
+                this,            SLOT  (populateTexts(const QModelIndex&)));
 
         connect(ui->selectionMethod, SIGNAL(currentIndexChanged(int)),
-                this,                SLOT(changeSelectMethod(int)));      
+                this,                SLOT  (changeSelectMethod(int)));      
 }
 
 TextManager::~TextManager()

@@ -10,21 +10,17 @@
 #include <QApplication>
 #include <QMultiHash>
 
-Typer::Typer(QWidget* parent) : QTextEdit(parent)
+Typer::Typer(QWidget* parent) : QTextEdit(parent), test(0)
 {
-        test = 0;
-
-        connect(this, SIGNAL(textChanged()), this, SLOT(checkText()));
-
         this->hide();
 
         this->setAcceptDrops(false);
         this->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showMenu(QPoint)));        
+        connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showMenu(QPoint)));
+        connect(this, SIGNAL(textChanged()), this, SLOT(checkText()));      
 }
-Typer::~Typer()
-{
-}
+
+Typer::~Typer() {}
 
 void Typer::setTextTarget(const QString& t)
 {
@@ -91,7 +87,7 @@ void Typer::checkText()
                                 test->maxWPM = test->wpm.last();
                         if (test->wpm.last() < test->minWPM)
                                 test->minWPM = test->wpm.last();
-                        emit newWPM(pos - 1, test->wpm.last());
+                        emit newPoint(0, pos - 1, test->wpm.last());
                 }
                 if (pos > test->apmWindow) {
                         // time since 1 window ago
@@ -104,7 +100,7 @@ void Typer::checkText()
                                 test->maxAPM = test->apm.last();
                         if (test->apm.last() < test->minAPM)
                                 test->minAPM = test->apm.last();
-                        emit newAPM(pos-1, test->apm.last());
+                        emit newPoint(1, pos-1, test->apm.last());
                 }
                 
                 int min = std::min(test->minWPM, test->minAPM);

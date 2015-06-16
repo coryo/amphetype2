@@ -33,7 +33,6 @@ Quizzer::Quizzer(QWidget *parent) :
         ui->result->setText("Last: 0wpm (0%)\n"
                             "last "+s.value("def_group_by").toString()+": 0wpm (0%)");
         ui->typerColsSpinBox->setValue(s.value("typer_cols").toInt());
-        
 
         // create the two graphs in the plot, set colours
         ui->plot->addGraph();
@@ -43,29 +42,24 @@ Quizzer::Quizzer(QWidget *parent) :
         ui->plot->xAxis->setVisible(false);
         ui->plot->yAxis->setTickLabels(false);
 
-        //connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), this, SLOT(wordWrap()));
-        //connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), this, SLOT(moveCursor()));
-        connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), ui->typerDisplay, SLOT(wordWrap(int)));
-
         // finishing or cancelling signals
         connect(ui->typer, SIGNAL(done()),   this, SLOT(done()));
         connect(ui->typer, SIGNAL(cancel()), this, SIGNAL(wantText()));
         // plot related signal connections
-        connect(ui->typer, SIGNAL(newWPM(double, double)),
-                this,      SLOT(updatePlotWPM(double, double)));
-        connect(ui->typer, SIGNAL(newAPM(double, double)), 
-                this,      SLOT(updatePlotAPM(double, double)));
+        connect(ui->typer, SIGNAL(newPoint(int, double, double)),
+                this,      SLOT  (addPlotPoint(int, double, double)));
         connect(ui->typer, SIGNAL(characterAdded(int,int)),
-                ui->plot,  SLOT(replot()));
+                ui->plot,  SLOT  (replot()));
         connect(ui->typer, SIGNAL(characterAdded(int,int)),
-                this,      SLOT(updatePlotRangeY(int,int)));
+                this,      SLOT  (updatePlotRangeY(int,int)));
         connect(ui->typer, SIGNAL(testStarted(int)),
-                ui->plot,  SLOT(replot()));
+                ui->plot,  SLOT  (replot()));
         connect(ui->typer, SIGNAL(testStarted(int)),
-                this,      SLOT(clearPlotData()));
+                this,      SLOT  (clearPlotData()));
         connect(ui->typer, SIGNAL(testStarted(int)),
-                this,      SLOT(updatePlotRangeX(int)));
-        connect(ui->plotCheckBox, SIGNAL(stateChanged(int)), this, SLOT(setPlotVisible(int)));
+                this,      SLOT  (updatePlotRangeX(int)));
+        connect(ui->plotCheckBox, SIGNAL(stateChanged(int)),
+                this,             SLOT  (setPlotVisible(int)));
         // timer stuff
         lessonTimer.setInterval(1000);
         connect(ui->typer, SIGNAL(testStarted(int)), &lessonTimer, SLOT(start()));
@@ -77,8 +71,10 @@ Quizzer::Quizzer(QWidget *parent) :
         connect(ui->typer, SIGNAL(done()), this, SLOT(timerLabelStop()));
         connect(ui->typer, SIGNAL(cancel()), this, SLOT(timerLabelStop()));
         // "cursor"
-        //connect(ui->typer, SIGNAL(textChanged()), this, SLOT(moveCursor()));
-        connect(ui->typer, SIGNAL(positionChanged(int,int)), ui->typerDisplay, SLOT(moveCursor(int,int)));
+        connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)),
+                ui->typerDisplay,     SLOT  (wordWrap(int)));
+        connect(ui->typer,            SIGNAL(positionChanged(int,int)),
+                ui->typerDisplay,     SLOT  (moveCursor(int,int)));
         // resize timer, singleshot so it doesnt repeat
         // when it times out, show the plot layer
         resizeTimer.setSingleShot(true);
@@ -322,7 +318,8 @@ void Quizzer::done()
         QHash<QPair<QChar, QChar>, int> m = ui->typer->getTest()->getMistakes();
         QHashIterator<QPair<QChar,QChar>, int> it(m);
         db.transaction();
-        q.prepare("insert into mistake (w,target,mistake,count) values (:time,:target,:mistake,:count)");
+        q.prepare("insert into mistake (w,target,mistake,count) "
+                  "values (:time,:target,:mistake,:count)");
         while (it.hasNext()) {
                 it.next();
                 q.bindValue(":time",    now);
@@ -337,7 +334,8 @@ void Quizzer::done()
         sqlite3pp::database* db2 = DB::openDB(s.value("db_name").toString());
         DB::addFunctions(db2);
         QString query = "select agg_median(wpm), agg_median(acc) from "
-            "(select wpm,100.0*accuracy as acc from result order by datetime(w) desc limit "+s.value("def_group_by").toString()+")";
+                "(select wpm,100.0*accuracy as acc from result "
+                "order by datetime(w) desc limit "+s.value("def_group_by").toString()+")";
         sqlite3pp::query qry(*db2, query.toStdString().c_str());
         QByteArray lastWpm, lastAcc;
         QList<QByteArray> cols;
@@ -382,14 +380,9 @@ void Quizzer::setTyperFont() // readjust
         ui->typerDisplay->setFont(f);
 }
 
-void Quizzer::updatePlotWPM(double x, double y)
+void Quizzer::addPlotPoint(int i, double x, double y)
 {
-        ui->plot->graph(0)->addData(x, y);
-}
-
-void Quizzer::updatePlotAPM(double x, double y)
-{
-        ui->plot->graph(1)->addData(x, y);
+        ui->plot->graph(i)->addData(x, y);
 }
 
 void Quizzer::updatePlotRangeY(int max, int min)

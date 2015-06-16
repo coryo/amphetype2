@@ -2,13 +2,12 @@
 
 #include <QSettings>
 
-TyperDisplay::TyperDisplay(QWidget* parent) : QTextEdit(parent), testPosition(0), cursorPosition(0)
+TyperDisplay::TyperDisplay(QWidget* parent)
+        : QTextEdit(parent), testPosition(0), cursorPosition(0)
 {
 }
 
-TyperDisplay::~TyperDisplay()
-{
-}
+TyperDisplay::~TyperDisplay() { }
 
 void TyperDisplay::setTextTarget(const QString& t)
 {
@@ -21,8 +20,8 @@ void TyperDisplay::setTextTarget(const QString& t)
 
 void TyperDisplay::moveCursor(int testPosition, int cursorPosition)
 {
-        this->testPosition     = testPosition;
-        this->cursorPosition   = cursorPosition;
+        this->testPosition   = testPosition;
+        this->cursorPosition = cursorPosition;
 
         const QString& text = originalText;
 
@@ -94,7 +93,8 @@ void TyperDisplay::moveCursor(int testPosition, int cursorPosition)
         }
 
         this->setText(result);
-        this->setMinimumWidth(this->document()->size().width() + 10);
+
+        this->setFixedWidth(this->document()->size().width() + 10);
 }
 
 

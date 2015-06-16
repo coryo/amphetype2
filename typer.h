@@ -22,8 +22,7 @@ signals:
         void done();
         void cancel();
         void mistake(int);
-        void newWPM(double, double);
-        void newAPM(double, double);
+        void newPoint(int, double, double);
         void characterAdded(int = 0, int = 0);
         void testStarted(int);
         void positionChanged(int, int);

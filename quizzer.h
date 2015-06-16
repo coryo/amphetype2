@@ -28,8 +28,6 @@ private:
         QTimer resizeTimer;
         QTimer lessonTimer;
         QTime  lessonTime;
-        //QStringList customWrapString;
-        //int lastCursorPosition;
 
 signals:
         void wantText();
@@ -43,8 +41,7 @@ private slots:
         // plot related slots
         void updatePlotRangeY(int, int = 0);
         void updatePlotRangeX(int, int = 0);
-        void updatePlotWPM(double, double);
-        void updatePlotAPM(double, double);
+        void addPlotPoint(int, double, double);
         void clearPlotData();
         void showGraphs();
         void setPlotVisible(int);
