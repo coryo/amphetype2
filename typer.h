@@ -29,6 +29,7 @@ signals:
 
 private slots:
         void checkText();
+        void showMenu(QPoint position) {};
 };
 
 #endif // TYPER_H

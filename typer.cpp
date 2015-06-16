@@ -17,6 +17,10 @@ Typer::Typer(QWidget* parent) : QTextEdit(parent)
         connect(this, SIGNAL(textChanged()), this, SLOT(checkText()));
 
         this->hide();
+
+        this->setAcceptDrops(false);
+        this->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showMenu(QPoint)));        
 }
 Typer::~Typer()
 {
@@ -126,8 +130,11 @@ void Typer::keyPressEvent(QKeyEvent* e)
 {
         if (e->key() == Qt::Key_Escape)
                 emit cancel();
-
-        return QTextEdit::keyPressEvent(e);
+        // to disable copy and paste
+        else if (e->matches(QKeySequence::Copy) || e->matches(QKeySequence::Cut) || e->matches(QKeySequence::Paste))
+                e->ignore();
+        else
+                return QTextEdit::keyPressEvent(e);
 }
 
 Test* Typer::getTest() { return test; }
