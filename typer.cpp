@@ -117,13 +117,15 @@ void Typer::checkText()
                 return;
         }
 
+        emit positionChanged(this->test->currentPos, this->toPlainText().length());
+
         if (pos < currentText.length() && pos < test->text.length()) {
                 //mistake
                 test->mistakes << pos;
                 // (position, (targetChar, mistakenChar))
                 test->mistakeMap.insert(pos, qMakePair(test->text[pos], currentText[pos]));
                 emit mistake(pos);
-        }
+        }     
 }
 
 void Typer::keyPressEvent(QKeyEvent* e)

@@ -24,7 +24,7 @@ Quizzer::Quizzer(QWidget *parent) :
         QSettings s;
 
         ui->typer->grabKeyboard();
-        lastCursorPosition = 0;
+
         // set defaults for ui stuff
         timerLabelReset();
         setTyperFont();
@@ -33,6 +33,8 @@ Quizzer::Quizzer(QWidget *parent) :
         ui->result->setText("Last: 0wpm (0%)\n"
                             "last "+s.value("def_group_by").toString()+": 0wpm (0%)");
         ui->typerColsSpinBox->setValue(s.value("typer_cols").toInt());
+        
+
         // create the two graphs in the plot, set colours
         ui->plot->addGraph();
         ui->plot->addGraph();
@@ -41,8 +43,9 @@ Quizzer::Quizzer(QWidget *parent) :
         ui->plot->xAxis->setVisible(false);
         ui->plot->yAxis->setTickLabels(false);
 
-        connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), this, SLOT(wordWrap()));
-        connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), this, SLOT(moveCursor()));
+        //connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), this, SLOT(wordWrap()));
+        //connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), this, SLOT(moveCursor()));
+        connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), ui->typerDisplay, SLOT(wordWrap(int)));
 
         // finishing or cancelling signals
         connect(ui->typer, SIGNAL(done()),   this, SLOT(done()));
@@ -74,7 +77,8 @@ Quizzer::Quizzer(QWidget *parent) :
         connect(ui->typer, SIGNAL(done()), this, SLOT(timerLabelStop()));
         connect(ui->typer, SIGNAL(cancel()), this, SLOT(timerLabelStop()));
         // "cursor"
-        connect(ui->typer, SIGNAL(textChanged()), this, SLOT(moveCursor()));
+        //connect(ui->typer, SIGNAL(textChanged()), this, SLOT(moveCursor()));
+        connect(ui->typer, SIGNAL(positionChanged(int,int)), ui->typerDisplay, SLOT(moveCursor(int,int)));
         // resize timer, singleshot so it doesnt repeat
         // when it times out, show the plot layer
         resizeTimer.setSingleShot(true);
@@ -368,133 +372,14 @@ void Quizzer::setText(Text* t)
         const QString& te = text->getText();
 
         ui->typer->setTextTarget(text->getText());
-
-        wordWrap();
-        moveCursor();
-}
-
-void Quizzer::moveCursor()
-{
-        cursorPosition   = ui->typer->toPlainText().length();
-        int testPosition = ui->typer->getTest()->currentPos;
-        QString& text    = ui->typer->getTest()->text;
-
-        int positionDiff = cursorPosition - testPosition;
-        QString result;
-
-        int trow, tcol, crow, ccol;
-        posToListPos(customWrapString, testPosition, &trow, &tcol);
-
-        if (cursorPosition < text.length())
-                posToListPos(customWrapString, cursorPosition, &crow, &ccol);
-        
-        // lines before
-        if (trow > 0) {
-                for (int j = 0; j < trow; j++)
-                        result.append(customWrapString.at(j) + "<br>");
-        }
-
-        // current line
-        if (positionDiff > 0) {
-
-                // errors
-                int lineLength = 0;
-                result.append(customWrapString.at(trow).left(tcol));
-                lineLength += tcol;
-                result.append("<span style='background-color:#FF8080'>");
-
-                for (int i = 0; i < positionDiff; ++i) {
-                        if (testPosition + i >= text.length()) {
-                                result.append("&nbsp;");   
-                        } else {
-                                int erow, ecol;
-                                posToListPos(customWrapString, testPosition+i, &erow, &ecol);
-                                result.append(customWrapString.at(erow).at(ecol));
-                                lineLength += 1; 
-                                if (lineLength >= customWrapString.at(erow).length()) {
-                                        if (erow != customWrapString.size()-1)
-                                                result.append("<br>");
-                                        lineLength = 0;
-                                }
-                        }
-                }
-
-                if (cursorPosition < text.length())
-                        result.append(customWrapString.at(crow).at(ccol));
-
-                result.append("</span>");
-
-                if (cursorPosition < text.length())
-                        result.append(customWrapString.at(crow).right((customWrapString.at(crow).length() - ccol - 1)));
-
-                if (crow != customWrapString.size()-1)
-                        result.append("<br>");
-        } else {
-                // non errors
-                result.append(customWrapString.at(crow).left(ccol));
-                result.append("<span style='background-color:#ADEBAD'>");
-                result.append(customWrapString.at(crow).at(ccol));                
-                result.append("</span>");
-                result.append(customWrapString.at(crow).right((customWrapString.at(crow).length() - ccol - 1)) + "<br>");
-        }
-
-        if (cursorPosition < text.length()) {
-                //remaining lines
-                for (int j = crow+1; j < customWrapString.size(); ++j)
-                        result.append(customWrapString.at(j) + "<br>");            
-        }
-
-        ui->testText->setText(result);
-}
-
-void Quizzer::posToListPos(const QStringList& list, int pos, int* row, int* col)
-{
-        int offset = 0;
-        *row = 0;
-        *col = 0;
-        while (pos - offset >= list.at(*row).length()) {
-                offset += list.at(*row).length();
-                *row += 1;
-        }
-        *col = pos - offset;
-}
-
-void Quizzer::wordWrap()
-{
-        customWrapString.clear();
-
-        QSettings s;
-        int maxWidth = ui->typerColsSpinBox->value();
-        s.setValue("typer_cols", maxWidth);
-
-        QString original(text->getText());
-        //original.replace('\n', "↵");
-        while (!original.isEmpty()) {
-                int i = maxWidth;
-                if (original.length() <= i) {
-                        customWrapString << original;//.replace(" ", "␣");
-                        break;
-                }
-                while (original.at(i) != QChar::Space)
-                        --i;  
-
-                QString line = original.left(i+1);
-                if (line.contains("\n")) {
-                        line = line.left(line.indexOf("\n")+1);
-                        customWrapString << line.replace('\n', "↵");
-                        original = original.right(original.length() - line.length());
-                } else {
-                        customWrapString << line;//.replace(" ", "␣");
-                        original = original.right(original.length() - line.length());  
-                }
-        }
+        ui->typerDisplay->setTextTarget(text->getText());
 }
 
 void Quizzer::setTyperFont() // readjust
 {
         QSettings s;
         QFont f = qvariant_cast<QFont>(s.value("typer_font"));
-        ui->testText->setFont(f);
+        ui->typerDisplay->setFont(f);
 }
 
 void Quizzer::updatePlotWPM(double x, double y)

@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     inc/sqlite3pp.cpp \
     inc/sqlite3ppext.cpp \
     inc/sqlite3.c \
-    settingswidget.cpp
+    settingswidget.cpp \
+    typerdisplay.cpp
 
 HEADERS  += mainwindow.h \
     typer.h \
@@ -45,7 +46,8 @@ HEADERS  += mainwindow.h \
     inc/sqlite3pp.h \
     inc/sqlite3ppext.h \
     inc/sqlite3.h \
-    settingswidget.h
+    settingswidget.h \
+    typerdisplay.h
 
 FORMS    += mainwindow.ui \
     quizzer.ui \

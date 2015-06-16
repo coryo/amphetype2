@@ -21,7 +21,6 @@ public:
 
 private:
         void resizeEvent(QResizeEvent*);
-        void posToListPos(const QStringList&, int, int*, int*);
 
         int cursorPosition;
         Ui::Quizzer* ui;
@@ -29,8 +28,8 @@ private:
         QTimer resizeTimer;
         QTimer lessonTimer;
         QTime  lessonTime;
-        QStringList customWrapString;
-        int lastCursorPosition;
+        //QStringList customWrapString;
+        //int lastCursorPosition;
 
 signals:
         void wantText();
@@ -40,8 +39,6 @@ private slots:
         void setText(Text *);
         void setTyperFont();
         void tabActive(int);
-
-        void moveCursor();
 
         // plot related slots
         void updatePlotRangeY(int, int = 0);
@@ -56,8 +53,6 @@ private slots:
         void timerLabelReset();
         void timerLabelGo();
         void timerLabelStop();
-
-        void wordWrap();
 };
 
 #endif // QUIZZER_H

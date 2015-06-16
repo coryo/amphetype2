@@ -84,7 +84,7 @@
        <property name="childrenCollapsible">
         <bool>false</bool>
        </property>
-       <widget class="QTextEdit" name="testText">
+       <widget class="TyperDisplay" name="typerDisplay">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -166,7 +166,7 @@
       </widget>
      </item>
      <item row="0" column="3" rowspan="2">
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="tipLabel">
        <property name="text">
         <string>Test begins when you start typing. Press ESC to cancel and load a new text.</string>
        </property>
@@ -215,6 +215,11 @@
    <class>Typer</class>
    <extends>QTextEdit</extends>
    <header>typer.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TyperDisplay</class>
+   <extends>QTextEdit</extends>
+   <header>typerdisplay.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -26,6 +26,7 @@ signals:
         void newAPM(double, double);
         void characterAdded(int = 0, int = 0);
         void testStarted(int);
+        void positionChanged(int, int);
 
 private slots:
         void checkText();
