@@ -87,7 +87,6 @@ void TextManager::tabActive(int i)
                 clearModel();     
                 refreshed = false;   
         }
-
 }
 
 void TextManager::clearModel()
@@ -221,15 +220,15 @@ void TextManager::doubleClicked(const QModelIndex& idx)
         q.prepare("select id, source, text from text where rowid = :textrow");
         q.bindValue(":textrow", model->getId(idx, Qt::DisplayRole));
         q.exec();
-        q.first();
+        if (q.first()) {
+                QByteArray _id     = q.value(0).toByteArray();
+                int        _source = q.value(1).toInt();
+                QString    _text   = q.value(2).toString();
+                Text* t = new Text(_id, _source, _text);
 
-        QByteArray _id     = q.value(0).toByteArray();
-        int        _source = q.value(1).toInt();
-        QString    _text   = q.value(2).toString();
-        Text* t = new Text(_id, _source, _text);
-
-        emit setText(t);
-        emit gotoTab(0);
+                emit setText(t);
+                emit gotoTab(0);    
+        }
 }
 
 void TextManager::nextText()
