@@ -6,6 +6,7 @@
 #include <QTime>
 
 class Text;
+class QStringList;
 
 namespace Ui {
 class Quizzer;
@@ -20,6 +21,7 @@ public:
 
 private:
         void resizeEvent(QResizeEvent*);
+        void posToListPos(const QStringList&, int, int*, int*);
 
         int cursorPosition;
         Ui::Quizzer* ui;
@@ -27,6 +29,8 @@ private:
         QTimer resizeTimer;
         QTimer lessonTimer;
         QTime  lessonTime;
+        QStringList customWrapString;
+        int lastCursorPosition;
 
 signals:
         void wantText();
@@ -52,6 +56,8 @@ private slots:
         void timerLabelReset();
         void timerLabelGo();
         void timerLabelStop();
+
+        void wordWrap();
 };
 
 #endif // QUIZZER_H
