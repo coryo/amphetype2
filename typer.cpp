@@ -1,14 +1,10 @@
 #include "typer.h"
 #include "test.h"
-#include "boost/date_time/posix_time/posix_time.hpp"
 
-#include <iostream>
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 #include <QKeyEvent>
 #include <QSettings>
-#include <QDir>
-#include <QApplication>
-#include <QMultiHash>
 
 Typer::Typer(QWidget* parent) : QTextEdit(parent), test(0)
 {

@@ -21,6 +21,7 @@ struct agg_median
                 l.push_back(x);
         }
         double finish() {
+                if (l.empty()) return 0;
                 std::sort(l.begin(), l.end());
                 double median;
                 int length = l.size();

@@ -37,6 +37,7 @@ private slots:
         void setText(Text *);
         void setTyperFont();
         void tabActive(int);
+        void setPreviousResultText(double, double);
 
         // plot related slots
         void updatePlotRangeY(int, int = 0);

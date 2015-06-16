@@ -8,6 +8,7 @@
 #include "boost/date_time/gregorian/gregorian.hpp"
 
 #include <iostream>
+
 #include <QVariantList>
 #include <QSettings>
 #include <QSqlQuery>

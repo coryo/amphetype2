@@ -13,7 +13,6 @@
 #include <QSettings>
 #include <QtSql>
 
-
 Quizzer::Quizzer(QWidget *parent) :
         QWidget(parent),
         ui(new Ui::Quizzer),
@@ -30,8 +29,10 @@ Quizzer::Quizzer(QWidget *parent) :
         setTyperFont();
         ui->plotCheckBox->setCheckState(Qt::Checked);
         ui->result->setVisible(s.value("show_last").toBool());
+        setPreviousResultText(0,0);
+        /*
         ui->result->setText("Last: 0wpm (0%)\n"
-                            "last "+s.value("def_group_by").toString()+": 0wpm (0%)");
+                            "last "+s.value("def_group_by").toString()+": 0wpm (0%)");*/
         ui->typerColsSpinBox->setValue(s.value("typer_cols").toInt());
 
         // create the two graphs in the plot, set colours
@@ -329,33 +330,36 @@ void Quizzer::done()
                 q.exec(); 
         }
         db.commit();
-        
-        ////
-        sqlite3pp::database* db2 = DB::openDB(s.value("db_name").toString());
-        DB::addFunctions(db2);
+
+        // set the previous results label text
+        setPreviousResultText(test->wpm.back(), accuracy);
+        // get the next text.
+        emit wantText(); 
+}
+
+void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)
+{
+        QSettings s;
+        sqlite3pp::database* db = DB::openDB(s.value("db_name").toString());
+        DB::addFunctions(db);
         QString query = "select agg_median(wpm), agg_median(acc) from "
                 "(select wpm,100.0*accuracy as acc from result "
                 "order by datetime(w) desc limit "+s.value("def_group_by").toString()+")";
-        sqlite3pp::query qry(*db2, query.toStdString().c_str());
-        QByteArray lastWpm, lastAcc;
+        sqlite3pp::query qry(*db, query.toStdString().c_str());
         QList<QByteArray> cols;
         for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                for (int j = 0; j < qry.column_count(); ++j) {
+                for (int j = 0; j < qry.column_count(); ++j)
                         cols << (*i).get<char const*>(j);
-                }
         }
-        delete db2;
 
-        // update the result label
         ui->result->setText(
                 "Last: " +
-                QString::number(test->wpm.back(), 'f', 1) +
-                "wpm (" + QString::number(accuracy * 100, 'f', 1) + "%)\n" +
-                "Last "+s.value("def_group_by").toString()+": " + QString::number(cols[0].toDouble(), 'f', 1) +
-                "wpm (" + QString::number(cols[1].toDouble(), 'f', 1)+ "%)");
+                QString::number(lastWpm, 'f', 1) +
+                "wpm (" + QString::number(lastAcc * 100, 'f', 1) + "%)\n" +
+                "Last " + s.value("def_group_by").toString()+": " + QString::number(cols[0].toDouble(), 'f', 1) +
+                "wpm (" + QString::number(cols[1].toDouble(), 'f', 1)+ "%)"); 
 
-        // get the next text.
-        emit wantText(); 
+        delete db;
 }
 
 void Quizzer::setText(Text* t)
