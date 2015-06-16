@@ -127,6 +127,7 @@ void StatisticsWidget::refreshStatistics()
                 // data
                 QString data(cols[0]);
                 data.replace(" ", "␣"); // UNICODE U+2423 OPEN BOX (visible space)
+                data.replace('\n', "↵"); // return symbol
                 items << new QStandardItem(data);
                 items.last()->setFont(font);
                 // speed
