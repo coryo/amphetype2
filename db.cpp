@@ -42,22 +42,20 @@ void DB::addFunctions(sqlite3pp::database* db)
 
 sqlite3pp::database* DB::openDB(const QString& db_name)
 {
-        QString dir = qApp->applicationDirPath() + QDir::separator() + db_name;
-
+        QSettings s;
+        QString dir = qApp->applicationDirPath() + QDir::separator() + s.value("db_name").toString();
         sqlite3pp::database* db = new sqlite3pp::database(dir.toStdString().c_str());
         return db;
 }
 
 QSqlError DB::initDb(const QString& db_name)
 {
-        QSettings s(qApp->applicationDirPath() + QDir::separator() +
-                                  "Amphetype2.ini",
-                          QSettings::IniFormat);
+        QSettings s;
 
         QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
         db.setDatabaseName(qApp->applicationDirPath()
                            + QDir::separator()
-                           + db_name);
+                           + s.value("db_name").toString());
         if (!db.open())
                 return db.lastError();
 

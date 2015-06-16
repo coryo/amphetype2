@@ -63,10 +63,11 @@ void loadSettings()
 int main(int argc, char *argv[])
 {
         QCoreApplication::setOrganizationName("coryo");
-        QCoreApplication::setOrganizationDomain("coryo");
+        QCoreApplication::setOrganizationDomain("coryo.com");
         QCoreApplication::setApplicationName("Amphetype2");
-
         QSettings::setDefaultFormat(QSettings::IniFormat);
+
+        //QSettings::setPath(QSettings::IniFormat, QSettings::UserScope);
 
         loadSettings();
 
