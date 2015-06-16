@@ -11,7 +11,7 @@ void loadSettings()
         } else {
                 // no settings found, write defaults
                 QFont defaultFont("Consolas", -1);
-                defaultFont.setStyleHint(QFont::TypeWriter);
+                defaultFont.setStyleHint(QFont::Monospace);
                 s.setValue("typer_font", defaultFont);
                 s.setValue("history", 30.0);
                 s.setValue("min_chars", 220);
@@ -55,6 +55,7 @@ void loadSettings()
                 s.setValue("str_clear", 's');
                 s.setValue("str_extra", 10);
                 s.setValue("str_what", 'e');
+                s.setValue("typer_cols", 50);
                 loadSettings();
         }        
 }
