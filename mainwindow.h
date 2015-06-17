@@ -4,7 +4,6 @@
 #include <QMainWindow>
 
 class QString;
-class QSqlError;
 
 namespace Ui
 {
@@ -21,7 +20,6 @@ public:
         ~MainWindow();
 
 private:
-        void showError(const QSqlError& err);
         Ui::MainWindow* ui;
         QString settingsFile;
         void writeDefaults();

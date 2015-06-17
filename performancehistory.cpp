@@ -11,7 +11,7 @@
 
 #include <QVariantList>
 #include <QSettings>
-#include <QSqlQuery>
+//#include <QSqlQuery>
 #include <QByteArray>
 #include <QStandardItemModel>
 
@@ -161,6 +161,22 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx)
 
         const QModelIndex& f = modelb->index(row, 0);
 
+
+        sqlite3pp::database* db = DB::openDB();
+        QString sql = "select id, source, text from text where id = \""+ f.data().toByteArray() +"\"";
+        sqlite3pp::query qry(*db, sql.toStdString().c_str());
+        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
+                QByteArray _id     = QByteArray((*i).get<char const*>(0));
+                int        _source = (*i).get<int>(1);
+                QString    _text   = QString((*i).get<char const*>(2));
+                Text* t = new Text(_id, _source, _text);
+                emit setText(t);
+                emit gotoTab(0); 
+                delete db;
+                return;
+        }
+
+        /*
         QSqlQuery q;
         q.prepare("select id, source, text from text where id = :textid");
         q.bindValue(":textid", f.data().toByteArray());
@@ -174,7 +190,7 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx)
 
                 emit setText(t);
                 emit gotoTab(0);
-        }
+        }*/
 }
 
 void PerformanceHistory::refreshPerformance()
@@ -246,6 +262,57 @@ void PerformanceHistory::refreshPerformance()
                       where + " " + group + " order by datetime(w) DESC limit " + n;
         }
 
+        ////////////////////////////
+        sqlite3pp::database* db = DB::openDB();
+        sqlite3pp::query qry(*db, sql.toStdString().c_str());
+
+        QList<QStandardItem*> items;
+        double x = -1;
+        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
+                
+
+                items << new QStandardItem(QString((*i).get<char const*>(0)));
+                // turn the string from db into a ptime
+                // its stored as delimited extended iso
+                boost::posix_time::ptime t;
+                t = boost::date_time::parse_delimited_time<boost::posix_time::ptime>((*i).get<char const*>(1), 'T');
+                // add time. convert it to nicer display first
+                items << new QStandardItem(QString::fromStdString(
+                                boost::gregorian::to_simple_string(t.date())));
+
+                // add source
+                items << new QStandardItem(QString((*i).get<char const*>(2)));
+
+                // add points to each of the plots
+                // if chrono x, make the x value seconds since epoch
+                if (s.value("chrono_x").toBool()) {
+                        boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1));
+                        boost::posix_time::time_duration::sec_type sec = (t - epoch).total_seconds();
+                        x = time_t(sec);
+                }  
+                double wpm = (*i).get<double>(3);
+                double acc = (*i).get<double>(4);
+                double vis = (*i).get<double>(5);
+                ui->performancePlot->graph(0)->addData(x, wpm);
+                ui->performancePlot->graph(1)->addData(x, acc);
+                ui->performancePlot->graph(2)->addData(x, vis);
+
+                // add wpm,acc,vis, 1 sigificant digit
+                items << new QStandardItem(QString::number(wpm, 'f', 1));
+                items << new QStandardItem(QString::number(acc, 'f', 1));
+                items << new QStandardItem(QString::number(vis, 'f', 1));
+
+                for (QStandardItem* item : items)
+                        item->setFlags(Qt::ItemIsEnabled);
+                modelb->appendRow(items);
+                items.clear();
+
+                --x;
+        }
+        delete db;
+
+        //////////////////
+        /*
         QSqlQuery q;
         q.prepare(sql);
         q.exec();
@@ -297,7 +364,7 @@ void PerformanceHistory::refreshPerformance()
                 items.clear();
 
                 --x;
-        }
+        }*/
 
         ui->tableView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
         ui->tableView->resizeColumnsToContents();

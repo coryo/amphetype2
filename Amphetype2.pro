@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql
+QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
@@ -67,10 +67,10 @@ macx {
 } win32 {
     INCLUDEPATH += E:/local/boost_1_58_0
     ## Windows common build here
-    CONFIG(debug, debug|release):sqlPlugins.files = $$QT_BUILD_TREE/plugins/sqldrivers/qsqlited.dll
-    CONFIG(release, debug|release):sqlPlugins.files = $$QT_BUILD_TREE/plugins/sqldrivers/qsqlite.dll
-    sqlPlugins.path = sqldrivers
-    DEPLOYMENT += sqlPlugins
+    #CONFIG(debug, debug|release):sqlPlugins.files = $$QT_BUILD_TREE/plugins/sqldrivers/qsqlited.dll
+    #CONFIG(release, debug|release):sqlPlugins.files = $$QT_BUILD_TREE/plugins/sqldrivers/qsqlite.dll
+    #sqlPlugins.path = sqldrivers
+    #DEPLOYMENT += sqlPlugins
 
     !contains(QMAKE_TARGET.arch, x86_64) {
         message("x86 build")

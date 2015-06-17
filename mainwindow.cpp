@@ -1,29 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "typer.h"
-#include "db.h"
-#include "text.h"
 
-#include <QtSql>
-#include <QMessageBox>
-#include <iostream>
+#include "text.h"
 
 MainWindow::MainWindow(QWidget* parent)
         : QMainWindow(parent), ui(new Ui::MainWindow)
 {
-        QSettings s;
-
-        if (!QSqlDatabase::drivers().contains("QSQLITE"))
-                QMessageBox::critical(this, "Unable to load database",
-                                      "This demo needs the SQLITE driver");
-
-        // init
-        QSqlError err = DB::initDb(s.value("db_name").toString());
-        if (err.type() != QSqlError::NoError) {
-                showError(err);
-                return;
-        }
-
         ui->setupUi(this);
 
         connect(this, SIGNAL(initText()), ui->textManager, SLOT(nextText()));
@@ -45,11 +27,5 @@ MainWindow::MainWindow(QWidget* parent)
 }
 
 MainWindow::~MainWindow() { delete ui; }
-
-void MainWindow::showError(const QSqlError& err)
-{
-        QMessageBox::critical(this, "Unable to initialize Database",
-                              "Error initializing database: " + err.text());
-}
 
 void MainWindow::gotoTab(int i) { ui->tabWidget->setCurrentIndex(i); }

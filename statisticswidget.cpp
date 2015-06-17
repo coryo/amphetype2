@@ -93,7 +93,7 @@ void StatisticsWidget::refreshStatistics()
         history = history - boost::posix_time::seconds(s.value("history").toInt()*86400);        
 
         // get the data and populate the model
-        sqlite3pp::database* db = DB::openDB(s.value("db_name").toString());
+        sqlite3pp::database* db = DB::openDB();
         DB::addFunctions(db);
 
         QString query = "select data, "
@@ -109,7 +109,7 @@ void StatisticsWidget::refreshStatistics()
                                "sum(count) as total, "
                                "sum(mistakes) as misses "
                                "from statistic "
-                               "where datetime(w) >= datetime('"+QString::fromStdString(boost::posix_time::to_iso_extended_string(history))+"') "
+                               "where datetime(w) >= datetime(\""+QString::fromStdString(boost::posix_time::to_iso_extended_string(history))+"\") "
                                 "and type = "+QString::number(cat)+" group by data) "
                 "where total >= "+QString::number(count)+" "
                 "order by "+ord+" limit "+QString::number(limit);

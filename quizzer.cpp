@@ -11,7 +11,7 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 
 #include <QSettings>
-#include <QtSql>
+//#include <QtSql>
 
 Quizzer::Quizzer(QWidget *parent) :
         QWidget(parent),
@@ -30,9 +30,7 @@ Quizzer::Quizzer(QWidget *parent) :
         ui->plotCheckBox->setCheckState(Qt::Checked);
         ui->result->setVisible(s.value("show_last").toBool());
         setPreviousResultText(0,0);
-        /*
-        ui->result->setText("Last: 0wpm (0%)\n"
-                            "last "+s.value("def_group_by").toString()+": 0wpm (0%)");*/
+
         ui->typerColsSpinBox->setValue(s.value("typer_cols").toInt());
 
         // create the two graphs in the plot, set colours
@@ -169,24 +167,21 @@ void Quizzer::done()
                 sum += x;
         double viscosity = sum/test->text.size();
 
-        // DB Stuff
-        QSqlDatabase db = QSqlDatabase::database();
-        if (!db.open())
-                return;
-
-        // Results transaction
-        db.transaction();
-        QSqlQuery q;
-        q.prepare("insert into result (w,text_id,source,wpm,accuracy,viscosity)"
-                  " values (:time,:id,:source,:wpm,:accuracy,:viscosity)");
-        q.bindValue(":time", now);
-        q.bindValue(":id", text->getId());
-        q.bindValue(":source", text->getSource());
-        q.bindValue(":wpm", test->wpm.back());
-        q.bindValue(":accuracy", accuracy);
-        q.bindValue(":viscosity", viscosity);
-        q.exec();
-        db.commit();
+        sqlite3pp::database* db = DB::openDB();
+        sqlite3pp::transaction resultTransaction(*db);
+        {
+                sqlite3pp::command cmd(*db, "insert into result (w,text_id,source,wpm,accuracy,viscosity)"
+                                        " values (:time,:id,:source,:wpm,:accuracy,:viscosity)");
+                std::string _t = now.toStdString();
+                cmd.bind(":time", _t.c_str());
+                cmd.bind(":id", text->getId().data());
+                cmd.bind(":source", text->getSource());
+                cmd.bind(":wpm", test->wpm.back());
+                cmd.bind(":accuracy", accuracy);
+                cmd.bind(":viscosity", viscosity);
+                cmd.execute();
+        }
+        resultTransaction.commit();
 
         // Generate statistics, the key is character/word/trigram
         // stats are the time values, visc viscosity, mistakeCount values are
@@ -276,60 +271,71 @@ void Quizzer::done()
         }
 
         // Statistics transaction
-        QList<QStringRef> keys = stats.uniqueKeys();
-        db.transaction();
-        q.prepare("insert into statistic (time,viscosity,w,count,mistakes,type,data) "
-                  "values (:time,:visc,:when,:count,:mistakes,:type,:data)");
-        for (QStringRef k : keys) {
-                // get the median time
-                const QList<double>& timeValues = stats.values(k);
-                if (timeValues.length() > 1)
-                        q.bindValue(":time", ((timeValues[timeValues.length()/2] + (timeValues[timeValues.length()/2 - 1]))/2.0));
-                else if (timeValues.length() == 1)
-                        q.bindValue(":time", timeValues[timeValues.length()/2]);
-                else
-                        q.bindValue(":time", timeValues.first());
-
-                // get the median viscosity
-                const QList<double>& viscValues = visc.values(k);
-                if (viscValues.length() > 1)
-                        q.bindValue(":visc", ((viscValues[viscValues.length()/2]+viscValues[viscValues.length()/2-1])/2.0) * 100.0);
-                else if (viscValues.length() == 1)
-                        q.bindValue(":visc", viscValues[viscValues.length()/2] * 100.0);
-                else
-                        q.bindValue(":visc", viscValues.first() * 100.0);
-
-                q.bindValue(":when",     now);
-                q.bindValue(":count",    stats.count(k));
-                q.bindValue(":mistakes", mistakeCount.count(k));
+        sqlite3pp::transaction statisticsTransaction(*db);
+        {
+                QList<QStringRef> keys = stats.uniqueKeys();
                 
-                if (k.length() == 1)
-                        q.bindValue(":type", 0);
-                else if (k.length() == 3)
-                        q.bindValue(":type", 1);
-                else 
-                        q.bindValue(":type", 2);
+                for (QStringRef k : keys) {
+                        sqlite3pp::command cmd(*db, "insert into statistic (time,viscosity,w,count,mistakes,type,data) "
+                  "values (:time,:visc,:when,:count,:mistakes,:type,:data)");
 
-                q.bindValue(":data", k.toString());
-                q.exec();
-        }
-        db.commit();
+                        const QList<double>& timeValues = stats.values(k);
+                        if (timeValues.length() > 1)
+                                cmd.bind(":time", ((timeValues[timeValues.length()/2] + (timeValues[timeValues.length()/2 - 1]))/2.0));
+                        else if (timeValues.length() == 1)
+                                cmd.bind(":time", timeValues[timeValues.length()/2]);
+                        else
+                                cmd.bind(":time", timeValues.first());
 
-        // Mistakes transaction
-        QHash<QPair<QChar, QChar>, int> m = ui->typer->getTest()->getMistakes();
-        QHashIterator<QPair<QChar,QChar>, int> it(m);
-        db.transaction();
-        q.prepare("insert into mistake (w,target,mistake,count) "
-                  "values (:time,:target,:mistake,:count)");
-        while (it.hasNext()) {
-                it.next();
-                q.bindValue(":time",    now);
-                q.bindValue(":target",  it.key().first);
-                q.bindValue(":mistake", it.key().second);
-                q.bindValue(":count",   it.value());
-                q.exec(); 
+                        // get the median viscosity
+                        const QList<double>& viscValues = visc.values(k);
+                        if (viscValues.length() > 1)
+                                cmd.bind(":visc", ((viscValues[viscValues.length()/2]+viscValues[viscValues.length()/2-1])/2.0) * 100.0);
+                        else if (viscValues.length() == 1)
+                                cmd.bind(":visc", viscValues[viscValues.length()/2] * 100.0);
+                        else
+                                cmd.bind(":visc", viscValues.first() * 100.0);
+
+                        std::string _n = now.toStdString();
+                        cmd.bind(":when",     _n.c_str());
+                        cmd.bind(":count",    stats.count(k));
+                        cmd.bind(":mistakes", mistakeCount.count(k));
+
+                        if (k.length() == 1)
+                                cmd.bind(":type", 0);
+                        else if (k.length() == 3)
+                                cmd.bind(":type", 1);
+                        else 
+                                cmd.bind(":type", 2);
+
+                        std::string _k(k.toString().toStdString());
+                        cmd.bind(":data", _k.c_str());
+                        cmd.execute();
+                }
         }
-        db.commit();
+        statisticsTransaction.commit();
+        
+        sqlite3pp::transaction mistakesTransaction(*db);
+        {
+                QHash<QPair<QChar, QChar>, int> m = ui->typer->getTest()->getMistakes();
+                QHashIterator<QPair<QChar,QChar>, int> it(m);
+
+                
+                while (it.hasNext()) {
+                        it.next();
+                        sqlite3pp::command cmd(*db, "insert into mistake (w,target,mistake,count) "
+                                "values (:time,:target,:mistake,:count)");
+                        std::string _n(now.toStdString());
+                        cmd.bind(":time",    _n.c_str());
+                        cmd.bind(":target",  it.key().first.toLatin1());
+                        cmd.bind(":mistake", it.key().second.toLatin1());
+                        cmd.bind(":count",   it.value());
+                        cmd.execute();
+                }
+        }
+        mistakesTransaction.commit();
+
+        delete db;
 
         // set the previous results label text
         setPreviousResultText(test->wpm.back(), accuracy);
@@ -340,7 +346,7 @@ void Quizzer::done()
 void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)
 {
         QSettings s;
-        sqlite3pp::database* db = DB::openDB(s.value("db_name").toString());
+        sqlite3pp::database* db = DB::openDB();
         DB::addFunctions(db);
         QString query = "select agg_median(wpm), agg_median(acc) from "
                 "(select wpm,100.0*accuracy as acc from result "
