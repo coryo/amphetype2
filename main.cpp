@@ -65,6 +65,8 @@ void loadSettings()
 
 int main(int argc, char *argv[])
 {
+        QApplication a(argc, argv);
+
         QCoreApplication::setOrganizationName("coryo");
         QCoreApplication::setOrganizationDomain("coryo.com");
         QCoreApplication::setApplicationName("Amphetype2");
@@ -72,11 +74,7 @@ int main(int argc, char *argv[])
 
         //QSettings::setPath(QSettings::IniFormat, QSettings::UserScope);
 
-        loadSettings();
-
-        
-
-        QApplication a(argc, argv);
+        loadSettings();    
 
         DB::initDb2();
 
