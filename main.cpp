@@ -1,7 +1,10 @@
 #include "mainwindow.h"
+
 #include <QApplication>
 #include <QSettings>
 #include <QFont>
+
+#include "db.h"
 
 void loadSettings()
 {
@@ -71,7 +74,11 @@ int main(int argc, char *argv[])
 
         loadSettings();
 
+        
+
         QApplication a(argc, argv);
+
+        DB::initDb2();
 
         MainWindow w;
 
