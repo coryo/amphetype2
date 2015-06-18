@@ -66,22 +66,18 @@ void LessonMiner::doWork(const QString& fname)
         QFileInfo fi(fname);
         int id = DB::getSource(fi.fileName(), -1);
         double i = 0.0;
-        //QSqlDatabase db = QSqlDatabase::database();
-        //db.transaction();
-        sqlite3pp::database* db = DB::openDB();
-        sqlite3pp::transaction xct(*db);
+
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());// = DB::openDB();
+        sqlite3pp::transaction xct(db);
         {
                 for (QString& x : lessons) {
-                        addTexts(db, id, x, -1, false);
+                        addTexts(&db, id, x, -1, false);
                         i += 1.0;
                         // value from 0 to 100 for a progress bar
                         emit progress((int)(100 * (i / lessons.size())));
                 }
         }
         xct.commit();
-        delete db;
-
-        //db.commit();
 
         // done
         emit resultReady();
@@ -93,8 +89,7 @@ void LessonMiner::addTexts(sqlite3pp::database* db, int source, const QString& t
                 QCryptographicHash::hash(text.toUtf8(), QCryptographicHash::Sha1);
         txt_id = txt_id.toHex();
         int dis = ((lesson == 2) ? 1 : 0);
-        try {
-                std::cout <<"add text"<<std::endl;
+        try {               
                 QString query("insert into text (id,text,source,disabled) "
                           "values (:id,:text,:source,:disabled)");
                 sqlite3pp::command cmd(*db, query.toStdString().c_str());

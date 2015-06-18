@@ -11,7 +11,6 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 
 #include <QSettings>
-//#include <QtSql>
 
 Quizzer::Quizzer(QWidget *parent) :
         QWidget(parent),
@@ -167,10 +166,10 @@ void Quizzer::done()
                 sum += x;
         double viscosity = sum/test->text.size();
 
-        sqlite3pp::database* db = DB::openDB();
-        sqlite3pp::transaction resultTransaction(*db);
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());// = DB::openDB();
+        sqlite3pp::transaction resultTransaction(db);
         {
-                sqlite3pp::command cmd(*db, "insert into result (w,text_id,source,wpm,accuracy,viscosity)"
+                sqlite3pp::command cmd(db, "insert into result (w,text_id,source,wpm,accuracy,viscosity)"
                                         " values (:time,:id,:source,:wpm,:accuracy,:viscosity)");
                 std::string _t = now.toStdString();
                 cmd.bind(":time", _t.c_str());
@@ -271,12 +270,12 @@ void Quizzer::done()
         }
 
         // Statistics transaction
-        sqlite3pp::transaction statisticsTransaction(*db);
+        sqlite3pp::transaction statisticsTransaction(db);
         {
                 QList<QStringRef> keys = stats.uniqueKeys();
                 
                 for (QStringRef k : keys) {
-                        sqlite3pp::command cmd(*db, "insert into statistic (time,viscosity,w,count,mistakes,type,data) "
+                        sqlite3pp::command cmd(db, "insert into statistic (time,viscosity,w,count,mistakes,type,data) "
                   "values (:time,:visc,:when,:count,:mistakes,:type,:data)");
 
                         const QList<double>& timeValues = stats.values(k);
@@ -315,7 +314,7 @@ void Quizzer::done()
         }
         statisticsTransaction.commit();
         
-        sqlite3pp::transaction mistakesTransaction(*db);
+        sqlite3pp::transaction mistakesTransaction(db);
         {
                 QHash<QPair<QChar, QChar>, int> m = ui->typer->getTest()->getMistakes();
                 QHashIterator<QPair<QChar,QChar>, int> it(m);
@@ -323,7 +322,7 @@ void Quizzer::done()
                 
                 while (it.hasNext()) {
                         it.next();
-                        sqlite3pp::command cmd(*db, "insert into mistake (w,target,mistake,count) "
+                        sqlite3pp::command cmd(db, "insert into mistake (w,target,mistake,count) "
                                 "values (:time,:target,:mistake,:count)");
                         std::string _n(now.toStdString());
                         cmd.bind(":time",    _n.c_str());
@@ -335,8 +334,6 @@ void Quizzer::done()
         }
         mistakesTransaction.commit();
 
-        delete db;
-
         // set the previous results label text
         setPreviousResultText(test->wpm.back(), accuracy);
         // get the next text.
@@ -346,12 +343,12 @@ void Quizzer::done()
 void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)
 {
         QSettings s;
-        sqlite3pp::database* db = DB::openDB();
-        DB::addFunctions(db);
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
+        DB::addFunctions(&db);
         QString query = "select agg_median(wpm), agg_median(acc) from "
                 "(select wpm,100.0*accuracy as acc from result "
                 "order by datetime(w) desc limit "+s.value("def_group_by").toString()+")";
-        sqlite3pp::query qry(*db, query.toStdString().c_str());
+        sqlite3pp::query qry(db, query.toStdString().c_str());
         QList<QByteArray> cols;
         for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
                 for (int j = 0; j < qry.column_count(); ++j)
@@ -364,8 +361,6 @@ void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)
                 "wpm (" + QString::number(lastAcc * 100, 'f', 1) + "%)\n" +
                 "Last " + s.value("def_group_by").toString()+": " + QString::number(cols[0].toDouble(), 'f', 1) +
                 "wpm (" + QString::number(cols[1].toDouble(), 'f', 1)+ "%)"); 
-
-        delete db;
 }
 
 void Quizzer::setText(Text* t)

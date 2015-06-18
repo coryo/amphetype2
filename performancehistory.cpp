@@ -11,7 +11,6 @@
 
 #include <QVariantList>
 #include <QSettings>
-//#include <QSqlQuery>
 #include <QByteArray>
 #include <QStandardItemModel>
 
@@ -158,13 +157,11 @@ void PerformanceHistory::refreshSources()
 void PerformanceHistory::doubleClicked(const QModelIndex& idx)
 {       
         int row = idx.row();
-
         const QModelIndex& f = modelb->index(row, 0);
 
-
-        sqlite3pp::database* db = DB::openDB();
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
         QString sql = "select id, source, text from text where id = \""+ f.data().toByteArray() +"\"";
-        sqlite3pp::query qry(*db, sql.toStdString().c_str());
+        sqlite3pp::query qry(db, sql.toStdString().c_str());
         for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
                 QByteArray _id     = QByteArray((*i).get<char const*>(0));
                 int        _source = (*i).get<int>(1);
@@ -172,25 +169,8 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx)
                 Text* t = new Text(_id, _source, _text);
                 emit setText(t);
                 emit gotoTab(0); 
-                delete db;
                 return;
         }
-
-        /*
-        QSqlQuery q;
-        q.prepare("select id, source, text from text where id = :textid");
-        q.bindValue(":textid", f.data().toByteArray());
-        q.exec();
-
-        if (q.first()) {
-                QByteArray _id = q.value(0).toByteArray();
-                int _source    = q.value(1).toInt();
-                QString _text  = q.value(2).toString();
-                Text* t = new Text(_id, _source, _text);
-
-                emit setText(t);
-                emit gotoTab(0);
-        }*/
 }
 
 void PerformanceHistory::refreshPerformance()
@@ -263,16 +243,19 @@ void PerformanceHistory::refreshPerformance()
         }
 
         ////////////////////////////
-        sqlite3pp::database* db = DB::openDB();
-        sqlite3pp::query qry(*db, sql.toStdString().c_str());
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
+        sqlite3pp::query qry(db, sql.toStdString().c_str());
+
+        // clear the data in the plots
+        for (int i = 0; i <ui->performancePlot->graphCount(); ++i)
+                ui->performancePlot->graph(i)->clearData();
 
         QList<QStandardItem*> items;
         double x = -1;
         for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                
-
+                // add hash from db
                 items << new QStandardItem(QString((*i).get<char const*>(0)));
-                // turn the string from db into a ptime
+                // turn the time string from db into a ptime
                 // its stored as delimited extended iso
                 boost::posix_time::ptime t;
                 t = boost::date_time::parse_delimited_time<boost::posix_time::ptime>((*i).get<char const*>(1), 'T');
@@ -309,62 +292,7 @@ void PerformanceHistory::refreshPerformance()
 
                 --x;
         }
-        delete db;
-
         //////////////////
-        /*
-        QSqlQuery q;
-        q.prepare(sql);
-        q.exec();
-
-        // clear the data in the plots
-        for (int i = 0; i <ui->performancePlot->graphCount(); ++i)
-                ui->performancePlot->graph(i)->clearData();
-
-        QList<QStandardItem*> items;
-        double x = -1;
-        while (q.next()) {
-                // add hash id
-                items << new QStandardItem(q.value(0).toString());
-
-                // turn the string from db into a ptime
-                // its stored as delimited extended iso
-                boost::posix_time::ptime t;
-                t = boost::date_time::parse_delimited_time<boost::posix_time::ptime>(q.value(1).toString().toStdString(), 'T');
-
-                // add time. convert it to nicer display first
-                items << new QStandardItem(QString::fromStdString(
-                                boost::gregorian::to_simple_string(t.date())));
-
-                // add source
-                items << new QStandardItem(q.value(2).toString());
-
-                // add points to each of the plots
-                // if chrono x, make the x value seconds since epoch
-                if (s.value("chrono_x").toBool()) {
-                        boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1));
-                        boost::posix_time::time_duration::sec_type sec = (t - epoch).total_seconds();
-                        x = time_t(sec);
-                }  
-                double wpm = q.value(3).toDouble();
-                double acc = q.value(4).toDouble();
-                double vis = q.value(5).toDouble();
-                ui->performancePlot->graph(0)->addData(x, wpm);
-                ui->performancePlot->graph(1)->addData(x, acc);
-                ui->performancePlot->graph(2)->addData(x, vis);
-
-                // add wpm,acc,vis, 1 sigificant digit
-                items << new QStandardItem(QString::number(wpm, 'f', 1));
-                items << new QStandardItem(QString::number(acc, 'f', 1));
-                items << new QStandardItem(QString::number(vis, 'f', 1));
-
-                for (QStandardItem* item : items)
-                        item->setFlags(Qt::ItemIsEnabled);
-                modelb->appendRow(items);
-                items.clear();
-
-                --x;
-        }*/
 
         ui->tableView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
         ui->tableView->resizeColumnsToContents();

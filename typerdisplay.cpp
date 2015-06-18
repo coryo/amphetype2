@@ -95,7 +95,7 @@ void TyperDisplay::moveCursor(int testPosition, int cursorPosition)
         this->setText(result);
 
         this->setFixedWidth(this->document()->size().width() + 10);
-        this->setFixedHeight(this->document()->size().height() + 30);
+        //this->setFixedHeight(this->document()->size().height() + 30);
 }
 
 

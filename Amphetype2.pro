@@ -21,7 +21,6 @@ SOURCES += main.cpp\
     db.cpp \
     text.cpp \
     inc/qcustomplot.cpp \
-    treemodel.cpp \
     performancehistory.cpp \
     statisticswidget.cpp \
     inc/sqlite3pp.cpp \
@@ -39,7 +38,6 @@ HEADERS  += mainwindow.h \
     db.h \
     text.h \
     inc/qcustomplot.h \
-    treemodel.h \
     lessonminercontroller.h \
     performancehistory.h \
     statisticswidget.h \

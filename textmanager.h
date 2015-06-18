@@ -6,7 +6,7 @@
 class QModelIndex;
 class LessonMinerController;
 class Text;
-class TreeModel;
+class QStandardItemModel;
 
 namespace Ui
 {
@@ -23,10 +23,11 @@ public:
 
 private:
         Ui::TextManager* ui;
-        TreeModel* model;
         QStringList files;
         LessonMinerController* lmc;
         bool refreshed;
+        QStandardItemModel* sourcesModel;
+        QStandardItemModel* textsModel;
 
 signals:
         void setText(Text*);
@@ -38,12 +39,10 @@ private slots:
         void addFiles();
         void refreshSources();
         void doubleClicked(const QModelIndex&);
-        void resizeColumns();
         void tabActive(int);
         void processNextFile();
         void changeSelectMethod(int);
         void populateTexts(const QModelIndex&);
-        void clearModel();
 };
 
 #endif // TEXTMANAGER_H

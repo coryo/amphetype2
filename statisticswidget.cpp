@@ -93,8 +93,8 @@ void StatisticsWidget::refreshStatistics()
         history = history - boost::posix_time::seconds(s.value("history").toInt()*86400);        
 
         // get the data and populate the model
-        sqlite3pp::database* db = DB::openDB();
-        DB::addFunctions(db);
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
+        DB::addFunctions(&db);
 
         QString query = "select data, "
                   "12.0/time as wpm, "
@@ -114,7 +114,7 @@ void StatisticsWidget::refreshStatistics()
                 "where total >= "+QString::number(count)+" "
                 "order by "+ord+" limit "+QString::number(limit);
 
-        sqlite3pp::query qry(*db, query.toStdString().c_str());
+        sqlite3pp::query qry(db, query.toStdString().c_str());
 
         QFont font("Monospace");
         font.setStyleHint(QFont::Monospace);
@@ -148,7 +148,6 @@ void StatisticsWidget::refreshStatistics()
                 model->appendRow(items);
                 items.clear();
         }
-        delete db;
 
         ui->tableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
         ui->tableView->resizeColumnsToContents();       

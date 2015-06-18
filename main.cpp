@@ -3,6 +3,8 @@
 #include <QApplication>
 #include <QSettings>
 #include <QFont>
+#include <QDir>
+#include <QString>
 
 #include "db.h"
 
@@ -13,7 +15,7 @@ void loadSettings()
                 // std::cout<< "settings found" << std::endl;
         } else {
                 // no settings found, write defaults
-                QFont defaultFont("Consolas", -1);
+                QFont defaultFont("Consolas", 12);
                 defaultFont.setStyleHint(QFont::Monospace);
                 s.setValue("typer_font", defaultFont);
                 s.setValue("history", 30.0);
@@ -58,7 +60,7 @@ void loadSettings()
                 s.setValue("str_clear", 's');
                 s.setValue("str_extra", 10);
                 s.setValue("str_what", 'e');
-                s.setValue("typer_cols", 50);
+                s.setValue("typer_cols", 80);
                 loadSettings();
         }        
 }
@@ -72,11 +74,17 @@ int main(int argc, char *argv[])
         QCoreApplication::setApplicationName("Amphetype2");
         QSettings::setDefaultFormat(QSettings::IniFormat);
 
-        //QSettings::setPath(QSettings::IniFormat, QSettings::UserScope);
-
         loadSettings();    
 
-        DB::initDb2();
+        QSettings s;
+        QString dir = qApp->applicationDirPath()
+                + QDir::separator()
+                + s.value("db_name").toString();
+        DB::db_path = dir;    
+
+        DB::initDB();
+
+           
 
         MainWindow w;
 
