@@ -21,6 +21,7 @@ public:
         static void addFunctions(sqlite3pp::database*);
         static int  getSource(const QString&, int = -1);
         static void getSourcesList(QList<QVariantList>*);
+        static void addText(sqlite3pp::database*, int, const QString&, int=-1, bool=true);
 
 private: 
         void med_step(sqlite3pp::ext::context&);

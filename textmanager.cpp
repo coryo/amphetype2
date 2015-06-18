@@ -23,7 +23,6 @@
 TextManager::TextManager(QWidget *parent) :
         QWidget(parent),
         ui(new Ui::TextManager),
-       // model(0),
         refreshed(false),
         sourcesModel(new QStandardItemModel),
         textsModel(new QStandardItemModel)
@@ -91,11 +90,11 @@ void TextManager::refreshSources()
 
         QStringList headers;
         headers << "id"
-                 << "Text"
-                 << "Length"
-                 << "Results"
-                 << "WPM"
-                 << "Dis";
+                << "Text"
+                << "Length"
+                << "Results"
+                << "WPM"
+                << "Dis";
         sourcesModel->setHorizontalHeaderLabels(headers);
 
         ui->sourcesTable->setSortingEnabled(false);
@@ -107,18 +106,18 @@ void TextManager::refreshSources()
         
         refreshed = true;
 
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());// = DB::openDB();
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
 
         QString sql = "select s.rowid, s.name, t.count, r.count, r.wpm, "
-                  "nullif(t.dis,t.count) "
-                  "from source as s "
-                  "left join (select source,count(*) as count,count(disabled) "
-                  "as dis from text group by source) as t "
-                  "on (s.rowid = t.source) "
-                  "left join (select source,count(*) as count,avg(wpm) "
-                  "as wpm from result group by source) as r "
-                  "on (t.source = r.source) "
-                  "where s.disabled is null order by s.name";
+                "nullif(t.dis,t.count) "
+                "from source as s "
+                "left join (select source,count(*) as count,count(disabled) "
+                "as dis from text group by source) as t "
+                "on (s.rowid = t.source) "
+                "left join (select source,count(*) as count,avg(wpm) "
+                "as wpm from result group by source) as r "
+                "on (t.source = r.source) "
+                "where s.disabled is null order by s.name";
 
         sqlite3pp::query qry(db, sql.toStdString().c_str());
         QList<QStandardItem*> items;
@@ -136,7 +135,7 @@ void TextManager::refreshSources()
                 sourcesModel->appendRow(items);
                 items.clear();
         }
-        //delete db;
+
         ui->sourcesTable->setModel(sourcesModel);
         ui->sourcesTable->resizeColumnsToContents();
 }
@@ -146,17 +145,16 @@ void TextManager::populateTexts(const QModelIndex& index)
         QSettings s;
         int row = index.row();
         const QModelIndex& f = sourcesModel->index(row, 0);
+
         textsModel->clear();
-        //if (textsModel != 0)
-        //        delete textsModel;
 
         QStringList headers;
         headers << "id"
-                 << "Text"
-                 << "Length"
-                 << "Results"
-                 << "WPM"
-                 << "Dis";
+                << "Text"
+                << "Length"
+                << "Results"
+                << "WPM"
+                << "Dis";
         textsModel->setHorizontalHeaderLabels(headers);
 
         ui->textsTable->setSortingEnabled(false);
@@ -186,14 +184,12 @@ void TextManager::populateTexts(const QModelIndex& index)
         QList<QStandardItem*> items;
 
         for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                QString dis = ((*i).column_type(5) == SQLITE_NULL) ? "." : "-";
-
                 items << new QStandardItem(QString((*i).get<char const*>(0)));
                 items << new QStandardItem(QString((*i).get<char const*>(1)).simplified());
                 items << new QStandardItem(QString((*i).get<char const*>(2)));
                 items << new QStandardItem(QString((*i).get<char const*>(3)));
                 items << new QStandardItem(QString::number((*i).get<double>(4), 'f', 1));
-                
+                QString dis = ((*i).column_type(5) == SQLITE_NULL) ? "." : "-";
                 items << new QStandardItem(dis);
 
                 for (QStandardItem* item : items)
@@ -209,7 +205,6 @@ void TextManager::populateTexts(const QModelIndex& index)
 
 void TextManager::doubleClicked(const QModelIndex& idx)
 {
-        //model->data(idx, Qt::DisplayRole);
         int row = idx.row();
         const QModelIndex& f = textsModel->index(row, 0);
 
@@ -235,7 +230,7 @@ void TextManager::nextText()
 
         int type = s.value("select_method").toInt();
 
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());// = DB::openDB();
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
 
         if (type != 1) {
                 // not in order
@@ -246,11 +241,11 @@ void TextManager::nextText()
                 sqlite3pp::query qry(db, sql.toStdString().c_str());
 
                 for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                        if (type == 2)
+                        if (type == 2) {
                                 std::cout << 2;
-                        else if (type == 3)
+                        } else if (type == 3) {
                                 std::cout << 3;
-                        else {
+                        } else {
                                 QByteArray _id     = QByteArray((*i).get<char const*>(0));
                                 int        _source = (*i).get<int>(1);
                                 QString    _text   = QString((*i).get<char const*>(2));
@@ -329,7 +324,7 @@ void TextManager::addFiles()
 void TextManager::processNextFile()
 {
         if (files.isEmpty()) {
-                //refreshSources();
+                refreshSources();
                 ui->progressText->hide();
                 ui->progress->hide();
                 delete lmc;

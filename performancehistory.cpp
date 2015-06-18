@@ -1,6 +1,5 @@
 #include "performancehistory.h"
 #include "ui_performancehistory.h"
-#include "treemodel.h"
 #include "db.h"
 #include "text.h"
 

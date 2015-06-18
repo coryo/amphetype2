@@ -69,21 +69,15 @@ void DB::initDB()
 
 int DB::getSource(const QString& source, int lesson)
 {
-        std::cout << "getsource " << std::endl;
         sqlite3pp::database db(DB::db_path.toStdString().c_str());
         QString query("select rowid from source where name = \""+source+"\" limit 1");
-        std::cout << "getsource1 " << std::endl;
-        std::cout << query.toStdString() <<std::endl;
+
         sqlite3pp::query qry(db, query.toStdString().c_str());
-        std::cout << "getsource2 " << std::endl;
+
         QByteArray rowid;
-        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                for (int j = 0; j < qry.column_count(); ++j) {
-                        rowid = (*i).get<char const*>(j);
-                        //(*i).getter() >> rowid;
-                }
-        }
-        std::cout << rowid.data() << std::endl;
+        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i)
+                rowid = (*i).get<char const*>(0);
+
         if (!rowid.isEmpty()) {
                 sqlite3pp::command cmd(db, "select rowid from source where name = :name limit 1");
                 cmd.bind(":name", rowid.data());
@@ -93,25 +87,23 @@ int DB::getSource(const QString& source, int lesson)
         sqlite3pp::command cmd(db, "insert into source (name, discount) values (?, ?)");
         std::string src = source.toStdString();
         cmd.bind(1, src.c_str());
-        std::cout << source.toLocal8Bit().data() <<std::endl;
+
         if (lesson == -1)
-                cmd.bind(2);
+                cmd.bind(2, SQLITE_NULL);
         else
                 cmd.bind(2, lesson);
         cmd.execute();
         return getSource(source, lesson);
 }
 
-/*
-void DB::addTexts(int source, const QString& text, int lesson, bool update)
+
+void DB::addText(sqlite3pp::database* db, int source, const QString& text, int lesson, bool update)
 {
         QByteArray txt_id = 
                 QCryptographicHash::hash(text.toUtf8(), QCryptographicHash::Sha1);
         txt_id = txt_id.toHex();
         int dis = ((lesson == 2) ? 1 : 0);
         try {
-                std::cout <<"add text"<<std::endl;
-                sqlite3pp::database* db = DB::openDB();
                 QString query("insert into text (id,text,source,disabled) "
                           "values (:id,:text,:source,:disabled)");
                 sqlite3pp::command cmd(*db, query.toStdString().c_str());
@@ -120,15 +112,14 @@ void DB::addTexts(int source, const QString& text, int lesson, bool update)
                 cmd.bind(":text", src.c_str());
                 cmd.bind(":source", source);
                 if (dis == 0)
-                        cmd.bind(":disabled", "");
+                        cmd.bind(":disabled");
                 else
                         cmd.bind(":disabled", dis);
-                cmd.execute();
-                delete db;              
+                cmd.execute();          
         } catch (std::exception& e) {
                 //
         }
-}*/
+}
 
 void DB::getSourcesList(QList<QVariantList>* s)
 {

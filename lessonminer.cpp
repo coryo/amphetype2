@@ -67,11 +67,12 @@ void LessonMiner::doWork(const QString& fname)
         int id = DB::getSource(fi.fileName(), -1);
         double i = 0.0;
 
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());// = DB::openDB();
+        // DB Transaction to add each text
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
         sqlite3pp::transaction xct(db);
         {
                 for (QString& x : lessons) {
-                        addTexts(&db, id, x, -1, false);
+                        DB::addText(&db, id, x, -1, false);
                         i += 1.0;
                         // value from 0 to 100 for a progress bar
                         emit progress((int)(100 * (i / lessons.size())));
@@ -82,31 +83,6 @@ void LessonMiner::doWork(const QString& fname)
         // done
         emit resultReady();
 }
-
-void LessonMiner::addTexts(sqlite3pp::database* db, int source, const QString& text, int lesson, bool update)
-{
-        QByteArray txt_id = 
-                QCryptographicHash::hash(text.toUtf8(), QCryptographicHash::Sha1);
-        txt_id = txt_id.toHex();
-        int dis = ((lesson == 2) ? 1 : 0);
-        try {               
-                QString query("insert into text (id,text,source,disabled) "
-                          "values (:id,:text,:source,:disabled)");
-                sqlite3pp::command cmd(*db, query.toStdString().c_str());
-                cmd.bind(":id", txt_id.data());
-                std::string src = text.toStdString();
-                cmd.bind(":text", src.c_str());
-                cmd.bind(":source", source);
-                if (dis == 0)
-                        cmd.bind(":disabled");
-                else
-                        cmd.bind(":disabled", dis);
-                cmd.execute();
-        } catch (std::exception& e) {
-                //
-        }
-}
-
 
 void LessonMiner::fileToParagraphs(QFile* f, QList<QStringList>* paragraphs)
 {

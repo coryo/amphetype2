@@ -24,7 +24,6 @@ private:
         QStringList sentenceSplitter(const QString&);
         void makeLessons(const QList<QStringList>&, QStringList*);
         QString popFormat(QStringList*);
-        void addTexts(sqlite3pp::database*, int, const QString&, int=-1, bool=true);
 
 private:
         QStringList abbr;

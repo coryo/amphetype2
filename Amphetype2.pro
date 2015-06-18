@@ -54,8 +54,6 @@ FORMS    += mainwindow.ui \
     statisticswidget.ui \
     settingswidget.ui
     
-
-
 macx {
     message("mac build")
     QMAKE_CXXFLAGS += -std=c++1y -stdlib=libc++
