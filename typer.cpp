@@ -1,10 +1,11 @@
 #include "typer.h"
 #include "test.h"
 
-#include "boost/date_time/posix_time/posix_time.hpp"
-
 #include <QKeyEvent>
 #include <QSettings>
+
+#include "boost/date_time/posix_time/posix_time.hpp"
+namespace bpt = boost::posix_time;
 
 Typer::Typer(QWidget* parent) : QTextEdit(parent), test(0)
 {
@@ -43,7 +44,7 @@ void Typer::checkText()
         QString currentText = this->toPlainText();
 
         if (test->when[0].is_not_a_date_time()) {
-                test->when[0] = boost::posix_time::microsec_clock::local_time();
+                test->when[0] = bpt::microsec_clock::local_time();
                 emit testStarted(test->length);
         }
 
@@ -62,7 +63,7 @@ void Typer::checkText()
 
         if (test->when[pos].is_not_a_date_time() && pos == currentText.length()) {
                 // store when we are at this position
-                test->when[pos] = boost::posix_time::microsec_clock::local_time(); 
+                test->when[pos] = bpt::microsec_clock::local_time(); 
 
                 // dont calc between the first 2 positions if !req_space
                 // because the times will be the same
@@ -74,7 +75,7 @@ void Typer::checkText()
                         // store time between keys
                         test->timeBetween[pos-1] = test->when[pos] - test->when[pos-1]; 
                         // time since the beginning
-                        boost::posix_time::time_duration timeSinceStart = test->when[pos] - test->when[0];
+                        bpt::time_duration timeSinceStart = test->when[pos] - test->when[0];
                         //store wpm
                         test->wpm << 12.0 * (pos / (timeSinceStart.total_milliseconds() / 1000.0));
 
@@ -87,7 +88,7 @@ void Typer::checkText()
                 }
                 if (pos > test->apmWindow) {
                         // time since 1 window ago
-                        boost::posix_time::time_duration t = test->when[pos] - test->when[pos-test->apmWindow];
+                        bpt::time_duration t = test->when[pos] - test->when[pos-test->apmWindow];
                         
                         test->apm << 12.0 * (test->apmWindow / (t.total_milliseconds() / 1000.0));
                         
