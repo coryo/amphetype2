@@ -84,8 +84,6 @@ int main(int argc, char *argv[])
 
         DB::initDB();
 
-           
-
         MainWindow w;
 
         w.show();
