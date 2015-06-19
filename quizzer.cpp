@@ -12,6 +12,8 @@
 
 #include <QSettings>
 
+namespace bpt = boost::posix_time;
+
 Quizzer::Quizzer(QWidget *parent) :
         QWidget(parent),
         ui(new Ui::Quizzer),
@@ -144,9 +146,7 @@ void Quizzer::done()
 
         QSettings s;
 
-        QString now = QString::fromStdString(boost::posix_time::to_iso_extended_string(
-                            boost::posix_time::microsec_clock::local_time()));
-
+        std::string now = bpt::to_iso_extended_string(bpt::microsec_clock::local_time());
         // tally mistakes
         int mistakes = test->mistakes.size();
 
@@ -165,22 +165,6 @@ void Quizzer::done()
         for (double x : v)
                 sum += x;
         double viscosity = sum/test->text.size();
-
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());// = DB::openDB();
-        sqlite3pp::transaction resultTransaction(db);
-        {
-                sqlite3pp::command cmd(db, "insert into result (w,text_id,source,wpm,accuracy,viscosity)"
-                                        " values (:time,:id,:source,:wpm,:accuracy,:viscosity)");
-                std::string _t = now.toStdString();
-                cmd.bind(":time", _t.c_str());
-                cmd.bind(":id", text->getId().data());
-                cmd.bind(":source", text->getSource());
-                cmd.bind(":wpm", test->wpm.back());
-                cmd.bind(":accuracy", accuracy);
-                cmd.bind(":viscosity", viscosity);
-                cmd.execute();
-        }
-        resultTransaction.commit();
 
         // Generate statistics, the key is character/word/trigram
         // stats are the time values, visc viscosity, mistakeCount values are
@@ -269,70 +253,10 @@ void Quizzer::done()
                 visc.insert(word, visco);
         }
 
-        // Statistics transaction
-        sqlite3pp::transaction statisticsTransaction(db);
-        {
-                QList<QStringRef> keys = stats.uniqueKeys();
-                
-                for (QStringRef k : keys) {
-                        sqlite3pp::command cmd(db, "insert into statistic (time,viscosity,w,count,mistakes,type,data) "
-                  "values (:time,:visc,:when,:count,:mistakes,:type,:data)");
-
-                        const QList<double>& timeValues = stats.values(k);
-                        if (timeValues.length() > 1)
-                                cmd.bind(":time", ((timeValues[timeValues.length()/2] + (timeValues[timeValues.length()/2 - 1]))/2.0));
-                        else if (timeValues.length() == 1)
-                                cmd.bind(":time", timeValues[timeValues.length()/2]);
-                        else
-                                cmd.bind(":time", timeValues.first());
-
-                        // get the median viscosity
-                        const QList<double>& viscValues = visc.values(k);
-                        if (viscValues.length() > 1)
-                                cmd.bind(":visc", ((viscValues[viscValues.length()/2]+viscValues[viscValues.length()/2-1])/2.0) * 100.0);
-                        else if (viscValues.length() == 1)
-                                cmd.bind(":visc", viscValues[viscValues.length()/2] * 100.0);
-                        else
-                                cmd.bind(":visc", viscValues.first() * 100.0);
-
-                        std::string _n = now.toStdString();
-                        cmd.bind(":when",     _n.c_str());
-                        cmd.bind(":count",    stats.count(k));
-                        cmd.bind(":mistakes", mistakeCount.count(k));
-
-                        if (k.length() == 1)
-                                cmd.bind(":type", 0);
-                        else if (k.length() == 3)
-                                cmd.bind(":type", 1);
-                        else 
-                                cmd.bind(":type", 2);
-
-                        std::string _k(k.toString().toStdString());
-                        cmd.bind(":data", _k.c_str());
-                        cmd.execute();
-                }
-        }
-        statisticsTransaction.commit();
-        
-        sqlite3pp::transaction mistakesTransaction(db);
-        {
-                QHash<QPair<QChar, QChar>, int> m = ui->typer->getTest()->getMistakes();
-                QHashIterator<QPair<QChar,QChar>, int> it(m);
-
-                
-                while (it.hasNext()) {
-                        it.next();
-                        sqlite3pp::command cmd(db, "insert into mistake (w,target,mistake,count) "
-                                "values (:time,:target,:mistake,:count)");
-                        std::string _n(now.toStdString());
-                        cmd.bind(":time",    _n.c_str());
-                        cmd.bind(":target",  it.key().first.toLatin1());
-                        cmd.bind(":mistake", it.key().second.toLatin1());
-                        cmd.bind(":count",   it.value());
-                        cmd.execute();
-                }
-        }
-        mistakesTransaction.commit();
+        // add stuff to the database
+        DB::addResult    (now.c_str(), text->getId().data(), text->getSource(), test->wpm.back(), accuracy, viscosity);
+        DB::addStatistics(now.c_str(), stats, visc, mistakeCount);
+        DB::addMistakes  (now.c_str(), test->getMistakes());
 
         // set the previous results label text
         setPreviousResultText(test->wpm.back(), accuracy);
@@ -343,24 +267,19 @@ void Quizzer::done()
 void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)
 {
         QSettings s;
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());
-        DB::addFunctions(&db);
-        QString query = "select agg_median(wpm), agg_median(acc) from "
-                "(select wpm,100.0*accuracy as acc from result "
-                "order by datetime(w) desc limit "+s.value("def_group_by").toString()+")";
-        sqlite3pp::query qry(db, query.toStdString().c_str());
-        QList<QByteArray> cols;
-        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                for (int j = 0; j < qry.column_count(); ++j)
-                        cols << (*i).get<char const*>(j);
-        }
+
+        int n = s.value("def_group_by").toInt();
+        double wpm = 0;
+        double acc = 0;
+
+        DB::getMedianStats(n, &wpm, &acc);
 
         ui->result->setText(
                 "Last: " +
                 QString::number(lastWpm, 'f', 1) +
                 "wpm (" + QString::number(lastAcc * 100, 'f', 1) + "%)\n" +
-                "Last " + s.value("def_group_by").toString()+": " + QString::number(cols[0].toDouble(), 'f', 1) +
-                "wpm (" + QString::number(cols[1].toDouble(), 'f', 1)+ "%)"); 
+                "Last " + QString::number(n) + ": " + QString::number(wpm, 'f', 1) +
+                "wpm (" + QString::number(acc, 'f', 1)+ "%)"); 
 }
 
 void Quizzer::setText(Text* t)
@@ -376,6 +295,7 @@ void Quizzer::setText(Text* t)
 
         ui->typer->setTextTarget(text->getText());
         ui->typerDisplay->setTextTarget(text->getText());
+        ui->textInfoLabel->setText(QString("%1 #%2").arg(text->getSourceName(), QString::number(text->getTextNumber())));
 }
 
 void Quizzer::setTyperFont() // readjust
