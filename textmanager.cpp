@@ -33,6 +33,7 @@ TextManager::TextManager(QWidget *parent) :
 
         ui->sourcesTable->setModel(sourcesModel);
         ui->textsTable->setModel(textsModel);
+        ui->textsTable->hide();
 
         // progress bar/text setup
         ui->progress->setRange(0,100);
@@ -79,8 +80,8 @@ void TextManager::tabActive(int i)
                 refreshSources();
         }
         if (i != 1) {
-                //textsModel->clear();  
-               // refreshed = false;   
+                textsModel->clear();
+                ui->textsTable->hide();
         }
 }
 
@@ -90,8 +91,8 @@ void TextManager::refreshSources()
 
         QStringList headers;
         headers << "id"
-                << "Text"
-                << "Length"
+                << "Source Name"
+                << "# Items"
                 << "Results"
                 << "WPM"
                 << "Dis";
@@ -127,7 +128,7 @@ void TextManager::refreshSources()
                 items << new QStandardItem(QString((*i).get<char const*>(2)));
                 items << new QStandardItem(QString((*i).get<char const*>(3)));
                 items << new QStandardItem(QString::number((*i).get<double>(4), 'f', 1));
-                QString dis = ((*i).column_type(5) == SQLITE_NULL) ? "No" : "Yes";
+                QString dis = ((*i).column_type(5) == SQLITE_NULL) ? "Yes" : "";
                 items << new QStandardItem(dis);
 
                 for (QStandardItem* item : items)
@@ -142,6 +143,7 @@ void TextManager::refreshSources()
 
 void TextManager::populateTexts(const QModelIndex& index)
 {
+        ui->textsTable->show();
         QSettings s;
         int row = index.row();
         const QModelIndex& f = sourcesModel->index(row, 0);
@@ -163,12 +165,6 @@ void TextManager::populateTexts(const QModelIndex& index)
         QHeaderView* verticalHeader = ui->textsTable->verticalHeader();
         verticalHeader->sectionResizeMode(QHeaderView::Fixed);
         verticalHeader->setDefaultSectionSize(24);
-
-        
-
-        QString dir = qApp->applicationDirPath()
-                + QDir::separator()
-                + s.value("db_name").toString();
 
         sqlite3pp::database db(DB::db_path.toStdString().c_str());
 
@@ -202,25 +198,45 @@ void TextManager::populateTexts(const QModelIndex& index)
         ui->textsTable->resizeColumnsToContents();
 }
 
-
 void TextManager::doubleClicked(const QModelIndex& idx)
 {
         int row = idx.row();
         const QModelIndex& f = textsModel->index(row, 0);
 
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());// = DB::openDB();
-        QString sql = "select id, source, text from text where rowid = \""+f.data().toString()+"\"";
-        sqlite3pp::query qry(db, sql.toStdString().c_str());
-        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                QByteArray _id     = QByteArray((*i).get<char const*>(0));
-                int        _source = (*i).get<int>(1);
-                QString    _text   = QString((*i).get<char const*>(2));
-                Text* t = new Text(_id, _source, _text);
+        try {
+                sqlite3pp::database db(DB::db_path.toStdString().c_str());
+
+                QString sql = "select t.id, t.source, t.text, s.name, t.rowid from text as t "
+                        "inner join source as s "
+                        "on (t.source = s.rowid) "
+                        "where t.rowid = "+ f.data().toString();
+
+                sqlite3pp::query qry(db, sql.toStdString().c_str());
+
+                sqlite3pp::query::iterator it = qry.begin();
+                QByteArray _id = QByteArray( (*it).get<char const*>(0) );
+                int _source    = (*it).get<int>(1);
+                QString _text  = QString( (*it).get<char const*>(2) );
+                QString _sName = QString( (*it).get<char const*>(3) );
+                int _tNum      = (*it).get<int>(4);
+
+                sql = "select rowid from text where source = "+QString::number(_source)+" limit 1";
+
+                sqlite3pp::query qry2(db, sql.toStdString().c_str());
+                int offset = 0;
+                it = qry2.begin();
+                offset = (*it).get<int>(0) - 1;
+
+                Text* t = new Text(_id, _source, _text, _sName, _tNum-offset);
 
                 emit setText(t);
                 emit gotoTab(0); 
+        }
+        catch (std::exception& e) {
+                std::cout << e.what() << std::endl;
                 return;
         }
+
 }
 
 void TextManager::nextText()
@@ -230,77 +246,110 @@ void TextManager::nextText()
 
         int type = s.value("select_method").toInt();
 
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());
+        try {
+                sqlite3pp::database db(DB::db_path.toStdString().c_str());
+                sqlite3pp::query::iterator it;
+                QString sql;
 
-        if (type != 1) {
-                // not in order
-                QString sql = "select id,source,text from text "
-                        "where disabled is null "
-                        "order by random() limit "+s.value("num_rand").toString();
+                if (type != 1) {
+                        // not in order
+                        sql = "SELECT t.id, t.source, t.text, s.name, t.rowid "
+                                "FROM ((select id,source,text,rowid from text "
+                                "where disabled is null order by random() "
+                                "limit "+s.value("num_rand").toString()+") as t) "
+                                        "INNER JOIN source as s "
+                                "ON (t.source = s.rowid)";
+                        sqlite3pp::query qry(db, sql.toStdString().c_str());
 
-                sqlite3pp::query qry(db, sql.toStdString().c_str());
-
-                for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
                         if (type == 2) {
                                 std::cout << 2;
                         } else if (type == 3) {
                                 std::cout << 3;
                         } else {
-                                QByteArray _id     = QByteArray((*i).get<char const*>(0));
-                                int        _source = (*i).get<int>(1);
-                                QString    _text   = QString((*i).get<char const*>(2));
-                                t = new Text(_id, _source, _text);    
-                                break;
+                                it = qry.begin();
+
+                                QByteArray _id     = QByteArray((*it).get<char const*>(0));
+                                int        _source = (*it).get<int>(1);
+                                QString    _text   = QString((*it).get<char const*>(2));
+                                QString    _sName  = QString((*it).get<char const*>(3));
+                                int        _tNum   = (*it).get<int>(4);
+
+                                sql = "select rowid from text where source = "
+                                        + QString::number(_source) + " limit 1";
+
+                                sqlite3pp::query qry2(db, sql.toStdString().c_str());
+
+                                it = qry2.begin();
+                                int offset = (*it).get<int>(0) - 1;
+
+                                t = new Text(_id, _source, _text, _sName, _tNum-offset);    
                         }
+                } else {
+                        // in order
+
+                        // first query
+                        sql = "select r.text_id from result as r "
+                                "left join source as s on (r.source = s.rowid) "
+                                "where (s.discount is null) or (s.discount = 1) "
+                                "order by r.w desc limit 1";
+                        sqlite3pp::query qry(db, sql.toStdString().c_str());
+
+                        it = qry.begin();
+                        QByteArray g = QByteArray((*it).get<char const*>(0));
+
+                        // second query
+                        sql = "select rowid from text where id = \""+QString(g)+"\"";
+                        sqlite3pp::query qry2(db, sql.toStdString().c_str());
+
+                        it = qry2.begin();
+                        int lastid = (*it).get<int>(0);
+                        
+                        // third query
+                        sql = "select t.id,t.source,t.text, s.name, t.rowid from text as t "
+                                "left join source as s on (t.source = s.rowid) "
+                                "where t.rowid > "+QString::number(lastid)+" and t.disabled is null "
+                                "order by t.rowid asc limit 1";
+                        sqlite3pp::query qry3(db, sql.toStdString().c_str());
+
+                        it = qry3.begin();
+                        QByteArray _id     = QByteArray((*it).get<char const*>(0));
+                        int        _source = (*it).get<int>(1);
+                        QString    _text   = QString((*it).get<char const*>(2));
+                        QString    _sName  = QString((*it).get<char const*>(3));
+                        int        _tNum   = (*it).get<int>(4);
+
+                        // fourth query
+                        sql = "select rowid from text where source = "+QString::number(_source)+" limit 1";
+                        sqlite3pp::query qry4(db, sql.toStdString().c_str());
+
+                        it = qry4.begin();
+                        int offset = (*it).get<int>(0) - 1;
+
+                        // done
+                        t = new Text(_id, _source, _text, _sName, _tNum-offset);
                 }
-        } else {
-                // in order
-                QString sql = "select r.text_id from result as r "
-                          "left join source as s on (r.source = s.rowid) "
-                          "where (s.discount is null) or (s.discount = 1) "
-                          "order by r.w desc limit 1";
-                sqlite3pp::query qry(db, sql.toStdString().c_str());
-                for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                        QByteArray g(QByteArray((*i).get<char const*>(0)));
 
-                        QString sql2 = "select rowid from text where id = \""+QString(g)+"\"";
-                        sqlite3pp::query qry2(db, sql2.toStdString().c_str());
-
-                        for (sqlite3pp::query::iterator j = qry2.begin(); j != qry2.end(); ++j) {
-                                int lastid = (*j).get<int>(0);
-                                QString sql3 = "select id,source,text from text "
-                                  "where rowid > "+QString::number(lastid)+" and disabled is null "
-                                  "order by rowid asc limit 1";
-                                sqlite3pp::query qry3(db, sql3.toStdString().c_str());
-
-                                for (sqlite3pp::query::iterator k = qry3.begin(); k != qry3.end(); ++k) {
-                                        QByteArray _id     = QByteArray((*k).get<char const*>(0));
-                                        int        _source = (*k).get<int>(1);
-                                        QString    _text   = QString((*k).get<char const*>(2));
-                                        t = new Text(_id, _source, _text);    
-                                        break;
-                                }
-                                break;
-                        }
-                        break;
+                if (t == 0) {
+                        t = new Text(QByteArray(""), 0, "Welcome to Amphetype!\nA "
+                                "typing program that not only measures your speed and "
+                                "progress, but also gives you detailed statistics about"
+                                " problem keys, words, common mistakes, and so on. This"
+                                " is just a default text since your database is empty. "
+                                "You might import a novel or text of your choosing and "
+                                "text excerpts will be generated for you automatically."
+                                " There are also some facilities to generate lessons "
+                                "based on your past statistics! But for now, go to the "
+                                "\"Sources\" tab and try adding some texts from the "
+                                "\"txt\" directory.");
                 }
+                emit setText(t);
+        } 
+        catch (std::exception& e) {
+                std::cout << "exception: " <<std::endl;
+                std::cout << e.what() << std::endl;
+                return;
         }
-
-        if (t == 0) {
-                t = new Text(QByteArray(""), 0, "Welcome to Amphetype!\nA "
-                        "typing program that not only measures your speed and "
-                        "progress, but also gives you detailed statistics about"
-                        " problem keys, words, common mistakes, and so on. This"
-                        " is just a default text since your database is empty. "
-                        "You might import a novel or text of your choosing and "
-                        "text excerpts will be generated for you automatically."
-                        " There are also some facilities to generate lessons "
-                        "based on your past statistics! But for now, go to the "
-                        "\"Sources\" tab and try adding some texts from the "
-                        "\"txt\" directory.");
-        }
-
-        emit setText(t);
+   
 }
 
 void TextManager::addFiles()
