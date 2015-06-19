@@ -15,6 +15,7 @@ void TyperDisplay::setTextTarget(const QString& t)
         cursorPosition = 0;
         QSettings s;
         originalText = t;
+
         wordWrap(s.value("typer_cols").toInt());
 }
 
@@ -94,13 +95,15 @@ void TyperDisplay::moveCursor(int testPosition, int cursorPosition)
 
         this->setText(result);
 
-        this->setFixedWidth(this->document()->size().width() + 10);
+        this->setMinimumWidth(this->document()->size().width() + 10);
         this->setMinimumHeight(this->document()->size().height() + 30);
 }
 
 
 void TyperDisplay::wordWrap(int w) 
 {
+        if (originalText.isEmpty())
+                return;
         wrappedText.clear();
 
         QSettings s;
