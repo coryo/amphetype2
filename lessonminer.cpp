@@ -1,7 +1,6 @@
 #include "lessonminer.h"
 
 #include "db.h"
-#include "inc/sqlite3pp.h"
 
 #include <iostream>
 
@@ -64,21 +63,9 @@ void LessonMiner::doWork(const QString& fname)
 
         // add the lessons to the database
         QFileInfo fi(fname);
-        int id = DB::getSource(fi.fileName(), -1);
-        double i = 0.0;
 
-        // DB Transaction to add each text
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());
-        sqlite3pp::transaction xct(db);
-        {
-                for (QString& x : lessons) {
-                        DB::addText(&db, id, x, -1, false);
-                        i += 1.0;
-                        // value from 0 to 100 for a progress bar
-                        emit progress((int)(100 * (i / lessons.size())));
-                }
-        }
-        xct.commit();
+        int id = DB::getSource(fi.fileName(), -1);
+        DB::addTexts(id, lessons, -1, false);
 
         // done
         emit resultReady();

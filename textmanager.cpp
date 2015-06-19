@@ -6,8 +6,6 @@
 #include "db.h"
 #include "text.h"
 
-#include "inc/sqlite3pp.h"
-
 #include <iostream>
 
 #include <QString>
@@ -107,34 +105,20 @@ void TextManager::refreshSources()
         
         refreshed = true;
 
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());
-
-        QString sql = "select s.rowid, s.name, t.count, r.count, r.wpm, "
-                "nullif(t.dis,t.count) "
-                "from source as s "
-                "left join (select source,count(*) as count,count(disabled) "
-                "as dis from text group by source) as t "
-                "on (s.rowid = t.source) "
-                "left join (select source,count(*) as count,avg(wpm) "
-                "as wpm from result group by source) as r "
-                "on (t.source = r.source) "
-                "where s.disabled is null order by s.name";
-
-        sqlite3pp::query qry(db, sql.toStdString().c_str());
-        QList<QStandardItem*> items;
-        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                items << new QStandardItem(QString((*i).get<char const*>(0)));
-                items << new QStandardItem(QString((*i).get<char const*>(1)));
-                items << new QStandardItem(QString((*i).get<char const*>(2)));
-                items << new QStandardItem(QString((*i).get<char const*>(3)));
-                items << new QStandardItem(QString::number((*i).get<double>(4), 'f', 1));
-                QString dis = ((*i).column_type(5) == SQLITE_NULL) ? "Yes" : "";
+        QList<QList<QString>> rows = DB::getSourcesData();
+        for (QList<QString> row : rows) {
+                QList<QStandardItem*> items;
+                items << new QStandardItem(row[0]);
+                items << new QStandardItem(row[1]);
+                items << new QStandardItem(row[2]);
+                items << new QStandardItem(row[3]);
+                items << new QStandardItem(QString::number(row[4].toDouble(), 'f', 1));
+                QString dis = (row[5].isEmpty()) ? "Yes" : "No";
                 items << new QStandardItem(dis);
 
                 for (QStandardItem* item : items)
                         item->setFlags(Qt::ItemIsEnabled);
                 sourcesModel->appendRow(items);
-                items.clear();
         }
 
         ui->sourcesTable->setModel(sourcesModel);
@@ -166,32 +150,20 @@ void TextManager::populateTexts(const QModelIndex& index)
         verticalHeader->sectionResizeMode(QHeaderView::Fixed);
         verticalHeader->setDefaultSectionSize(24);
 
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());
-
-        QString sql = "select t.rowid, substr(t.text,0,30)||' ...', "
-                "length(t.text), r.count, r.m, t.disabled "
-                "from (select rowid,* from text where source = "+f.data().toString()+") as t "
-                "left join (select text_id,count(*) as count, avg(wpm) "
-                "as m from result group by text_id) as r "
-                "on (t.id = r.text_id) "
-                "order by t.rowid";
-        sqlite3pp::query qry(db, sql.toStdString().c_str());
-
-        QList<QStandardItem*> items;
-
-        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                items << new QStandardItem(QString((*i).get<char const*>(0)));
-                items << new QStandardItem(QString((*i).get<char const*>(1)).simplified());
-                items << new QStandardItem(QString((*i).get<char const*>(2)));
-                items << new QStandardItem(QString((*i).get<char const*>(3)));
-                items << new QStandardItem(QString::number((*i).get<double>(4), 'f', 1));
-                QString dis = ((*i).column_type(5) == SQLITE_NULL) ? "." : "-";
+        QList<QList<QString>> rows = DB::getTextsData(f.data().toInt());
+        for (QList<QString> row : rows) {
+                QList<QStandardItem*> items;
+                items << new QStandardItem(row[0]);
+                items << new QStandardItem(row[1].simplified());
+                items << new QStandardItem(row[2]);
+                items << new QStandardItem(row[3]);
+                items << new QStandardItem(QString::number(row[4].toDouble(), 'f', 1));
+                QString dis = (row[5].isEmpty()) ? "Yes" : "No";
                 items << new QStandardItem(dis);
 
                 for (QStandardItem* item : items)
                         item->setFlags(Qt::ItemIsEnabled);
                 textsModel->appendRow(items);
-                items.clear();
         }
 
         ui->textsTable->setModel(textsModel);

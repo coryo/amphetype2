@@ -3,15 +3,18 @@
 #include "db.h"
 #include "text.h"
 
-#include "boost/date_time/posix_time/posix_time.hpp"
-#include "boost/date_time/gregorian/gregorian.hpp"
-
 #include <iostream>
 
 #include <QVariantList>
 #include <QSettings>
 #include <QByteArray>
 #include <QStandardItemModel>
+
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include "boost/date_time/gregorian/gregorian.hpp"
+namespace bpt = boost::posix_time;
+namespace bdt = boost::date_time;
+namespace bg = boost::gregorian;
 
 PerformanceHistory::PerformanceHistory(QWidget* parent)
         : QWidget(parent), ui(new Ui::PerformanceHistory),
@@ -146,11 +149,10 @@ void PerformanceHistory::refreshSources()
         ui->sourceComboBox->addItem("<ALL TEXTS>");
         ui->sourceComboBox->addItem("<ALL LESSONS>");
 
-        QList<QVariantList> sources;
-        DB::getSourcesList(&sources);
+        QList<QList<QString>> rows = DB::getSourcesList();
 
-        for (QVariantList x : sources)
-                ui->sourceComboBox->addItem(x.at(1).toString(), x.at(0));
+        for (QList<QString> row : rows)
+                ui->sourceComboBox->addItem(row[1], row[0].toInt());
 }
 
 void PerformanceHistory::doubleClicked(const QModelIndex& idx)
@@ -195,86 +197,42 @@ void PerformanceHistory::refreshPerformance()
         QHeaderView* verticalHeader = ui->tableView->verticalHeader();
         verticalHeader->sectionResizeMode(QHeaderView::Fixed);
         verticalHeader->setDefaultSectionSize(24);
-
-        QStringList query;        
-        switch (ui->sourceComboBox->currentIndex()) {
-        case 0:
-                break;
-        case 1:
-                query << "r.text_id = (select text_id from result order by "
-                         "w desc limit 1)";
-                break;
-        case 2:
-                query << "s.discount is null";
-                break;
-        case 3:
-                query << "s.discount is not null";
-                break;
-        default:
-                QString s = ui->sourceComboBox->currentData().toString();
-                query << "r.source = " + s;
-                break;
-        }
-
-        QString where;
-        if (query.length() > 0)
-                where = "where " + query.join(" and ");
-        else
-                where = "";
-
-        QString group;
-
-        QString sql;
-        int g = s.value("perf_group_by").toInt();
-        QString n = ui->limitNumber->text();
-        if (g == 0) {
-                sql = "select text_id,w,s.name,wpm,100.0*accuracy,viscosity "
-                      "from result as r left join source as s on(r.source = "
-                      "s.rowid) " +
-                      where + " " + group + " order by datetime(w) DESC limit " + n;
-        } else {
-                sql = "select agg_first(text_id),avg(r.w) as w,count(r.rowid) "
-                      "|| ' result(s)',agg_median(r.wpm), 100.0 * "
-                      "agg_median(r.accuracy), agg_median(r.viscosity) from "
-                      "result as r left join source as s on(r.source = "
-                      "s.rowid) " +
-                      where + " " + group + " order by datetime(w) DESC limit " + n;
-        }
-
-        ////////////////////////////
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());
-        sqlite3pp::query qry(db, sql.toStdString().c_str());
-
+        
         // clear the data in the plots
         for (int i = 0; i <ui->performancePlot->graphCount(); ++i)
                 ui->performancePlot->graph(i)->clearData();
 
-        QList<QStandardItem*> items;
+        // get rows from db
+        QList<QList<QString>> rows =
+                DB::getPerformanceData(ui->sourceComboBox->currentIndex(),
+                                       ui->sourceComboBox->currentData().toInt(),
+                                       ui->limitNumber->text().toInt());
         double x = -1;
-        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
+        // iterate through rows
+        for (QList<QString> row : rows) {
+                QList<QStandardItem*> items;
                 // add hash from db
-                items << new QStandardItem(QString((*i).get<char const*>(0)));
+                items << new QStandardItem(row[0]);
                 // turn the time string from db into a ptime
                 // its stored as delimited extended iso
                 boost::posix_time::ptime t;
-                t = boost::date_time::parse_delimited_time<boost::posix_time::ptime>((*i).get<char const*>(1), 'T');
+                t = bdt::parse_delimited_time<bpt::ptime>(row[1].toUtf8().data(), 'T');
                 // add time. convert it to nicer display first
-                items << new QStandardItem(QString::fromStdString(
-                                boost::gregorian::to_simple_string(t.date())));
+                items << new QStandardItem(QString::fromStdString(bg::to_simple_string(t.date())));
 
                 // add source
-                items << new QStandardItem(QString((*i).get<char const*>(2)));
+                items << new QStandardItem(row[2]);
 
                 // add points to each of the plots
                 // if chrono x, make the x value seconds since epoch
                 if (s.value("chrono_x").toBool()) {
-                        boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1));
-                        boost::posix_time::time_duration::sec_type sec = (t - epoch).total_seconds();
+                        bpt::ptime epoch(bg::date(1970,1,1));
+                        bpt::time_duration::sec_type sec = (t - epoch).total_seconds();
                         x = time_t(sec);
                 }  
-                double wpm = (*i).get<double>(3);
-                double acc = (*i).get<double>(4);
-                double vis = (*i).get<double>(5);
+                double wpm = row[3].toDouble();
+                double acc = row[4].toDouble();
+                double vis = row[5].toDouble();
                 ui->performancePlot->graph(0)->addData(x, wpm);
                 ui->performancePlot->graph(1)->addData(x, acc);
                 ui->performancePlot->graph(2)->addData(x, vis);
@@ -287,11 +245,8 @@ void PerformanceHistory::refreshPerformance()
                 for (QStandardItem* item : items)
                         item->setFlags(Qt::ItemIsEnabled);
                 modelb->appendRow(items);
-                items.clear();
-
                 --x;
         }
-        //////////////////
 
         ui->tableView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
         ui->tableView->resizeColumnsToContents();

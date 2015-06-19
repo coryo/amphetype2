@@ -5,8 +5,6 @@
 #include <QList>
 #include <QStringList>
 
-#include "inc/sqlite3pp.h"
-
 class QRegularExpression;
 class QFile;
 class QString;

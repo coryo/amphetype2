@@ -6,12 +6,9 @@
 #include "test.h"
 #include "db.h"
 
-#include "inc/sqlite3pp.h"
-
-#include "boost/date_time/posix_time/posix_time.hpp"
-
 #include <QSettings>
 
+#include "boost/date_time/posix_time/posix_time.hpp"
 namespace bpt = boost::posix_time;
 
 Quizzer::Quizzer(QWidget *parent) :
@@ -146,7 +143,7 @@ void Quizzer::done()
 
         QSettings s;
 
-        std::string now = bpt::to_iso_extended_string(bpt::microsec_clock::local_time());
+        QString now = QString::fromStdString(bpt::to_iso_extended_string(bpt::microsec_clock::local_time()));
         // tally mistakes
         int mistakes = test->mistakes.size();
 
@@ -254,9 +251,9 @@ void Quizzer::done()
         }
 
         // add stuff to the database
-        DB::addResult    (now.c_str(), text->getId().data(), text->getSource(), test->wpm.back(), accuracy, viscosity);
-        DB::addStatistics(now.c_str(), stats, visc, mistakeCount);
-        DB::addMistakes  (now.c_str(), test->getMistakes());
+        DB::addResult    (now, text->getId(), text->getSource(), test->wpm.back(), accuracy, viscosity);
+        DB::addStatistics(now, stats, visc, mistakeCount);
+        DB::addMistakes  (now, test->getMistakes());
 
         // set the previous results label text
         setPreviousResultText(test->wpm.back(), accuracy);
