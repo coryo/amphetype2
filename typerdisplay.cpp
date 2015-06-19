@@ -2,12 +2,9 @@
 
 #include <QSettings>
 
-TyperDisplay::TyperDisplay(QWidget* parent)
-        : QTextEdit(parent), testPosition(0), cursorPosition(0)
+TyperDisplay::TyperDisplay(QWidget* parent) : QTextEdit(parent), testPosition(0), cursorPosition(0)
 {
 }
-
-TyperDisplay::~TyperDisplay() { }
 
 void TyperDisplay::setTextTarget(const QString& t)
 {
@@ -21,81 +18,91 @@ void TyperDisplay::setTextTarget(const QString& t)
 
 void TyperDisplay::moveCursor(int testPosition, int cursorPosition)
 {
+        // testPosition: index in the text that has been reached successfully.
+        // cursorPosition: index of the 'cursor', which is = to test position when correct
+        //      but it will grow beyond for every wrong character added to the typer.
+        //
+        //       v-test position [2]
+        //     This is a test.
+        //             ^-cursor position [8]
+        //
+        //     The user typed 'Th' correctly, then entered 7 incorrect characters
+        //     Th[is is a] test     <-text in brackets needs to be highlighted as error
+
         this->testPosition   = testPosition;
         this->cursorPosition = cursorPosition;
 
-        const QString& text = originalText;
+        const QString&     text         = originalText;
+        int                positionDiff = cursorPosition - testPosition;
+        QString            result;
+        std::pair<int,int> testPos, cursorPos;
 
-        int positionDiff = cursorPosition - testPosition;
-
-        QString result;
-
-        int trow, tcol, crow, ccol;
-
-        posToListPos(testPosition, &trow, &tcol);
-
+        // get a (row,col) pair for each of the positions
+        // because the wrapped text is a list of strings
+        testPos = posToListPos(testPosition);
         if (cursorPosition < text.length())
-                posToListPos(cursorPosition, &crow, &ccol);
+                cursorPos = posToListPos(cursorPosition);
         
-        // lines before
-        if (trow > 0) {
-                for (int j = 0; j < trow; j++)
-                        result.append(wrappedText.at(j) + "<br>");
+        // lines before current line
+        if (testPos.first > 0) {
+                for (int j = 0; j < testPos.first; j++)
+                        result.append(wrappedText[j] + "<br>");
         }
-
         // current line
         if (positionDiff > 0) {
-
                 // errors
                 int lineLength = 0;
-                result.append(wrappedText.at(trow).left(tcol));
-                lineLength += tcol;
-                result.append("<span style='background-color:#FF8080'>");
+                result.append(wrappedText[testPos.first].left(testPos.second));
+                lineLength += testPos.second;
 
+                result.append("<span style='background-color:#FF8080'>");
                 for (int i = 0; i < positionDiff; ++i) {
                         if (testPosition + i >= text.length()) {
                                 result.append("&nbsp;");   
                         } else {
-                                int erow, ecol;
-                                posToListPos(testPosition+i, &erow, &ecol);
-                                result.append(wrappedText.at(erow).at(ecol));
+                                std::pair<int,int> errorPos;
+                                errorPos = posToListPos(testPosition+i);
+                                result.append(wrappedText[errorPos.first][errorPos.second]);
                                 lineLength += 1; 
-                                if (lineLength >= wrappedText.at(erow).length()) {
-                                        if (erow != wrappedText.size()-1)
+                                if (lineLength >= wrappedText[errorPos.first].length()) {
+                                        if (errorPos.first != wrappedText.size()-1)
                                                 result.append("<br>");
                                         lineLength = 0;
                                 }
                         }
                 }
-
                 if (cursorPosition < text.length())
-                        result.append(wrappedText.at(crow).at(ccol));
+                        result.append(wrappedText[cursorPos.first][cursorPos.second]);
 
                 result.append("</span>");
 
-                if (cursorPosition < text.length())
-                        result.append(wrappedText.at(crow).right((wrappedText.at(crow).length() - ccol - 1)));
+                if (cursorPosition < text.length()) {
+                        result.append(wrappedText[cursorPos.first].right(
+                                (wrappedText[cursorPos.first].length() - cursorPos.second - 1)));
+                }
 
-                if (crow != wrappedText.size()-1)
+                if (cursorPos.first != wrappedText.size()-1)
                         result.append("<br>");
         } else {
                 // non errors
-                result.append(wrappedText.at(crow).left(ccol));
+                result.append(wrappedText[cursorPos.first].left(cursorPos.second));
                 result.append("<span style='background-color:#ADEBAD'>");
-                result.append(wrappedText.at(crow).at(ccol));                
+                result.append(wrappedText[cursorPos.first][cursorPos.second]);
                 result.append("</span>");
-                result.append(wrappedText.at(crow).right((wrappedText.at(crow).length() - ccol - 1)) + "<br>");
+                result.append(wrappedText[cursorPos.first].right(
+                        (wrappedText[cursorPos.first].length() - cursorPos.second - 1)));
+                result.append("<br>");
         }
 
+        // lines after current line
         if (cursorPosition < text.length()) {
-                //remaining lines
-                for (int j = crow+1; j < wrappedText.size(); ++j)
-                        result.append(wrappedText.at(j) + "<br>");            
+                for (int j = cursorPos.first+1; j < wrappedText.size(); ++j)
+                        result.append(wrappedText[j] + "<br>");            
         }
 
         this->setText(result);
 
-        this->setMinimumWidth(this->document()->size().width() + 10);
+        this->setMinimumWidth (this->document()->size().width()  + 10);
         this->setMinimumHeight(this->document()->size().height() + 30);
 }
 
@@ -134,17 +141,19 @@ void TyperDisplay::wordWrap(int w)
         updateDisplay();
 }
 
-void TyperDisplay::posToListPos(int pos, int* row, int* col)
+std::pair<int,int> TyperDisplay::posToListPos(int pos)
 {
         const QStringList& list = wrappedText;
         int offset = 0;
-        *row = 0;
-        *col = 0;
-        while (pos - offset >= list.at(*row).length()) {
-                offset += list.at(*row).length();
-                *row += 1;
+        int row = 0;
+        int col = 0;
+        while (pos - offset >= list.at(row).length()) {
+                offset += list.at(row).length();
+                row += 1;
         }
-        *col = pos - offset;
+        col = pos - offset;
+
+        return {row, col};
 }
 
 void TyperDisplay::updateDisplay()

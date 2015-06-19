@@ -10,7 +10,6 @@ class TyperDisplay : public QTextEdit
         Q_OBJECT
 public:
         TyperDisplay(QWidget* parent = 0);
-        ~TyperDisplay();
         void setTextTarget(const QString&);
 
 private:
@@ -18,7 +17,7 @@ private:
         QStringList wrappedText;
         int cursorPosition;
         int testPosition;
-        void posToListPos(int, int*, int*);
+        std::pair<int,int> posToListPos(int);
         void updateDisplay();
 
 private slots:
