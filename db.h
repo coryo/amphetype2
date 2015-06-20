@@ -8,6 +8,7 @@
 
 class QString;
 class QStringList;
+class Text;
 
 class DB
 {
@@ -32,7 +33,11 @@ public:
         static QList<QStringList> getTextsData(int);
         static QList<QStringList> getPerformanceData(int, int, int);
         static QList<QStringList> getSourcesList();
-        static QList<QStringList> getStatisticsData(const QString&, int, int, const QString&, int);
+        static QList<QStringList> getStatisticsData(const QString&, int, int, int, int);
+        // create a text object 
+        static Text* getNextText(int);          // get next text based on given select method
+        static Text* getText(int);              // get a text with a given rowid
+        static Text* getText(const QString&);   // get a text with a given hashid
 
 private:
         // functions for sqlite extending 
@@ -45,6 +50,8 @@ private:
 
         static void insertItems(const QString&, const QVariantList& values);
         static void insertItems(sqlite3pp::database*, const QString&, const QVariantList&);
+        // create a text object with a given query
+        static Text* getTextWithQuery(const QString&);
 
 signals:
         static void progress(int);

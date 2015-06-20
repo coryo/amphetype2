@@ -2,8 +2,6 @@
 #include "ui_statisticswidget.h"
 #include "db.h"
 
-#include "boost/date_time/posix_time/posix_time.hpp"
-
 #include <vector>
 #include <algorithm>
 #include <string>
@@ -11,6 +9,7 @@
 #include <QStandardItemModel>
 #include <QSettings>
 
+#include "boost/date_time/posix_time/posix_time.hpp"
 namespace bpt = boost::posix_time;
 
 StatisticsWidget::StatisticsWidget(QWidget *parent) :
@@ -22,20 +21,10 @@ StatisticsWidget::StatisticsWidget(QWidget *parent) :
 
         QSettings s;
 
-        ui->orderComboBox->setItemData(0, "wpm asc");
-        ui->orderComboBox->setItemData(1, "wpm desc");
-        ui->orderComboBox->setItemData(2, "viscosity desc");
-        ui->orderComboBox->setItemData(3, "viscosity asc");
-        ui->orderComboBox->setItemData(4, "accuracy asc");
-        ui->orderComboBox->setItemData(5, "misses desc");
-        ui->orderComboBox->setItemData(6, "total desc");
-        ui->orderComboBox->setItemData(7, "damage desc");
-
         ui->limitEdit->setText(s.value("ana_many").toString());
         ui->minCountEdit->setText(s.value("ana_count").toString());
-
-        ui->orderComboBox->setCurrentIndex(ui->orderComboBox->findData(s.value("ana_which")));
-        ui->typeComboBox->setCurrentIndex(s.value("ana_what").toInt());
+        ui->orderComboBox->setCurrentIndex(s.value("ana_which").toInt());
+        ui->typeComboBox-> setCurrentIndex(s.value("ana_what").toInt());
 
         connect(ui->orderComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
         connect(ui->typeComboBox,  SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
@@ -51,14 +40,14 @@ StatisticsWidget::~StatisticsWidget()
 void StatisticsWidget::writeSettings()
 {
         QSettings s;
-        s.setValue("ana_which", ui->orderComboBox->itemData(ui->orderComboBox->currentIndex()).toString());
-        s.setValue("ana_what", ui->typeComboBox->currentIndex());
-        s.setValue("ana_many", ui->limitEdit->text().toInt());
+        s.setValue("ana_which", ui->orderComboBox->currentIndex());
+        s.setValue("ana_what",  ui->typeComboBox->currentIndex());
+        s.setValue("ana_many",  ui->limitEdit->text().toInt());
         s.setValue("ana_count", ui->minCountEdit->text().toInt());
-        refreshStatistics();
+        populateStatistics();
 }
 
-void StatisticsWidget::refreshStatistics()
+void StatisticsWidget::populateStatistics()
 {
         QSettings s;
 
@@ -80,10 +69,10 @@ void StatisticsWidget::refreshStatistics()
         verticalHeader->sectionResizeMode(QHeaderView::Fixed);
         verticalHeader->setDefaultSectionSize(24);
 
-        QString ord = ui->orderComboBox->itemData(ui->orderComboBox->currentIndex()).toString();
-        int cat     = ui->typeComboBox->currentIndex();
-        int limit   = ui->limitEdit->text().toInt();
-        int count   = ui->minCountEdit->text().toInt();
+        int ord   = ui->orderComboBox->currentIndex();
+        int cat   = ui->typeComboBox->currentIndex();
+        int limit = ui->limitEdit->text().toInt();
+        int count = ui->minCountEdit->text().toInt();
 
         bpt::ptime history = bpt::microsec_clock::local_time();
         history = history - bpt::seconds(s.value("history").toInt()*86400);   

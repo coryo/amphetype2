@@ -6,6 +6,7 @@
 
 class Text {
 public:
+        Text();
         Text(const QByteArray&, int, const QString&);
         Text(const QByteArray&, int, const QString&, const QString&, int);
 

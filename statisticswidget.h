@@ -22,7 +22,7 @@ private:
         QStandardItemModel* model;
 
 private slots:
-        void refreshStatistics();
+        void populateStatistics();
         void writeSettings();
 };
 

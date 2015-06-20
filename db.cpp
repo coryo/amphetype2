@@ -1,4 +1,5 @@
 #include "db.h"
+#include "text.h"
 
 #include "inc/sqlite3pp.h"
 
@@ -333,9 +334,24 @@ QList<QStringList> DB::getPerformanceData(int w, int source, int limit)
         return rows;     
 }
 
-QList<QStringList> DB::getStatisticsData(const QString& when, int type, int count, const QString& order, int limit)
+QList<QStringList> DB::getStatisticsData(const QString& when, int type, int count, int ord, int limit)
 {
-        QString sql = QString("select data, "
+        QString order;
+
+        switch (ord) {
+                case 0: order = "wpm asc"; break;
+                case 1: order = "wpm desc"; break;
+                case 2: order = "viscosity desc"; break;
+                case 3: order = "viscosity asc"; break;
+                case 4: order = "accuracy asc"; break;
+                case 5: order = "misses desc"; break;
+                case 6: order = "total desc"; break;
+                case 7: order = "damage desc"; break;
+        }
+        
+
+        QString sql = QString(
+                "select data, "
                   "12.0/time as wpm, "
                   "100.0-100.0*misses/cast(total as real) as accuracy, "
                   "viscosity, "
@@ -366,6 +382,86 @@ QList<QStringList> DB::getSourcesList()
         QList<QStringList> rows;
         rows = getRows(sql);
         return rows;
+}
+
+
+
+Text* DB::getText(const QString& textHash)
+{
+        QString sql = QString(
+                "select t.id, t.source, t.text, s.name, t.rowid "
+                "from text as t "
+                "inner join source as s "
+                "on (t.source = s.rowid) "
+                "where t.id = \"%1\"").arg(textHash);
+        
+        return DB::getTextWithQuery(sql);
+}
+
+Text* DB::getText(int rowid)
+{
+        QString sql = QString(
+                "select t.id, t.source, t.text, s.name, t.rowid "
+                "from text as t "
+                "inner join source as s "
+                "on (t.source = s.rowid) "
+                "where t.rowid = %1").arg(rowid);
+        
+        return DB::getTextWithQuery(sql);
+}
+
+Text* DB::getNextText(int selectMethod)
+{
+        QString sql;
+        QSettings s;
+
+        int num_rand = s.value("num_rand").toInt();
+
+        if (selectMethod != 1) {
+                // not in order
+                sql = QString(
+                        "SELECT t.id, t.source, t.text, s.name, t.rowid "
+                        "FROM ((select id,source,text,rowid from text "
+                                "where disabled is null order by random() "
+                                "limit %1) as t) "
+                        "INNER JOIN source as s "
+                        "ON (t.source = s.rowid)").arg(num_rand);
+
+                if (selectMethod == 2)
+                        std::cout << 2;
+                else if (selectMethod == 3)
+                        std::cout << 3;
+                else
+                        return DB::getTextWithQuery(sql);
+        } else {
+                // in order
+                sql = "select r.text_id from result as r "
+                        "left join source as s on (r.source = s.rowid) "
+                        "where (s.discount is null) or (s.discount = 1) "
+                        "order by r.w desc limit 1";
+
+                QStringList row = DB::getOneRow(sql);
+
+                if (row.isEmpty())
+                        return new Text();
+
+                sql = QString("select rowid from text where id = \"%1\"").arg(row[0]);
+                QStringList row2 = DB::getOneRow(sql);
+
+                if (row2.isEmpty())
+                        return new Text();
+
+                sql = QString(
+                        "select t.id,t.source,t.text, s.name, t.rowid "
+                        "from text as t "
+                        "left join source as s "
+                        "on (t.source = s.rowid) "
+                        "where t.rowid > %1 and t.disabled is null "
+                        "order by t.rowid asc limit 1").arg(row2[0]);
+
+                return DB::getTextWithQuery(sql);
+        }
+        return new Text();
 }
 
 QStringList DB::getOneRow(const QString& sql)
@@ -450,5 +546,40 @@ void DB::insertItems(sqlite3pp::database* db, const QString& sql, const QVariant
         } catch (const std::exception& e) {
                 std::cout << "error inserting data: " << sql.toStdString() << std::endl;
                 std::cout << e.what() << std::endl;
+        }
+}
+
+Text* DB::getTextWithQuery(const QString& query)
+{
+        try {
+                QString sql = query;
+
+                QStringList row = DB::getOneRow(sql);
+
+                if (row.isEmpty())
+                        return new Text();
+
+                QStringList data;
+                data << row[0]; // id
+                data << row[1]; // source
+                data << row[2]; // text
+                data << row[3]; // name
+
+                int source = row[1].toInt();
+                sql = QString("select rowid from text where source = %1 limit 1")
+                        .arg(source);
+                QStringList row2 = DB::getOneRow(sql);
+
+                if (row2.isEmpty())
+                        return new Text();
+
+                int offset = row2[0].toInt() - 1;
+                data << QString::number(row[4].toInt() - offset);       // text number
+
+                return new Text(data[0].toUtf8(), data[1].toInt(), data[2], data[3], data[4].toInt());
+        }
+        catch(const std::exception& e) {
+                std::cerr << e.what() << std::endl;
+                return new Text();
         }
 }

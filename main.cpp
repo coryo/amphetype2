@@ -50,7 +50,7 @@ void loadSettings()
                 s.setValue("group_month", 365.0);
                 s.setValue("group_week", 30.0);
                 s.setValue("group_day", 7.0);
-                s.setValue("ana_which", "wpm asc");
+                s.setValue("ana_which", 0);
                 s.setValue("ana_what", 0);
                 s.setValue("ana_many", 30);
                 s.setValue("ana_count", 1);

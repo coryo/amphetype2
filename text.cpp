@@ -3,6 +3,20 @@
 #include <QByteArray>
 #include <QString>
 
+Text::Text() : id(QByteArray()), source(0), textNumber(-1)
+{
+        text = "Welcome to Amphetype!\nA "
+               "typing program that not only measures your speed and "
+               "progress, but also gives you detailed statistics about"
+               " problem keys, words, common mistakes, and so on. This"
+               " is just a default text since your database is empty. "
+               "You might import a novel or text of your choosing and "
+               "text excerpts will be generated for you automatically."
+               " There are also some facilities to generate lessons "
+               "based on your past statistics! But for now, go to the "
+               "\"Sources\" tab and try adding some texts from the "
+               "\"txt\" directory.";
+}
 Text::Text(const QByteArray& id, int source, const QString& text)
         : id(id), source(source), text(text), sourceName(""), textNumber(0)
 {

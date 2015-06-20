@@ -160,18 +160,10 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx)
         int row = idx.row();
         const QModelIndex& f = modelb->index(row, 0);
 
-        sqlite3pp::database db(DB::db_path.toStdString().c_str());
-        QString sql = "select id, source, text from text where id = \""+ f.data().toByteArray() +"\"";
-        sqlite3pp::query qry(db, sql.toStdString().c_str());
-        for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                QByteArray _id     = QByteArray((*i).get<char const*>(0));
-                int        _source = (*i).get<int>(1);
-                QString    _text   = QString((*i).get<char const*>(2));
-                Text* t = new Text(_id, _source, _text);
-                emit setText(t);
-                emit gotoTab(0); 
-                return;
-        }
+        Text* t = DB::getText(f.data().toString());
+
+        emit setText(t);
+        emit gotoTab(0);
 }
 
 void PerformanceHistory::refreshPerformance()
