@@ -12,7 +12,7 @@ namespace bpt = boost::posix_time;
 class Test {
 public:
         Test(const QString&);
-        ~Test();
+        QHash<QPair<QChar, QChar>, int> getMistakes();
 
         QString text;
         int length;
@@ -35,8 +35,6 @@ public:
         double maxWPM;
         double maxAPM;
         int apmWindow;
-
-        QHash<QPair<QChar, QChar>, int> getMistakes();
 };
 
 #endif // TEST_H

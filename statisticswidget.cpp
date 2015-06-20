@@ -92,8 +92,8 @@ void StatisticsWidget::refreshStatistics()
         QFont font("Monospace");
         font.setStyleHint(QFont::Monospace);
 
-        QList<QList<QString>> rows = DB::getStatisticsData(historyString, cat, count, ord, limit);
-        for (QList<QString> row : rows) {
+        QList<QStringList> rows = DB::getStatisticsData(historyString, cat, count, ord, limit);
+        for (QStringList row : rows) {
                 QList<QStandardItem*> items;
                 // item: key/trigram/word
                 QString data(row[0]);

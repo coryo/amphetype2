@@ -19,8 +19,6 @@ Test::Test(const QString& t)
         apmWindow = 5;
 }
 
-Test::~Test() {}
-
 QHash<QPair<QChar, QChar>, int> Test::getMistakes()
 {
         QHash<QPair<QChar, QChar>, int> mis;

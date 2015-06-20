@@ -143,7 +143,8 @@ void Quizzer::done()
 
         QSettings s;
 
-        QString now = QString::fromStdString(bpt::to_iso_extended_string(bpt::microsec_clock::local_time()));
+        QString now = QString::fromStdString(
+                bpt::to_iso_extended_string(bpt::microsec_clock::local_time()));
         // tally mistakes
         int mistakes = test->mistakes.size();
 
@@ -207,7 +208,7 @@ void Quizzer::done()
                 double tspc = perch * 1.0e-6;
                 // get the average viscosity
                 for (int j = start; j < end; ++j)
-                        visco += pow(((test->timeBetween.at(j).total_microseconds()* 1.0e-6 - tspc)/tspc), 2);
+                        visco += pow(((test->timeBetween.at(j).total_microseconds() * 1.0e-6 - tspc) / tspc), 2);
                 visco = visco/(end-start);
 
                 stats.insert(tri, tspc);
@@ -243,7 +244,7 @@ void Quizzer::done()
 
                 double tspc = perch * 1.0e-6;
                 for (int j = start; j < end; ++j)
-                        visco += pow(((test->timeBetween.at(j).total_microseconds() * 1.0e-6 - tspc)/tspc), 2);
+                        visco += pow(((test->timeBetween.at(j).total_microseconds() * 1.0e-6 - tspc) / tspc), 2);
                 visco = visco/(end-start);
 
                 stats.insert(word, tspc);
@@ -266,17 +267,14 @@ void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)
         QSettings s;
 
         int n = s.value("def_group_by").toInt();
-        double wpm = 0;
-        double acc = 0;
-
-        DB::getMedianStats(n, &wpm, &acc);
+        std::pair<double,double> stats;
+        stats = DB::getMedianStats(n);
 
         ui->result->setText(
-                "Last: " +
-                QString::number(lastWpm, 'f', 1) +
-                "wpm (" + QString::number(lastAcc * 100, 'f', 1) + "%)\n" +
-                "Last " + QString::number(n) + ": " + QString::number(wpm, 'f', 1) +
-                "wpm (" + QString::number(acc, 'f', 1)+ "%)"); 
+                "Last: " + QString::number(lastWpm, 'f', 1) +
+                "wpm ("  + QString::number(lastAcc * 100, 'f', 1) + "%)\n" +
+                "Last "  + QString::number(n) + ": " + QString::number(stats.first, 'f', 1) +
+                "wpm ("  + QString::number(stats.second, 'f', 1)+ "%)"); 
 }
 
 void Quizzer::setText(Text* t)

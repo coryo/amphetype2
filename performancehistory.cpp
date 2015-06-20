@@ -149,9 +149,9 @@ void PerformanceHistory::refreshSources()
         ui->sourceComboBox->addItem("<ALL TEXTS>");
         ui->sourceComboBox->addItem("<ALL LESSONS>");
 
-        QList<QList<QString>> rows = DB::getSourcesList();
+        QList<QStringList> rows = DB::getSourcesList();
 
-        for (QList<QString> row : rows)
+        for (QStringList row : rows)
                 ui->sourceComboBox->addItem(row[1], row[0].toInt());
 }
 
@@ -203,13 +203,13 @@ void PerformanceHistory::refreshPerformance()
                 ui->performancePlot->graph(i)->clearData();
 
         // get rows from db
-        QList<QList<QString>> rows =
+        QList<QStringList> rows =
                 DB::getPerformanceData(ui->sourceComboBox->currentIndex(),
                                        ui->sourceComboBox->currentData().toInt(),
                                        ui->limitNumber->text().toInt());
         double x = -1;
         // iterate through rows
-        for (QList<QString> row : rows) {
+        for (QStringList row : rows) {
                 QList<QStandardItem*> items;
                 // add hash from db
                 items << new QStandardItem(row[0]);

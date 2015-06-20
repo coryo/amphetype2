@@ -105,8 +105,8 @@ void TextManager::refreshSources()
         
         refreshed = true;
 
-        QList<QList<QString>> rows = DB::getSourcesData();
-        for (QList<QString> row : rows) {
+        QList<QStringList> rows = DB::getSourcesData();
+        for (QStringList row : rows) {
                 QList<QStandardItem*> items;
                 items << new QStandardItem(row[0]);
                 items << new QStandardItem(row[1]);
@@ -150,8 +150,8 @@ void TextManager::populateTexts(const QModelIndex& index)
         verticalHeader->sectionResizeMode(QHeaderView::Fixed);
         verticalHeader->setDefaultSectionSize(24);
 
-        QList<QList<QString>> rows = DB::getTextsData(f.data().toInt());
-        for (QList<QString> row : rows) {
+        QList<QStringList> rows = DB::getTextsData(f.data().toInt());
+        for (QStringList row : rows) {
                 QList<QStandardItem*> items;
                 items << new QStandardItem(row[0]);
                 items << new QStandardItem(row[1].simplified());

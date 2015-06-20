@@ -40,7 +40,7 @@ void DB::addFunctions(sqlite3pp::database* db)
         try {
                 sqlite3pp::ext::aggregate aggr(*db);
                 aggr.create<agg_median, double>("agg_median"); 
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
                 std::cout << e.what() << std::endl;
         } 
 }
@@ -63,7 +63,7 @@ void DB::initDB()
                 db.execute("create view text_source as select "
                             "id,s.name,text,coalesce(t.disabled,s.disabled) from text "
                             "as t left join source as s on (t.source = s.rowid)");           
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
                 std::cout << "cannot create database" <<std::endl;
                 std::cout << e.what() <<std::endl;
         }
@@ -73,7 +73,7 @@ int DB::getSource(const QString& source, int lesson)
 {
         try {
                 QString sql = QString("select rowid from source where name = \"%1\" limit 1").arg(source);
-                QList<QString> row = DB::getOneRow(sql);
+                QStringList row = DB::getOneRow(sql);
                 
                 // if the source exists return it
                 if(!row.isEmpty())
@@ -92,7 +92,7 @@ int DB::getSource(const QString& source, int lesson)
                 DB::insertItems(sql, data);
                 // try again now that it's in the db
                 return getSource(source, lesson);
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
                 std::cout << "error getting source" << std::endl;
                 std::cout << e.what() << std::endl;
                 return -1;
@@ -123,7 +123,7 @@ void DB::addTexts(int source, const QStringList& lessons, int lesson, bool updat
                         }
                 }
                 xct.commit();
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
                 std::cout << "error adding text" << std::endl;
                 std::cout << e.what() << std::endl;
         }
@@ -142,7 +142,7 @@ void DB::addResult(const QString& time, const QByteArray& id, int source, double
                         DB::insertItems(&db, sql, items);
                 }
                 resultTransaction.commit();
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
                 std::cout << "error adding result" << std::endl;
                 std::cout << e.what() << std::endl;
         }
@@ -196,7 +196,7 @@ void DB::addStatistics(const QString& time, const QMultiHash<QStringRef, double>
                         }
                 }
                 statisticsTransaction.commit();
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
                 std::cout << "error adding statistics" << std::endl;
                 std::cout << e.what() << std::endl;
         }
@@ -222,25 +222,23 @@ void DB::addMistakes(const QString& time, const QHash<QPair<QChar, QChar>, int>&
                         }
                 }
                 mistakesTransaction.commit();
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
                 std::cout << "error adding mistakes" << std::endl;
                 std::cout << e.what() << std::endl;
         }
 }
 
- void DB::getMedianStats(int n, double* wpm,double* acc)
+ std::pair<double,double> DB::getMedianStats(int n)
  {
         QString query = QString(
                 "select agg_median(wpm), agg_median(acc) "
                 "from (select wpm,100.0*accuracy as acc from result "
                         "order by datetime(w) desc limit %1)").arg(n);
-        QList<QString> cols = getOneRow(query);
-
-        *wpm = cols[0].toDouble();
-        *acc = cols[1].toDouble();
+        QStringList cols = getOneRow(query);
+        return {cols[0].toDouble(), cols[1].toDouble()};
  }
 
-QList<QList<QString>> DB::getSourcesData()
+QList<QStringList> DB::getSourcesData()
  {
         QString sql =
                 "select s.rowid, s.name, t.count, r.count, r.wpm, "
@@ -255,12 +253,12 @@ QList<QList<QString>> DB::getSourcesData()
                         "as r on (t.source = r.source) "
                 "where s.disabled is null "
                 "order by s.name";
-        QList<QList<QString>> rows;
+        QList<QStringList> rows;
         rows = getRows(sql);
         return rows;
  }
 
-QList<QList<QString>> DB::getTextsData(int source)
+QList<QStringList> DB::getTextsData(int source)
 {
         QString sql = QString(
                 "select t.rowid, substr(t.text,0,30)||' ...', "
@@ -270,12 +268,12 @@ QList<QList<QString>> DB::getTextsData(int source)
                         "as m from result group by text_id) "
                         "as r on (t.id = r.text_id) "
                 "order by t.rowid").arg(source);
-        QList<QList<QString>> rows;
+        QList<QStringList> rows;
         rows = getRows(sql);
         return rows;
 }
 
-QList<QList<QString>> DB::getPerformanceData(int w, int source, int limit)
+QList<QStringList> DB::getPerformanceData(int w, int source, int limit)
 {
         QSettings s;
         int g = s.value("perf_group_by").toInt();
@@ -330,12 +328,12 @@ QList<QList<QString>> DB::getPerformanceData(int w, int source, int limit)
                         "%1 %2 order by datetime(w) DESC limit %3")
                       .arg(where).arg(group).arg(limit);
         }
-        QList<QList<QString>> rows;
+        QList<QStringList> rows;
         rows = getRows(sql);
         return rows;     
 }
 
-QList<QList<QString>> DB::getStatisticsData(const QString& when, int type, int count, const QString& order, int limit)
+QList<QStringList> DB::getStatisticsData(const QString& when, int type, int count, const QString& order, int limit)
 {
         QString sql = QString("select data, "
                   "12.0/time as wpm, "
@@ -355,60 +353,60 @@ QList<QList<QString>> DB::getStatisticsData(const QString& when, int type, int c
                 "where total >= %3 "
                 "order by %4 limit %5").arg(when).arg(type).arg(count).arg(order).arg(limit);
 
-        QList<QList<QString>> rows;
+        QList<QStringList> rows;
         rows = getRows(sql);
         return rows;
 }
 
 
 
-QList<QList<QString>> DB::getSourcesList()
+QList<QStringList> DB::getSourcesList()
 {
         QString sql = "select rowid, name from source order by name";
-        QList<QList<QString>> rows;
+        QList<QStringList> rows;
         rows = getRows(sql);
         return rows;
 }
 
-QList<QString> DB::getOneRow(const QString& sql)
+QStringList DB::getOneRow(const QString& sql)
 {
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
                 DB::addFunctions(&db);
 
                 sqlite3pp::query qry(db, sql.toUtf8().data());
-                QList<QString> row;
+                QStringList row;
                 for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
                         for (int j = 0; j < qry.column_count(); ++j)
                                 row << (*i).get<char const*>(j);
                 }
                 return row;
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
                 std::cout << "error running query: " << sql.toStdString() << std::endl;
                 std::cout << e.what() << std::endl;
-                return QList<QString>();
+                return QStringList();
         }
 }
 
-QList<QList<QString>> DB::getRows(const QString& sql)
+QList<QStringList> DB::getRows(const QString& sql)
 {
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
                 DB::addFunctions(&db);
 
                 sqlite3pp::query qry(db, sql.toUtf8().data());
-                QList<QList<QString>> rows;
+                QList<QStringList> rows;
                 for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-                        QList<QString> row;
+                        QStringList row;
                         for (int j = 0; j < qry.column_count(); ++j)
                                 row << (*i).get<char const*>(j);
                         rows << row;
                 }
                 return rows;
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
                 std::cout << "error running query: " << sql.toStdString() << std::endl;
                 std::cout << e.what() << std::endl;
-                return QList<QList<QString>>();
+                return QList<QStringList>();
         }
 }
 
@@ -428,7 +426,7 @@ void DB::insertItems(const QString& sql, const QVariantList& values)
                                 cmd.bind(i + 1, items[i].data());
                 }
                 cmd.execute();
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
                 std::cout << "error inserting data: " << sql.toStdString() << std::endl;
                 std::cout << e.what() << std::endl;
         }
@@ -449,7 +447,7 @@ void DB::insertItems(sqlite3pp::database* db, const QString& sql, const QVariant
                                 cmd.bind(i + 1, items[i].data());
                 }
                 cmd.execute();
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
                 std::cout << "error inserting data: " << sql.toStdString() << std::endl;
                 std::cout << e.what() << std::endl;
         }

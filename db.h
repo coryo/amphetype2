@@ -27,12 +27,12 @@ public:
         static void addMistakes(const QString&, const QHash<QPair<QChar, QChar>, int>&);
 
         // specific query functions
-        static void getMedianStats(int, double*, double*);
-        static QList<QList<QString>> getSourcesData();
-        static QList<QList<QString>> getTextsData(int);
-        static QList<QList<QString>> getPerformanceData(int, int, int);
-        static QList<QList<QString>> getSourcesList();
-        static QList<QList<QString>> getStatisticsData(const QString&, int, int, const QString&, int);
+        static std::pair<double,double> getMedianStats(int);
+        static QList<QStringList> getSourcesData();
+        static QList<QStringList> getTextsData(int);
+        static QList<QStringList> getPerformanceData(int, int, int);
+        static QList<QStringList> getSourcesList();
+        static QList<QStringList> getStatisticsData(const QString&, int, int, const QString&, int);
 
 private:
         // functions for sqlite extending 
@@ -40,8 +40,8 @@ private:
         void med_finalize(sqlite3pp::ext::context&);
 
         // general functions for retrieving data with a given query
-        static QList<QString> getOneRow(const QString&);
-        static QList<QList<QString>> getRows(const QString&);
+        static QStringList getOneRow(const QString&);
+        static QList<QStringList> getRows(const QString&);
 
         static void insertItems(const QString&, const QVariantList& values);
         static void insertItems(sqlite3pp::database*, const QString&, const QVariantList&);
