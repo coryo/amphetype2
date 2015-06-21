@@ -99,9 +99,8 @@ void TextManager::refreshSources()
         ui->sourcesTable->setSortingEnabled(false);
         ui->sourcesTable->setColumnHidden(0, true);
 
-        QHeaderView* verticalHeader = ui->sourcesTable->verticalHeader();
-        verticalHeader->sectionResizeMode(QHeaderView::Fixed);
-        verticalHeader->setDefaultSectionSize(24);
+        ui->sourcesTable->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
+        ui->sourcesTable->verticalHeader()->setDefaultSectionSize(24);
         
         refreshed = true;
 
@@ -146,9 +145,8 @@ void TextManager::populateTexts(const QModelIndex& index)
         ui->textsTable->setSortingEnabled(false);
         ui->textsTable->setColumnHidden(0, true);
 
-        QHeaderView* verticalHeader = ui->textsTable->verticalHeader();
-        verticalHeader->sectionResizeMode(QHeaderView::Fixed);
-        verticalHeader->setDefaultSectionSize(24);
+        ui->textsTable->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
+        ui->textsTable->verticalHeader()->setDefaultSectionSize(24);
 
         QList<QStringList> rows = DB::getTextsData(f.data().toInt());
         for (QStringList row : rows) {

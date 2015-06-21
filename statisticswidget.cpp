@@ -65,9 +65,8 @@ void StatisticsWidget::populateStatistics()
         ui->tableView->setModel(model);
         ui->tableView->setSortingEnabled(false);
 
-        QHeaderView* verticalHeader = ui->tableView->verticalHeader();
-        verticalHeader->sectionResizeMode(QHeaderView::Fixed);
-        verticalHeader->setDefaultSectionSize(24);
+        ui->tableView->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
+        ui->tableView->verticalHeader()->setDefaultSectionSize(24);
 
         int ord   = ui->orderComboBox->currentIndex();
         int cat   = ui->typeComboBox->currentIndex();
@@ -86,8 +85,8 @@ void StatisticsWidget::populateStatistics()
                 QList<QStandardItem*> items;
                 // item: key/trigram/word
                 QString data(row[0]);
-                data.replace(" ",  "␣"); // UNICODE U+2423 OPEN BOX (visible space)
-                data.replace('\n', "↵"); // return symbol
+                data.replace(" ",  "␣"); // UNICODE U+2423 'OPEN BOX'
+                data.replace('\n', "⏎"); // UNICODE U+23CE 'RETURN SYMBOL'
                 items << new QStandardItem(data);
                 items.last()->setFont(font);
                 // speed

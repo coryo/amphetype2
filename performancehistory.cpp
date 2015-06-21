@@ -186,9 +186,8 @@ void PerformanceHistory::refreshPerformance()
         ui->tableView->setSortingEnabled(false);
         ui->tableView->setColumnHidden(0, true);
 
-        QHeaderView* verticalHeader = ui->tableView->verticalHeader();
-        verticalHeader->sectionResizeMode(QHeaderView::Fixed);
-        verticalHeader->setDefaultSectionSize(24);
+        ui->tableView->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
+        ui->tableView->verticalHeader()->setDefaultSectionSize(24);
         
         // clear the data in the plots
         for (int i = 0; i <ui->performancePlot->graphCount(); ++i)
