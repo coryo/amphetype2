@@ -131,7 +131,7 @@ void TyperDisplay::wordWrap(int w)
                 QString line = original.left(i + 1);
                 if (line.contains("\n")) {
                         line = line.left(line.indexOf("\n") + 1);
-                        wrappedText << line.replace('\n', "↵");
+                        wrappedText << line.replace('\n', "⏎");
                 } else {
                         wrappedText << line;//.replace(" ", "␣"); 
                 }
