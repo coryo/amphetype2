@@ -20,12 +20,15 @@ public:
         static int  getSource(const QString&, int = -1);
 
         // specific insertion functions
+        static void addText(int, const QString&, int=-1, bool=true);
         static void addTexts(int, const QStringList&, int=-1, bool=true);
         static void addResult(const QString&, const QByteArray&, int, double, double, double);
         static void addStatistics(const QString&, const QMultiHash<QStringRef, double>&, 
                                   const QMultiHash<QStringRef, double>&, 
                                   const QMultiHash<QStringRef, int>&);
         static void addMistakes(const QString&, const QHash<QPair<QChar, QChar>, int>&);
+
+        static void deleteSource(int);
 
         // specific query functions
         static std::pair<double,double> getMedianStats(int);
@@ -48,10 +51,15 @@ private:
         static QStringList getOneRow(const QString&);
         static QList<QStringList> getRows(const QString&);
 
+        static void execCommand(const QString&);
+
         static void insertItems(const QString&, const QVariantList& values);
         static void insertItems(sqlite3pp::database*, const QString&, const QVariantList&);
         // create a text object with a given query
         static Text* getTextWithQuery(const QString&);
+
+        static void updateResultSource(int);
+        static void deleteTexts(int);
 
 signals:
         static void progress(int);

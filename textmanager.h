@@ -35,7 +35,7 @@ signals:
         void gotoTab(int);
 
 private slots:
-        void nextText();
+        void nextText(Text*);
         void addFiles();
         void refreshSources();
         void doubleClicked(const QModelIndex&);
@@ -43,6 +43,8 @@ private slots:
         void processNextFile();
         void changeSelectMethod(int);
         void populateTexts(const QModelIndex&);
+        void addSource();
+        void deleteSource();
 };
 
 #endif // TEXTMANAGER_H

@@ -17,6 +17,8 @@
 #include <QProgressBar>
 #include <QModelIndex>
 #include <QStandardItemModel>
+#include <QInputDialog>
+#include <QDebug>
 
 TextManager::TextManager(QWidget *parent) :
         QWidget(parent),
@@ -46,6 +48,12 @@ TextManager::TextManager(QWidget *parent) :
         connect(ui->refreshSources, SIGNAL(clicked()),
                 this,               SLOT  (refreshSources()));
 
+        connect(ui->addSourceButton, SIGNAL(clicked()),
+                this,                SLOT(addSource()));
+
+        connect(ui->deleteSourceButton, SIGNAL(clicked()),
+                this,                   SLOT(deleteSource()));
+
         connect(ui->textsTable,  SIGNAL(doubleClicked(const QModelIndex&)),
                 this,            SLOT  (doubleClicked(const QModelIndex&)));
                         
@@ -61,6 +69,36 @@ TextManager::~TextManager()
         delete ui;
         delete sourcesModel;
         delete textsModel;
+}
+
+void TextManager::addSource()
+{
+        bool ok;
+        QString sourceName = QInputDialog::getText(this, tr("Add Source:"),
+                tr("Source name:"), QLineEdit::Normal,
+                QDir::home().dirName(), &ok);
+        
+        if (ok && !sourceName.isEmpty())
+                DB::getSource(sourceName);
+        refreshSources();
+}
+
+void TextManager::deleteSource()
+{
+        const QModelIndexList& indexes = ui->sourcesTable->selectionModel()->selectedIndexes();
+
+        if (indexes.isEmpty())
+                return;
+
+        int row = indexes[0].row();
+        const QModelIndex& f = sourcesModel->index(row, 0);
+        qDebug() << f.data().toInt();
+
+        int source = f.data().toInt();
+        DB::deleteSource(source);
+
+        refreshSources();
+        ui->textsTable->hide();
 }
 
 void TextManager::changeSelectMethod(int i)
@@ -116,7 +154,7 @@ void TextManager::refreshSources()
                 items << new QStandardItem(dis);
 
                 for (QStandardItem* item : items)
-                        item->setFlags(Qt::ItemIsEnabled);
+                        item->setFlags(Qt::ItemIsEnabled|Qt::ItemIsSelectable);
                 sourcesModel->appendRow(items);
         }
 
@@ -160,7 +198,7 @@ void TextManager::populateTexts(const QModelIndex& index)
                 items << new QStandardItem(dis);
 
                 for (QStandardItem* item : items)
-                        item->setFlags(Qt::ItemIsEnabled);
+                        item->setFlags(Qt::ItemIsEnabled|Qt::ItemIsSelectable);
                 textsModel->appendRow(items);
         }
 
@@ -181,10 +219,13 @@ void TextManager::doubleClicked(const QModelIndex& idx)
         emit gotoTab(0);
 }
 
-void TextManager::nextText()
+void TextManager::nextText(Text* lastText)
 {
         QSettings s;
         int selectMethod = s.value("select_method").toInt();
+
+        if (lastText != 0)
+                delete lastText;
 
         Text* t = DB::getNextText(selectMethod);
 

@@ -4,6 +4,7 @@
 #include <QMainWindow>
 
 class QString;
+class Text;
 
 namespace Ui
 {
@@ -23,9 +24,6 @@ private:
         Ui::MainWindow* ui;
         QString settingsFile;
         void writeDefaults();
-
-signals:
-        void initText();
 
 private slots:
         void gotoTab(int);

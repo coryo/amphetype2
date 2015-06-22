@@ -41,7 +41,7 @@ Quizzer::Quizzer(QWidget *parent) :
 
         // finishing or cancelling signals
         connect(ui->typer, SIGNAL(done()),   this, SLOT(done()));
-        connect(ui->typer, SIGNAL(cancel()), this, SIGNAL(wantText()));
+        connect(ui->typer, SIGNAL(cancel()), this, SLOT(cancelled()));
         // plot related signal connections
         connect(ui->typer, SIGNAL(newPoint(int, double, double)),
                 this,      SLOT  (addPlotPoint(int, double, double)));
@@ -75,13 +75,18 @@ Quizzer::Quizzer(QWidget *parent) :
         // resize timer, singleshot so it doesnt repeat
         // when it times out, show the plot layer
         resizeTimer.setSingleShot(true);
-        connect(&resizeTimer, SIGNAL(timeout()), this, SLOT(showGraphs()));    
+        connect(&resizeTimer, SIGNAL(timeout()), this, SLOT(showGraphs()));
 }
 
 Quizzer::~Quizzer()
 {
         delete ui;
         delete text;
+}
+
+void Quizzer::cancelled()
+{
+        emit wantText(text);
 }
 
 void Quizzer::setPlotVisible(int s)
@@ -181,9 +186,8 @@ void Quizzer::done()
                 visc.insert(c, pow((((test->timeBetween.at(i).total_microseconds()*1.0e-6)-spc)/spc), 2));
 
                 // add the mistake to the key
-                if (test->mistakes.contains(i)) {
+                if (test->mistakes.contains(i))
                         mistakeCount.insert(c, i);
-                }
         }
         //trigrams
         for (int i = 1; i <test->length - 2; ++i) {
@@ -258,8 +262,9 @@ void Quizzer::done()
 
         // set the previous results label text
         setPreviousResultText(test->wpm.back(), accuracy);
+
         // get the next text.
-        emit wantText(); 
+        emit wantText(text); 
 }
 
 void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)
@@ -279,11 +284,6 @@ void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)
 
 void Quizzer::setText(Text* t)
 {
-        cursorPosition = 0;
-
-        if (text != 0)
-                delete text;
-
         text = t;
 
         const QString& te = text->getText();

@@ -100,6 +100,55 @@ int DB::getSource(const QString& source, int lesson)
         }
 }
 
+void DB::deleteSource(int source)
+{
+        DB::deleteTexts(source);
+        DB::updateResultSource(source);
+        
+        QString sql = QString("DELETE FROM source WHERE rowid = %1").arg(source);
+        DB::execCommand(sql);
+}
+
+void DB::deleteTexts(int source)
+{
+        QString sql = QString("DELETE FROM text WHERE source = %1").arg(source);
+        DB::execCommand(sql);
+}
+
+void DB::updateResultSource(int source)
+{
+        QString sql = QString("UPDATE result SET source = 0 WHERE source = %1").arg(source);
+        DB::execCommand(sql);
+}
+
+void DB::addText(int source, const QString& text, int lesson, bool update)
+{
+        try {
+                QString sql = "insert into text (id,text,source,disabled) values (?, ?, ?, ?)";
+                sqlite3pp::database db(DB::db_path.toStdString().c_str());
+                sqlite3pp::transaction xct(db);
+                {
+                        QByteArray txt_id = QCryptographicHash::hash(text.toUtf8(), QCryptographicHash::Sha1);
+                        txt_id = txt_id.toHex();
+                        int dis = ((lesson == 2) ? 1 : 0);
+
+                        QVariantList items;
+                        items << txt_id;
+                        items << text;
+                        items << source;
+                        if (dis == 0)
+                                items << QVariant(); // null
+                        else
+                                items << dis;
+                        DB::insertItems(&db, sql, items);
+                }
+                xct.commit();
+        } catch (const std::exception& e) {
+                std::cout << "error adding text" << std::endl;
+                std::cout << e.what() << std::endl;
+        }
+}
+
 void DB::addTexts(int source, const QStringList& lessons, int lesson, bool update)
 {
         try {
@@ -546,6 +595,18 @@ void DB::insertItems(sqlite3pp::database* db, const QString& sql, const QVariant
         } catch (const std::exception& e) {
                 std::cout << "error inserting data: " << sql.toStdString() << std::endl;
                 std::cout << e.what() << std::endl;
+        }
+}
+
+void DB::execCommand(const QString& sql)
+{
+        try {
+                sqlite3pp::database db(DB::db_path.toUtf8().data());
+                sqlite3pp::command cmd(db, sql.toUtf8().data());
+                cmd.execute();
+        }
+        catch(const std::exception& e) {
+                std::cerr << e.what() << '\n';
         }
 }
 

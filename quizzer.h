@@ -22,7 +22,6 @@ public:
 private:
         void resizeEvent(QResizeEvent*);
 
-        int cursorPosition;
         Ui::Quizzer* ui;
         Text*  text;
         QTimer resizeTimer;
@@ -30,7 +29,7 @@ private:
         QTime  lessonTime;
 
 signals:
-        void wantText();
+        void wantText(Text*);
 
 private slots:
         void done();
@@ -38,6 +37,7 @@ private slots:
         void setTyperFont();
         void tabActive(int);
         void setPreviousResultText(double, double);
+        void cancelled();
 
         // plot related slots
         void updatePlotRangeY(int, int = 0);
