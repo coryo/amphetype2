@@ -22,10 +22,10 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="1" column="0" colspan="11">
-      <widget class="QTableView" name="tableView">
+     <item row="3" column="0" colspan="12">
+      <widget class="QCustomPlot" name="performancePlot" native="true">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -35,15 +35,6 @@
          <width>0</width>
          <height>0</height>
         </size>
-       </property>
-       <property name="alternatingRowColors">
-        <bool>true</bool>
-       </property>
-       <property name="gridStyle">
-        <enum>Qt::NoPen</enum>
-       </property>
-       <property name="cornerButtonEnabled">
-        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -69,6 +60,13 @@
        </property>
       </widget>
      </item>
+     <item row="0" column="9" colspan="2">
+      <widget class="QPushButton" name="updateButton">
+       <property name="text">
+        <string>Update</string>
+       </property>
+      </widget>
+     </item>
      <item row="2" column="11">
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
@@ -82,17 +80,17 @@
        </property>
       </spacer>
      </item>
-     <item row="0" column="9" colspan="2">
-      <widget class="QPushButton" name="updateButton">
-       <property name="text">
-        <string>Update</string>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="0" colspan="2">
       <widget class="QLabel" name="label">
        <property name="text">
         <string>Show:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="4" colspan="2">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Results</string>
        </property>
       </widget>
      </item>
@@ -106,27 +104,10 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="4" colspan="2">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>Results</string>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="6">
       <widget class="QLabel" name="label_2">
        <property name="text">
         <string>From:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="7" colspan="2">
-      <widget class="QComboBox" name="sourceComboBox">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
        </property>
       </widget>
      </item>
@@ -201,6 +182,16 @@
        </property>
       </widget>
      </item>
+     <item row="0" column="7" colspan="2">
+      <widget class="QComboBox" name="sourceComboBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
      <item row="2" column="5" colspan="3">
       <widget class="QCheckBox" name="timeScaleCheckBox">
        <property name="text">
@@ -208,17 +199,17 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="8">
-      <widget class="QCheckBox" name="fullRangeYCheckBox">
-       <property name="text">
-        <string>Full Range Y</string>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
         <string>Plot:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="8">
+      <widget class="QCheckBox" name="fullRangeYCheckBox">
+       <property name="text">
+        <string>Full Range Y</string>
        </property>
       </widget>
      </item>
@@ -312,20 +303,10 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="11">
-      <widget class="QLabel" name="label_5">
-       <property name="text">
-        <string>Double click an entry to send it to the typer.</string>
-       </property>
-       <property name="wordWrap">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0" colspan="12">
-      <widget class="QCustomPlot" name="performancePlot" native="true">
+     <item row="1" column="0" colspan="11">
+      <widget class="QTableView" name="tableView">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -335,6 +316,25 @@
          <width>0</width>
          <height>0</height>
         </size>
+       </property>
+       <property name="alternatingRowColors">
+        <bool>true</bool>
+       </property>
+       <property name="gridStyle">
+        <enum>Qt::NoPen</enum>
+       </property>
+       <property name="cornerButtonEnabled">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="11">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Double click an entry to send it to the typer.</string>
+       </property>
+       <property name="wordWrap">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

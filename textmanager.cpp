@@ -32,8 +32,10 @@ TextManager::TextManager(QWidget *parent) :
         QSettings s;
 
         ui->sourcesTable->setModel(sourcesModel);
+        //ui->sourcesTable->setSelectionMode(QAbstractItemView::SingleSelection);
         ui->textsTable->setModel(textsModel);
-        ui->textsTable->hide();
+        //ui->textsTable->setSelectionMode(QAbstractItemView::SingleSelection);
+        ui->textsWidget->hide();
 
         // progress bar/text setup
         ui->progress->setRange(0,100);
@@ -54,6 +56,12 @@ TextManager::TextManager(QWidget *parent) :
         connect(ui->deleteSourceButton, SIGNAL(clicked()),
                 this,                   SLOT(deleteSource()));
 
+        connect(ui->addTextButton, SIGNAL(clicked()),
+                this,              SLOT(addText()));
+
+        connect(ui->deleteTextButton, SIGNAL(clicked()),
+                this,              SLOT(deleteText()));
+
         connect(ui->textsTable,  SIGNAL(doubleClicked(const QModelIndex&)),
                 this,            SLOT  (doubleClicked(const QModelIndex&)));
                         
@@ -61,7 +69,14 @@ TextManager::TextManager(QWidget *parent) :
                 this,             SLOT  (populateTexts(const QModelIndex&)));
 
         connect(ui->selectionMethod, SIGNAL(currentIndexChanged(int)),
-                this,                SLOT  (changeSelectMethod(int)));      
+                this,                SLOT  (changeSelectMethod(int)));
+
+        connect(ui->enableSourceButton, SIGNAL(pressed()),
+                this,                   SLOT  (enableSource()));
+        connect(ui->disableSourceButton, SIGNAL(pressed()),
+                this,                   SLOT  (disableSource()));
+
+        connect(ui->showTextsButton, SIGNAL(pressed()), this, SLOT(toggleTextsWidget()));
 }
 
 TextManager::~TextManager()
@@ -71,16 +86,111 @@ TextManager::~TextManager()
         delete textsModel;
 }
 
+void TextManager::toggleTextsWidget()
+{
+        if (ui->textsWidget->isVisible()) {
+                ui->textsWidget->hide();
+                ui->showTextsButton->setText("Show Texts ->");
+        }
+        else {
+                ui->textsWidget->show();
+                ui->showTextsButton->setText("<- Hide Texts");
+                const QModelIndexList& indexes = ui->sourcesTable->selectionModel()->selectedIndexes();
+                if (!indexes.isEmpty())
+                        populateTexts(indexes[0]);
+        }
+}
+
+void TextManager::enableSource()
+{
+        const QModelIndexList& indexes = ui->sourcesTable->selectionModel()->selectedIndexes();
+        if (indexes.isEmpty())
+                return;
+
+        QList<int> sources;
+        for (QModelIndex index : indexes) {
+                int row = index.row();
+                const QModelIndex& f = sourcesModel->index(row, 0);
+                sources << f.data().toInt();
+        }
+        DB::enableSource(sources);
+
+        refreshSources();
+}
+void TextManager::disableSource()
+{
+        const QModelIndexList& indexes = ui->sourcesTable->selectionModel()->selectedIndexes();
+        if (indexes.isEmpty())
+                return;
+
+        QList<int> sources;
+        for (QModelIndex index : indexes) {
+                int row = index.row();
+                const QModelIndex& f = sourcesModel->index(row, 0);
+                sources << f.data().toInt();
+        }
+        DB::disableSource(sources);
+        refreshSources();
+}
+
+void TextManager::addText()
+{
+        const QModelIndexList& indexes = ui->sourcesTable->selectionModel()->selectedIndexes();
+        if (indexes.isEmpty())
+                return;
+
+        bool ok;
+        QString text = QInputDialog::getMultiLineText(this, tr("Add Text:"),
+                tr("Text:"), "", &ok);
+
+        if (ok && !text.isEmpty()) {
+                int row = indexes[0].row();
+                const QModelIndex& f = sourcesModel->index(row, 0);
+                int source = f.data().toInt();
+
+                DB::addText(source, text, -1, false);
+
+                refreshSources();
+                ui->sourcesTable->selectRow(row);
+                populateTexts(f);
+        }
+}
+
 void TextManager::addSource()
 {
         bool ok;
         QString sourceName = QInputDialog::getText(this, tr("Add Source:"),
-                tr("Source name:"), QLineEdit::Normal,
-                QDir::home().dirName(), &ok);
-        
+                tr("Source name:"), QLineEdit::Normal, "", &ok);
+
         if (ok && !sourceName.isEmpty())
                 DB::getSource(sourceName);
+
         refreshSources();
+}
+
+void TextManager::deleteText()
+{
+        const QModelIndexList& sourceIndexes = ui->sourcesTable->selectionModel()->selectedIndexes();
+        const QModelIndexList& textIndexes   = ui->textsTable->selectionModel()->selectedIndexes();
+        if (textIndexes.isEmpty() || sourceIndexes.isEmpty())
+                return;
+
+        int sourceRow = sourceIndexes[0].row();
+        const QModelIndex& source = sourcesModel->index(sourceRow,0);
+
+        QList<int> rowids;
+        for (QModelIndex index : textIndexes) {
+                int row = index.row();
+                const QModelIndex& f = textsModel->index(row, 0);
+                int rowid = f.data().toInt();
+                rowids << rowid;
+                
+        }
+        DB::deleteText(rowids);
+
+        refreshSources();
+        ui->sourcesTable->selectRow(sourceRow);
+        populateTexts(source);
 }
 
 void TextManager::deleteSource()
@@ -90,15 +200,17 @@ void TextManager::deleteSource()
         if (indexes.isEmpty())
                 return;
 
-        int row = indexes[0].row();
-        const QModelIndex& f = sourcesModel->index(row, 0);
-        qDebug() << f.data().toInt();
-
-        int source = f.data().toInt();
-        DB::deleteSource(source);
+        QList<int> sources;
+        for (QModelIndex index : indexes) {
+                int row = index.row();
+                const QModelIndex& f = sourcesModel->index(row, 0);
+                int source = f.data().toInt();
+                sources << source;
+        }
+        DB::deleteSource(sources); 
 
         refreshSources();
-        ui->textsTable->hide();
+        ui->textsWidget->hide();
 }
 
 void TextManager::changeSelectMethod(int i)
@@ -117,7 +229,7 @@ void TextManager::tabActive(int i)
         }
         if (i != 1) {
                 textsModel->clear();
-                ui->textsTable->hide();
+                ui->textsWidget->hide();
         }
 }
 
@@ -131,7 +243,7 @@ void TextManager::refreshSources()
                 << "# Items"
                 << "Results"
                 << "WPM"
-                << "Dis";
+                << "Disabled";
         sourcesModel->setHorizontalHeaderLabels(headers);
 
         ui->sourcesTable->setSortingEnabled(false);
@@ -150,7 +262,7 @@ void TextManager::refreshSources()
                 items << new QStandardItem(row[2]);
                 items << new QStandardItem(row[3]);
                 items << new QStandardItem(QString::number(row[4].toDouble(), 'f', 1));
-                QString dis = (row[5].isEmpty()) ? "Yes" : "No";
+                QString dis = (row[5].isEmpty()) ? "Yes" : "";
                 items << new QStandardItem(dis);
 
                 for (QStandardItem* item : items)
@@ -164,7 +276,9 @@ void TextManager::refreshSources()
 
 void TextManager::populateTexts(const QModelIndex& index)
 {
-        ui->textsTable->show();
+        if (!ui->textsWidget->isVisible())
+                return;
+
         QSettings s;
         int row = index.row();
         const QModelIndex& f = sourcesModel->index(row, 0);
@@ -194,7 +308,7 @@ void TextManager::populateTexts(const QModelIndex& index)
                 items << new QStandardItem(row[2]);
                 items << new QStandardItem(row[3]);
                 items << new QStandardItem(QString::number(row[4].toDouble(), 'f', 1));
-                QString dis = (row[5].isEmpty()) ? "Yes" : "No";
+                QString dis = (row[5].isEmpty()) ? "Yes" : "";
                 items << new QStandardItem(dis);
 
                 for (QStandardItem* item : items)

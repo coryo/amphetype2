@@ -70,10 +70,35 @@ void DB::initDB()
         }
 }
 
-int DB::getSource(const QString& source, int lesson)
+void DB::disableSource(const QList<int>& sources)
+{
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
+        sqlite3pp::transaction xct(db);
+        {
+                for (int source : sources) {
+                        QString sql = QString("UPDATE text SET disabled = 1 where source = %1").arg(source);
+                        DB::execCommand(&db, sql);
+                }
+        }
+        xct.commit();
+}
+void DB::enableSource(const QList<int>& sources)
+{
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
+        sqlite3pp::transaction xct(db);
+        {
+                for (int source : sources) {
+                        QString sql = QString("UPDATE text SET disabled = NULL where source = %1").arg(source);
+                        DB::execCommand(&db, sql);
+                }
+        }
+        xct.commit();
+}
+
+int DB::getSource(const QString& sourceName, int lesson)
 {
         try {
-                QString sql = QString("select rowid from source where name = \"%1\" limit 1").arg(source);
+                QString sql = QString("select rowid from source where name = \"%1\" limit 1").arg(sourceName);
                 QStringList row = DB::getOneRow(sql);
                 
                 // if the source exists return it
@@ -83,7 +108,7 @@ int DB::getSource(const QString& source, int lesson)
                 // source didn't exist. add it
                 QVariantList data;
 
-                data << source;
+                data << sourceName;
                 if (lesson == -1)
                         data << QVariant();
                 else
@@ -92,7 +117,7 @@ int DB::getSource(const QString& source, int lesson)
                 sql = "insert into source (name, discount) values (?, ?)";
                 DB::insertItems(sql, data);
                 // try again now that it's in the db
-                return getSource(source, lesson);
+                return getSource(sourceName, lesson);
         } catch (const std::exception& e) {
                 std::cout << "error getting source" << std::endl;
                 std::cout << e.what() << std::endl;
@@ -100,25 +125,34 @@ int DB::getSource(const QString& source, int lesson)
         }
 }
 
-void DB::deleteSource(int source)
+void DB::deleteSource(const QList<int>& sources)
 {
-        DB::deleteTexts(source);
-        DB::updateResultSource(source);
-        
-        QString sql = QString("DELETE FROM source WHERE rowid = %1").arg(source);
-        DB::execCommand(sql);
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
+        sqlite3pp::transaction xct(db);
+        {
+                for (int source : sources) {
+                        QString sql = QString("DELETE FROM text WHERE source = %1").arg(source);
+                        DB::execCommand(&db, sql);
+                        sql = QString("UPDATE result SET source = 0 WHERE source = %1").arg(source);
+                        DB::execCommand(&db, sql);
+                        sql = QString("DELETE FROM source WHERE rowid = %1").arg(source);
+                        DB::execCommand(&db, sql);
+                }
+        }
+        xct.commit();
 }
 
-void DB::deleteTexts(int source)
+void DB::deleteText(const QList<int>& rowids)
 {
-        QString sql = QString("DELETE FROM text WHERE source = %1").arg(source);
-        DB::execCommand(sql);
-}
-
-void DB::updateResultSource(int source)
-{
-        QString sql = QString("UPDATE result SET source = 0 WHERE source = %1").arg(source);
-        DB::execCommand(sql);
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
+        sqlite3pp::transaction xct(db);
+        {
+                for (int rowid : rowids) {
+                        QString sql = QString("DELETE FROM text WHERE rowid = %1").arg(rowid);
+                        DB::execCommand(&db, sql);
+                }
+        }
+        xct.commit();
 }
 
 void DB::addText(int source, const QString& text, int lesson, bool update)
@@ -292,6 +326,7 @@ QList<QStringList> DB::getSourcesData()
  {
         QString sql =
                 "select s.rowid, s.name, t.count, r.count, r.wpm, "
+                        //"disabled "
                         "nullif(t.dis,t.count) "
                 "from source as s "
                 "left join (select source,count(*) as count, "
@@ -598,6 +633,16 @@ void DB::insertItems(sqlite3pp::database* db, const QString& sql, const QVariant
         }
 }
 
+void DB::execCommand(sqlite3pp::database* db, const QString& sql)
+{
+        try {
+                sqlite3pp::command cmd(*db, sql.toUtf8().data());
+                cmd.execute();
+        }
+        catch(const std::exception& e) {
+                std::cerr << e.what() << '\n';
+        }
+}
 void DB::execCommand(const QString& sql)
 {
         try {

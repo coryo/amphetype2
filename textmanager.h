@@ -45,6 +45,11 @@ private slots:
         void populateTexts(const QModelIndex&);
         void addSource();
         void deleteSource();
+        void addText();
+        void deleteText();
+        void enableSource();
+        void disableSource();
+        void toggleTextsWidget();
 };
 
 #endif // TEXTMANAGER_H

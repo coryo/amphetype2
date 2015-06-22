@@ -234,7 +234,7 @@ void PerformanceHistory::refreshPerformance()
                 items << new QStandardItem(QString::number(vis, 'f', 1));
 
                 for (QStandardItem* item : items)
-                        item->setFlags(Qt::ItemIsEnabled);
+                        item->setFlags(Qt::ItemIsEnabled|Qt::ItemIsSelectable);
                 modelb->appendRow(items);
                 --x;
         }
