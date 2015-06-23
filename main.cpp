@@ -83,7 +83,6 @@ int main(int argc, char *argv[])
         DB::setDBPath(dir);    
 
         DB::initDB();
-        // test
         QString style = 
                 "* { background-color: #333333; color: #FFFFFF; }"
                 // Tab widget
