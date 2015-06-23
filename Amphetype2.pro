@@ -78,3 +78,5 @@ linux {
         }
 }
 
+RESOURCES += \
+    resources.qrc

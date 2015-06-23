@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Amphetype2</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <property name="unifiedTitleAndToolBarOnMac">
    <bool>false</bool>
   </property>
