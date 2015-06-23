@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>911</width>
-    <height>506</height>
+    <width>633</width>
+    <height>381</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -177,6 +177,11 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
        </property>
        <property name="text">
         <string>Test begins when you start typing. Press ESC to cancel and load a new text.</string>

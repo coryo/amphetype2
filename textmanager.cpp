@@ -32,7 +32,9 @@ TextManager::TextManager(QWidget *parent) :
         QSettings s;
 
         ui->sourcesTable->setModel(sourcesModel);
+        ui->sourcesTable->verticalHeader()->setVisible(false);
         ui->textsTable->setModel(textsModel);
+        ui->textsTable->verticalHeader()->setVisible(false);
         ui->textsWidget->hide();
 
         // progress bar/text setup

@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
         QCoreApplication::setApplicationName("Amphetype2");
         QSettings::setDefaultFormat(QSettings::IniFormat);
 
-        loadSettings();    
+        loadSettings();
 
         QSettings s;
         QString dir = qApp->applicationDirPath()
@@ -83,6 +83,21 @@ int main(int argc, char *argv[])
         DB::setDBPath(dir);    
 
         DB::initDB();
+
+        QString style = 
+                "* { background-color: #333333; color: #FFFFFF; }"
+                "QTableView { alternate-background-color: #555555; selection-background-color: #995555; }"
+                "QTabWidget::tab-bar { left: 5px; }"
+                "QTabBar::tab { background: #555555; }"
+                "QTabBar::tab:selected, QTabBar::tab:hover { background: #995555; }"
+                "QScrollBar:vertical { background: #995555; }"
+                "QScrollBar:horizontal { background: #995555; }"
+                "QTableView QTableCornerButton::section { background: #333333; }"
+                "QHeaderView::section { background: #553333; border: 0px; }"
+                "QTextEdit, QLineEdit, QComboBox, QSpinBox { background: #444444; }"
+                "QPushButton { padding: 2px; border: 2px solid #8f8f91; border-radius: 6px; background-color: #444444; }";
+        a.setStyleSheet(style);
+
 
         MainWindow w;
 

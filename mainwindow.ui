@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Amphetype2</string>
   </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>false</bool>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_4">
     <property name="spacing">
