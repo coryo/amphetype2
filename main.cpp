@@ -86,26 +86,55 @@ int main(int argc, char *argv[])
 
         QString style = 
                 "* { background-color: #333333; color: #FFFFFF; }"
-                "QTableView { alternate-background-color: #555555; selection-background-color: #995555; }"
-                "QTabWidget::pane { border-top: 2px solid #C2C7CB; border-left: 0px; border-right: 0px; border-bottom: 0px; }"
+                // Tab widget
+                "QTabWidget::pane { border-top: 2px solid #555555; }"
                 "QTabWidget::tab-bar { left: 5px; }"
-                "QTabBar::tab { background: #555555; }"
-                "QTabBar::tab:selected, QTabBar::tab:hover { background: #995555; }"
-                "QScrollBar:vertical { background: #995555; }"
-                "QScrollBar:horizontal { background: #995555; }"
-                "QTableView QTableCornerButton::section { background: #333333; }"
-                "QTableView { border: 0px; }"
-                "QHeaderView::section { background: #553333; border: 0px; }"
-                "QTextEdit, QLineEdit, QComboBox, QSpinBox { background: #444444; }"
-                "QTextEdit { border: 0px; }"
-                "QPushButton { padding: 2px; border: 2px solid #8f8f91; border-radius: 6px; background-color: #444444; }"
-                "TyperDisplay { qproperty-correctColor: #79B221; qproperty-errorColor: #995555; }"
-                "Quizzer { qproperty-wpmLineColor: rgb(121, 178, 33); qproperty-apmLineColor: rgba(214, 187, 187, 80); "
-                        "qproperty-plotBackgroundColor: rgb(51,51,51); qproperty-plotForegroundColor: rgb(255,255,255); }"
-                "PerformanceHistory { qproperty-wpmLineColor: rgba(121, 178, 33,150); qproperty-smaLineColor: rgb(214, 187, 187); "
-                        "qproperty-plotBackgroundColor: rgb(51,51,51); qproperty-plotForegroundColor: rgb(255,255,255); }";
-        a.setStyleSheet(style);
+                "QTabBar::tab { min-width: 15ex; border: 2px solid #444444; border-top-left-radius: 6px; border-top-right-radius: 6px; padding: 3px; border-bottom-color: #555555; background: #555555; }"
+                "QTabBar::tab:selected { background: #995555; }"
+                "QTabBar::tab:!selected { margin-top: 4px; }"
+                // Horizontal scrollbars
+                "QScrollBar:horizontal { border: 2px solid grey; background: #333333; height: 15px; margin: 0px 15px 0px 15px; }"
+                "QScrollBar::handle:horizontal { background: #995555; min-width: 20px; }"
+                "QScrollBar::add-line:horizontal { border: 2px solid grey; background: #333333; width: 15px; subcontrol-position: right; subcontrol-origin: margin; }"
+                "QScrollBar::sub-line:horizontal { border: 2px solid grey; background: #333333; width: 15px; subcontrol-position: left; subcontrol-origin: margin; }"
+                "QScrollBar:left-arrow:horizontal, QScrollBar::right-arrow:horizontal { width: 3px; height: 3px; background: #FFFFFF; }"
+                "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background: none; }"
+                // Vertical scrollbars
+                "QScrollBar:vertical { border: 2px solid grey; background: #333333; width: 15px; margin: 15px 0px 15px 0px; }"
+                "QScrollBar::handle:vertical { background: #995555; min-height: 20px; }"
+                "QScrollBar::add-line:vertical { border: 2px solid grey; background: #333333; height: 15px; subcontrol-position: bottom; subcontrol-origin: margin; }"
+                "QScrollBar::sub-line:vertical { border: 2px solid grey; background: #333333; height: 15px; subcontrol-position: top; subcontrol-origin: margin; }"
+                "QScrollBar:up-arrow:vertical, QScrollBar::down-arrow:vertical { width: 3px; height: 3px; background: #FFFFFF; }"
+                "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }"
+                // Table views
+                "QTableView { border: 2px solid grey; background-color: #444444; alternate-background-color: #555555; selection-background-color: #995555; }"
+                "QTableView QTableCornerButton::section { background: #995555; }"
+                // the header view of tables
+                "QHeaderView::section { background: #995555; border: 0px; }"
 
+                "QTextEdit, QLineEdit, QComboBox, QSpinBox { padding: 2px; border: 2px solid gray; background: #444444; selection-background-color: #444444; }"
+                "QTextEdit { border: 0px; }"
+
+                "QPushButton { padding: 2px; border: 2px solid #8f8f91; background-color: #444444; }"
+
+                "QCheckBox::indicator { border: 2px solid grey; width: 7px; height: 7px; }"
+                "QCheckBox::indicator:unchecked { background: #555555; }"
+                "QCheckBox::indicator:checked { background: #995555; }"
+
+                "TyperDisplay { color: #FFFFFF; qproperty-correctColor: #79B221; qproperty-errorColor: #995555; }"
+                // plot colors of the typer tab
+                "Quizzer {"
+                        "qproperty-wpmLineColor: rgb(121, 178, 33);"
+                        "qproperty-apmLineColor: rgba(214, 187, 187, 80);"
+                        "qproperty-plotBackgroundColor: rgb(51,51,51);"
+                        "qproperty-plotForegroundColor: rgb(255,255,255); }"
+                // plot colors of the performance tab
+                "PerformanceHistory {"
+                        "qproperty-wpmLineColor: rgba(121, 178, 33,150);"
+                        "qproperty-smaLineColor: rgb(121, 178, 33);"
+                        "qproperty-plotBackgroundColor: rgb(51,51,51);"
+                        "qproperty-plotForegroundColor: rgb(255,255,255); }";
+        a.setStyleSheet(style);
 
         MainWindow w;
 

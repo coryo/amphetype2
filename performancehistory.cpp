@@ -127,7 +127,7 @@ QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
 
         // style the graph
         //newGraph->setScatterStyle(QCPScatterStyle::ssDisc);
-        newGraph->setPen(QPen(smaLineColor, 2));
+        newGraph->setPen(QPen(smaLineColor, 3));
 
         return newGraph;
 }

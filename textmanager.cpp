@@ -233,8 +233,10 @@ void TextManager::tabActive(int i)
 
 void TextManager::refreshSources()
 {
-        sourcesModel->clear();
+        ui->sourcesTable->hide();
 
+        sourcesModel->clear();
+     
         QStringList headers;
         headers << "id"
                 << "Source Name"
@@ -271,7 +273,10 @@ void TextManager::refreshSources()
         }
 
         ui->sourcesTable->setModel(sourcesModel);
+
+        ui->sourcesTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
         ui->sourcesTable->resizeColumnsToContents();
+        ui->sourcesTable->show();
 }
 
 void TextManager::populateTexts(const QModelIndex& index)
