@@ -17,34 +17,11 @@
 
 QString DB::db_path = QString();
 
-struct agg_median
-{
-        void step(double x) {
-                l.push_back(x);
-        }
-        double finish() {
-                if (l.empty()) return 0;
-                std::sort(l.begin(), l.end());
-                double median;
-                int length = l.size();
-                if (length % 2 == 0)
-                        median = (l[length / 2] + l[length / 2 - 1]) / 2;
-                else
-                        median = l[length / 2];
-                return median;
-        }
-        std::vector<double> l;
-};
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// PUBLIC FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DB::addFunctions(sqlite3pp::database* db)
-{
-        try {
-                sqlite3pp::ext::aggregate aggr(*db);
-                aggr.create<agg_median, double>("agg_median"); 
-        } catch (const std::exception& e) {
-                std::cout << e.what() << std::endl;
-        } 
-}
+void DB::setDBPath(const QString& path) { db_path = path; }
 
 void DB::initDB()
 {
@@ -478,7 +455,6 @@ Text* DB::getText(const QString& textHash)
                 "inner join source as s "
                 "on (t.source = s.rowid) "
                 "where t.id = \"%1\"").arg(textHash);
-        
         return DB::getTextWithQuery(sql);
 }
 
@@ -490,7 +466,6 @@ Text* DB::getText(int rowid)
                 "inner join source as s "
                 "on (t.source = s.rowid) "
                 "where t.rowid = %1").arg(rowid);
-        
         return DB::getTextWithQuery(sql);
 }
 
@@ -542,11 +517,14 @@ Text* DB::getNextText(int selectMethod)
                         "on (t.source = s.rowid) "
                         "where t.rowid > %1 and t.disabled is null "
                         "order by t.rowid asc limit 1").arg(row2[0]);
-
                 return DB::getTextWithQuery(sql);
         }
         return new Text();
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// PRIVATE FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 QStringList DB::getOneRow(const QString& sql)
 {
@@ -688,4 +666,33 @@ Text* DB::getTextWithQuery(const QString& query)
                 std::cerr << e.what() << std::endl;
                 return new Text();
         }
+}
+
+struct agg_median
+{
+        void step(double x) {
+                l.push_back(x);
+        }
+        double finish() {
+                if (l.empty()) return 0;
+                std::sort(l.begin(), l.end());
+                double median;
+                int length = l.size();
+                if (length % 2 == 0)
+                        median = (l[length / 2] + l[length / 2 - 1]) / 2;
+                else
+                        median = l[length / 2];
+                return median;
+        }
+        std::vector<double> l;
+};
+
+void DB::addFunctions(sqlite3pp::database* db)
+{
+        try {
+                sqlite3pp::ext::aggregate aggr(*db);
+                aggr.create<agg_median, double>("agg_median"); 
+        } catch (const std::exception& e) {
+                std::cout << e.what() << std::endl;
+        } 
 }

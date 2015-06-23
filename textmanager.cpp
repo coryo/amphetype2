@@ -32,9 +32,7 @@ TextManager::TextManager(QWidget *parent) :
         QSettings s;
 
         ui->sourcesTable->setModel(sourcesModel);
-        //ui->sourcesTable->setSelectionMode(QAbstractItemView::SingleSelection);
         ui->textsTable->setModel(textsModel);
-        //ui->textsTable->setSelectionMode(QAbstractItemView::SingleSelection);
         ui->textsWidget->hide();
 
         // progress bar/text setup
@@ -90,10 +88,13 @@ void TextManager::toggleTextsWidget()
 {
         if (ui->textsWidget->isVisible()) {
                 ui->textsWidget->hide();
+                ui->emptyWidget->show();
+                textsModel->clear();
                 ui->showTextsButton->setText("Show Texts ->");
         }
         else {
                 ui->textsWidget->show();
+                ui->emptyWidget->hide();
                 ui->showTextsButton->setText("<- Hide Texts");
                 const QModelIndexList& indexes = ui->sourcesTable->selectionModel()->selectedIndexes();
                 if (!indexes.isEmpty())
@@ -114,7 +115,6 @@ void TextManager::enableSource()
                 sources << f.data().toInt();
         }
         DB::enableSource(sources);
-
         refreshSources();
 }
 void TextManager::disableSource()
@@ -226,10 +226,6 @@ void TextManager::tabActive(int i)
                 // do stuff when this tab is made active & the tree hasnt been
                 // loaded
                 refreshSources();
-        }
-        if (i != 1) {
-                textsModel->clear();
-                ui->textsWidget->hide();
         }
 }
 

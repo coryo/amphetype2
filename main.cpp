@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
         QString dir = qApp->applicationDirPath()
                 + QDir::separator()
                 + s.value("db_name").toString();
-        DB::db_path = dir;    
+        DB::setDBPath(dir);    
 
         DB::initDB();
 

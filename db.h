@@ -13,10 +13,10 @@ class Text;
 class DB
 {
 public:
-        static QString db_path;
-
+        static void setDBPath(const QString&);
+        
         static void initDB();
-        static void addFunctions(sqlite3pp::database*);
+        
         static int  getSource(const QString&, int = -1);
 
         // specific insertion functions
@@ -46,19 +46,21 @@ public:
         static Text* getText(const QString&);   // get a text with a given hashid
 
 private:
+        static QString db_path;
         // functions for sqlite extending 
+        static void addFunctions(sqlite3pp::database*);
         void med_step(sqlite3pp::ext::context&);
         void med_finalize(sqlite3pp::ext::context&);
 
         // general functions for retrieving data with a given query
         static QStringList getOneRow(const QString&);
         static QList<QStringList> getRows(const QString&);
-
+        // general functions for executing commands
         static void execCommand(sqlite3pp::database*, const QString&);
         static void execCommand(const QString&);
-
         static void insertItems(const QString&, const QVariantList& values);
         static void insertItems(sqlite3pp::database*, const QString&, const QVariantList&);
+
         // create a text object with a given query
         static Text* getTextWithQuery(const QString&);
 

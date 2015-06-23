@@ -21,8 +21,10 @@ StatisticsWidget::StatisticsWidget(QWidget *parent) :
 
         QSettings s;
 
-        ui->limitEdit->setText(s.value("ana_many").toString());
-        ui->minCountEdit->setText(s.value("ana_count").toString());
+        ui->limitSpinBox->setValue(s.value("ana_many").toInt());
+        ui->minCountSpinBox->setValue(s.value("ana_count").toInt());
+
+        //ui->minCountEdit->setText(s.value("ana_count").toString());
         ui->orderComboBox->setCurrentIndex(s.value("ana_which").toInt());
         ui->typeComboBox-> setCurrentIndex(s.value("ana_what").toInt());
 
@@ -42,8 +44,8 @@ void StatisticsWidget::writeSettings()
         QSettings s;
         s.setValue("ana_which", ui->orderComboBox->currentIndex());
         s.setValue("ana_what",  ui->typeComboBox->currentIndex());
-        s.setValue("ana_many",  ui->limitEdit->text().toInt());
-        s.setValue("ana_count", ui->minCountEdit->text().toInt());
+        s.setValue("ana_many",  ui->limitSpinBox->value());
+        s.setValue("ana_count", ui->minCountSpinBox->value());
         populateStatistics();
 }
 
@@ -70,8 +72,8 @@ void StatisticsWidget::populateStatistics()
 
         int ord   = ui->orderComboBox->currentIndex();
         int cat   = ui->typeComboBox->currentIndex();
-        int limit = ui->limitEdit->text().toInt();
-        int count = ui->minCountEdit->text().toInt();
+        int limit = ui->limitSpinBox->value();
+        int count = ui->minCountSpinBox->value();
 
         bpt::ptime history = bpt::microsec_clock::local_time();
         history = history - bpt::seconds(s.value("history").toInt()*86400);   
