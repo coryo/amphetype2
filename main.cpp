@@ -87,15 +87,23 @@ int main(int argc, char *argv[])
         QString style = 
                 "* { background-color: #333333; color: #FFFFFF; }"
                 "QTableView { alternate-background-color: #555555; selection-background-color: #995555; }"
+                "QTabWidget::pane { border-top: 2px solid #C2C7CB; border-left: 0px; border-right: 0px; border-bottom: 0px; }"
                 "QTabWidget::tab-bar { left: 5px; }"
                 "QTabBar::tab { background: #555555; }"
                 "QTabBar::tab:selected, QTabBar::tab:hover { background: #995555; }"
                 "QScrollBar:vertical { background: #995555; }"
                 "QScrollBar:horizontal { background: #995555; }"
                 "QTableView QTableCornerButton::section { background: #333333; }"
+                "QTableView { border: 0px; }"
                 "QHeaderView::section { background: #553333; border: 0px; }"
                 "QTextEdit, QLineEdit, QComboBox, QSpinBox { background: #444444; }"
-                "QPushButton { padding: 2px; border: 2px solid #8f8f91; border-radius: 6px; background-color: #444444; }";
+                "QTextEdit { border: 0px; }"
+                "QPushButton { padding: 2px; border: 2px solid #8f8f91; border-radius: 6px; background-color: #444444; }"
+                "TyperDisplay { qproperty-correctColor: #79B221; qproperty-errorColor: #995555; }"
+                "Quizzer { qproperty-wpmLineColor: rgb(121, 178, 33); qproperty-apmLineColor: rgba(214, 187, 187, 80); "
+                        "qproperty-plotBackgroundColor: rgb(51,51,51); qproperty-plotForegroundColor: rgb(255,255,255); }"
+                "PerformanceHistory { qproperty-wpmLineColor: rgba(121, 178, 33,150); qproperty-smaLineColor: rgb(214, 187, 187); "
+                        "qproperty-plotBackgroundColor: rgb(51,51,51); qproperty-plotForegroundColor: rgb(255,255,255); }";
         a.setStyleSheet(style);
 
 

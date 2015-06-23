@@ -88,7 +88,7 @@ void StatisticsWidget::populateStatistics()
                 // item: key/trigram/word
                 QString data(row[0]);
                 data.replace(" ",  "␣"); // UNICODE U+2423 'OPEN BOX'
-                data.replace('\n', "⏎"); // UNICODE U+23CE 'RETURN SYMBOL'
+                data.replace('\n', "↵"); // UNICODE U+23CE 'RETURN SYMBOL'
                 items << new QStandardItem(data);
                 items.last()->setFont(font);
                 // speed

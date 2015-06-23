@@ -41,13 +41,10 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         ui->performancePlot->addGraph();
         ui->performancePlot->addGraph();
         ui->performancePlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc,3));
-        ui->performancePlot->graph(0)->setPen(QPen(QColor(0, 20, 255,100), 1));
         ui->performancePlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc,3));
-        ui->performancePlot->graph(1)->setPen(QPen(QColor(0, 20, 255,100), 1));
         ui->performancePlot->graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc,3));
-        ui->performancePlot->graph(2)->setPen(QPen(QColor(0, 20, 255,100), 1));
 
-        ui->limitNumber->setText(s.value("perf_items").toString());
+        ui->limitNumberSpinBox->setValue(s.value("perf_items").toInt());
 
         refreshSources();
 
@@ -63,12 +60,30 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         connect(ui->dampenCheckBox,     SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
         connect(ui->smaWindowSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(writeSettings()));
         connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(this, SIGNAL(colorChanged()), this, SLOT(updateColors()));
 }
 
 PerformanceHistory::~PerformanceHistory()
 {
         delete ui;
         delete modelb;
+}
+
+void PerformanceHistory::updateColors()
+{
+        ui->performancePlot->graph(0)->setPen(QPen(wpmLineColor, 1));
+        ui->performancePlot->graph(1)->setPen(QPen(wpmLineColor, 1));
+        ui->performancePlot->graph(2)->setPen(QPen(wpmLineColor, 1));
+        ui->performancePlot->setBackground(QBrush(plotBackgroundColor));
+        ui->performancePlot->yAxis->setBasePen(QPen(plotForegroundColor, 1));
+        ui->performancePlot->yAxis->setTickPen(QPen(plotForegroundColor, 1));
+        ui->performancePlot->yAxis->setTickLabelColor(plotForegroundColor);
+        ui->performancePlot->yAxis->setSubTickPen(QPen(plotForegroundColor, 1));
+
+        ui->performancePlot->xAxis->setBasePen(QPen(plotForegroundColor, 1));
+        ui->performancePlot->xAxis->setTickPen(QPen(plotForegroundColor, 1));
+        ui->performancePlot->xAxis->setSubTickPen(QPen(plotForegroundColor, 1));
+        ui->performancePlot->xAxis->setTickLabelColor(plotForegroundColor);
 }
 
 void PerformanceHistory::togglePlot(int i)
@@ -112,7 +127,7 @@ QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
 
         // style the graph
         //newGraph->setScatterStyle(QCPScatterStyle::ssDisc);
-        newGraph->setPen(QPen(QColor(255, 0, 0), 2));
+        newGraph->setPen(QPen(smaLineColor, 2));
 
         return newGraph;
 }
@@ -120,7 +135,7 @@ QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
 void PerformanceHistory::writeSettings()
 {
         QSettings s;
-        s.setValue("perf_items", ui->limitNumber->text().toInt());
+        s.setValue("perf_items", ui->limitNumberSpinBox->value());
 
         if (ui->timeScaleCheckBox->checkState() == Qt::Unchecked)
                 s.setValue("chrono_x", false);
@@ -197,7 +212,7 @@ void PerformanceHistory::refreshPerformance()
         QList<QStringList> rows =
                 DB::getPerformanceData(ui->sourceComboBox->currentIndex(),
                                        ui->sourceComboBox->currentData().toInt(),
-                                       ui->limitNumber->text().toInt());
+                                       ui->limitNumberSpinBox->value());
         double x = -1;
         // iterate through rows
         for (QStringList row : rows) {
@@ -235,6 +250,7 @@ void PerformanceHistory::refreshPerformance()
 
                 for (QStandardItem* item : items)
                         item->setFlags(Qt::ItemIsEnabled|Qt::ItemIsSelectable);
+
                 modelb->appendRow(items);
                 --x;
         }

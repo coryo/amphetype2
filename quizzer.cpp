@@ -31,11 +31,9 @@ Quizzer::Quizzer(QWidget *parent) :
 
         ui->typerColsSpinBox->setValue(s.value("typer_cols").toInt());
 
-        // create the two graphs in the plot, set colours
+        // create the two graphs in the plot
         ui->plot->addGraph();
-        ui->plot->addGraph();
-        ui->plot->graph(0)->setPen(QPen(QColor(255, 0, 0), 3));
-        ui->plot->graph(1)->setPen(QPen(QColor(0, 0, 255, 80), 2));      
+        ui->plot->addGraph();   
         ui->plot->xAxis->setVisible(false);
         ui->plot->yAxis->setTickLabels(false);
 
@@ -57,6 +55,8 @@ Quizzer::Quizzer(QWidget *parent) :
                 this,      SLOT  (updatePlotRangeX(int)));
         connect(ui->plotCheckBox, SIGNAL(stateChanged(int)),
                 this,             SLOT  (setPlotVisible(int)));
+
+        connect(this, SIGNAL(colorChanged()), this, SLOT(updateColors()));
         // timer stuff
         lessonTimer.setInterval(1000);
         connect(ui->typer, SIGNAL(testStarted(int)), &lessonTimer, SLOT(start()));
@@ -83,6 +83,16 @@ Quizzer::~Quizzer()
         delete ui;
         delete text;
 }
+void Quizzer::updateColors()
+{
+        ui->plot->graph(0)->setPen(QPen(wpmLineColor, 3));
+        ui->plot->graph(1)->setPen(QPen(apmLineColor, 2));
+        ui->plot->setBackground(QBrush(plotBackgroundColor));
+        ui->plot->yAxis->setBasePen(QPen(plotForegroundColor, 1));
+        ui->plot->yAxis->setTickPen(QPen(plotForegroundColor, 1));
+        ui->plot->yAxis->setSubTickPen(QPen(plotForegroundColor, 1));
+        ui->plot->yAxis->setTickLabelColor(plotForegroundColor);
+}
 
 void Quizzer::cancelled()
 {
@@ -105,12 +115,12 @@ void Quizzer::timerLabelUpdate()
 
 void Quizzer::timerLabelGo()
 {
-        ui->timerLabel->setStyleSheet("QLabel { background-color : greenyellow; }");
+        ui->timerLabel->setStyleSheet("QLabel { background-color : #79B221; }");
 }
 
 void Quizzer::timerLabelStop()
 {
-        ui->timerLabel->setStyleSheet("QLabel { background-color : red; }");
+        ui->timerLabel->setStyleSheet("QLabel { background-color : #995555; }");
 }
 void Quizzer::timerLabelReset()
 {

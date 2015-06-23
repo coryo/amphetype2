@@ -133,22 +133,6 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="5">
-         <widget class="QPushButton" name="showTextsButton">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="layoutDirection">
-           <enum>Qt::RightToLeft</enum>
-          </property>
-          <property name="text">
-           <string>Show Texts -&gt;</string>
-          </property>
-         </widget>
-        </item>
         <item row="4" column="3">
          <widget class="QPushButton" name="enableSourceButton">
           <property name="sizePolicy">
@@ -242,22 +226,6 @@
           </property>
          </spacer>
         </item>
-        <item row="2" column="3" colspan="2">
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Preferred</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item row="4" column="1" rowspan="3">
          <spacer name="horizontalSpacer_6">
           <property name="orientation">
@@ -284,6 +252,22 @@
           </property>
           <property name="text">
            <string>Text Selection Method</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="4">
+         <widget class="QPushButton" name="showTextsButton">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::RightToLeft</enum>
+          </property>
+          <property name="text">
+           <string>Show Texts -&gt;</string>
           </property>
          </widget>
         </item>

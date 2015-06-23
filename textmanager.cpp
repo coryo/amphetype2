@@ -264,7 +264,9 @@ void TextManager::refreshSources()
                 items << new QStandardItem(dis);
 
                 for (QStandardItem* item : items)
-                        item->setFlags(Qt::ItemIsEnabled|Qt::ItemIsSelectable);
+                        item->setFlags(Qt::ItemIsEnabled);
+                items[1]->setFlags(Qt::ItemIsEnabled|Qt::ItemIsSelectable);
+
                 sourcesModel->appendRow(items);
         }
 
@@ -310,7 +312,8 @@ void TextManager::populateTexts(const QModelIndex& index)
                 items << new QStandardItem(dis);
 
                 for (QStandardItem* item : items)
-                        item->setFlags(Qt::ItemIsEnabled|Qt::ItemIsSelectable);
+                        item->setFlags(Qt::ItemIsEnabled);
+                items[1]->setFlags(Qt::ItemIsEnabled|Qt::ItemIsSelectable);
                 textsModel->appendRow(items);
         }
 
