@@ -283,6 +283,7 @@ void TextManager::populateTexts(const QModelIndex& index)
 {
         if (!ui->textsWidget->isVisible())
                 return;
+        ui->textsTable->hide();
 
         QSettings s;
         int row = index.row();
@@ -324,6 +325,7 @@ void TextManager::populateTexts(const QModelIndex& index)
 
         ui->textsTable->setModel(textsModel);
         ui->textsTable->resizeColumnsToContents();
+        ui->textsTable->show();
 }
 
 void TextManager::doubleClicked(const QModelIndex& idx)
