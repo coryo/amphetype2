@@ -14,13 +14,6 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="1">
-    <widget class="QPushButton" name="fontButton">
-     <property name="text">
-      <string>Change Typer Font</string>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="2">
     <spacer name="horizontalSpacer">
      <property name="orientation">
@@ -34,7 +27,14 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="1">
+   <item row="0" column="1">
+    <widget class="QPushButton" name="fontButton">
+     <property name="text">
+      <string>Change Typer Font</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -51,6 +51,16 @@
     <widget class="QLabel" name="fontLabel">
      <property name="text">
       <string>This is the current Typer Font</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="styleSheetComboBox"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Application Style:</string>
      </property>
     </widget>
    </item>

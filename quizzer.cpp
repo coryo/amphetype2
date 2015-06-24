@@ -14,7 +14,9 @@ namespace bpt = boost::posix_time;
 Quizzer::Quizzer(QWidget *parent) :
         QWidget(parent),
         ui(new Ui::Quizzer),
-        text(0)
+        text(0),
+        goColor("#00FF00"),
+        stopColor("#FF0000")
 {
         ui->setupUi(this);
 
@@ -92,6 +94,7 @@ void Quizzer::updateColors()
         ui->plot->yAxis->setTickPen(QPen(plotForegroundColor, 1));
         ui->plot->yAxis->setSubTickPen(QPen(plotForegroundColor, 1));
         ui->plot->yAxis->setTickLabelColor(plotForegroundColor);
+        timerLabelStop();
 }
 
 void Quizzer::cancelled()
@@ -115,12 +118,12 @@ void Quizzer::timerLabelUpdate()
 
 void Quizzer::timerLabelGo()
 {
-        ui->timerLabel->setStyleSheet("QLabel { background-color : #79B221; }");
+        ui->timerLabel->setStyleSheet("QLabel { background-color : "+goColor+"; }");
 }
 
 void Quizzer::timerLabelStop()
 {
-        ui->timerLabel->setStyleSheet("QLabel { background-color : #995555; }");
+        ui->timerLabel->setStyleSheet("QLabel { background-color : "+stopColor+"; }");
 }
 void Quizzer::timerLabelReset()
 {

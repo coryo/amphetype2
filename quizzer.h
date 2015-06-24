@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QTime>
 #include <QColor>
+#include <QString>
 
 class Text;
 class QStringList;
@@ -19,6 +20,8 @@ class Quizzer : public QWidget {
         Q_PROPERTY(QColor apmLineColor MEMBER apmLineColor NOTIFY colorChanged)
         Q_PROPERTY(QColor plotBackgroundColor MEMBER plotBackgroundColor NOTIFY colorChanged)
         Q_PROPERTY(QColor plotForegroundColor MEMBER plotForegroundColor NOTIFY colorChanged)
+        Q_PROPERTY(QString goColor MEMBER goColor NOTIFY colorChanged)
+        Q_PROPERTY(QString stopColor MEMBER stopColor NOTIFY colorChanged)
 
 public:
         explicit Quizzer(QWidget *parent = 0);
@@ -37,6 +40,8 @@ private:
         QColor apmLineColor;
         QColor plotBackgroundColor;
         QColor plotForegroundColor;
+        QString goColor;
+        QString stopColor;
 
 signals:
         void wantText(Text*);

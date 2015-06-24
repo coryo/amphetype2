@@ -6,6 +6,7 @@ TyperDisplay::TyperDisplay(QWidget* parent) : QTextEdit(parent), testPosition(0)
 {
         errorColor = "#995555";
         correctColor = "#79B221";
+        highlightedTextColor = "#000000";
 }
 
 void TyperDisplay::setTextTarget(const QString& t)
@@ -57,7 +58,7 @@ void TyperDisplay::moveCursor(int testPosition, int cursorPosition)
                 result.append(wrappedText[testPos.first].left(testPos.second));
                 lineLength += testPos.second;
 
-                result.append("<span style='background-color:"+errorColor+"'>");
+                result.append("<span style='color:"+highlightedTextColor+"; background-color:"+errorColor+"'>");
                 for (int i = 0; i < positionDiff; ++i) {
                         if (testPosition + i >= text.length()) {
                                 result.append("&nbsp;");   
@@ -88,7 +89,7 @@ void TyperDisplay::moveCursor(int testPosition, int cursorPosition)
         } else {
                 // non errors
                 result.append(wrappedText[cursorPos.first].left(cursorPos.second));
-                result.append("<span style='background-color:"+correctColor+"'>");
+                result.append("<span style='color:"+highlightedTextColor+"; background-color:"+correctColor+"'>");
                 result.append(wrappedText[cursorPos.first][cursorPos.second]);
                 result.append("</span>");
                 result.append(wrappedText[cursorPos.first].right(

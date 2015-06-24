@@ -71,9 +71,9 @@ PerformanceHistory::~PerformanceHistory()
 
 void PerformanceHistory::updateColors()
 {
-        ui->performancePlot->graph(0)->setPen(QPen(wpmLineColor, 1));
-        ui->performancePlot->graph(1)->setPen(QPen(wpmLineColor, 1));
-        ui->performancePlot->graph(2)->setPen(QPen(wpmLineColor, 1));
+        ui->performancePlot->graph(0)->setPen(QPen(wpmLineColor, 2));
+        ui->performancePlot->graph(1)->setPen(QPen(wpmLineColor, 2));
+        ui->performancePlot->graph(2)->setPen(QPen(wpmLineColor, 2));
         ui->performancePlot->setBackground(QBrush(plotBackgroundColor));
         ui->performancePlot->yAxis->setBasePen(QPen(plotForegroundColor, 1));
         ui->performancePlot->yAxis->setTickPen(QPen(plotForegroundColor, 1));

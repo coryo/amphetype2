@@ -23,6 +23,7 @@ signals:
 
 private slots:
         void selectFont();
+        void changeStyleSheet(int);
 };
 
 #endif // SETTINGSWIDGET_H
