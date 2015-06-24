@@ -45,6 +45,9 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         ui->performancePlot->graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc,3));
 
         ui->limitNumberSpinBox->setValue(s.value("perf_items").toInt());
+        ui->groupByComboBox->setCurrentIndex(s.value("perf_group_by").toInt());
+        QString _groupbyx = QString("%1 Results").arg(s.value("def_group_by").toInt());
+        ui->groupByComboBox->setItemText(2, _groupbyx);
 
         refreshSources();
 
@@ -53,6 +56,7 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         // settings
         connect(ui->updateButton,   SIGNAL(pressed()),                this, SLOT(writeSettings()));
         connect(ui->sourceComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
         connect(ui->plotSelector,   SIGNAL(currentIndexChanged(int)), this, SLOT(showPlot(int)));
         // checkboxes for plot settings
         connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
@@ -136,6 +140,7 @@ void PerformanceHistory::writeSettings()
 {
         QSettings s;
         s.setValue("perf_items", ui->limitNumberSpinBox->value());
+        s.setValue("perf_group_by", ui->groupByComboBox->currentIndex());
 
         if (ui->timeScaleCheckBox->checkState() == Qt::Unchecked)
                 s.setValue("chrono_x", false);

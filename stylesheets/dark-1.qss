@@ -221,7 +221,7 @@ TyperDisplay {
 
 Quizzer {
         qproperty-wpmLineColor: rgb(121, 178, 33);
-        qproperty-apmLineColor: rgba(214, 187, 187, 80);
+        qproperty-apmLineColor: rgb(153, 85, 85);/*rgba(214, 187, 187, 80);*/
         qproperty-plotBackgroundColor: rgb(51, 51, 51);
         qproperty-plotForegroundColor: rgb(255, 255, 255);
         qproperty-goColor: #557D17;
@@ -229,7 +229,7 @@ Quizzer {
 }
 
 PerformanceHistory {
-        qproperty-wpmLineColor: rgba(214, 187, 187, 80);/*rgba(121, 178, 33, 150);*/
+        qproperty-wpmLineColor: rgb(153, 85, 85);/*rgba(214, 187, 187, 80);rgba(121, 178, 33, 150);*/
         qproperty-smaLineColor: rgb(121, 178, 33);
         qproperty-plotBackgroundColor: rgb(51, 51, 51);
         qproperty-plotForegroundColor: rgb(255, 255, 255);

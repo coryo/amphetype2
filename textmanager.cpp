@@ -242,7 +242,7 @@ void TextManager::refreshSources()
                 << "Source Name"
                 << "# Items"
                 << "Results"
-                << "WPM"
+                << "avg WPM"
                 << "Disabled";
         sourcesModel->setHorizontalHeaderLabels(headers);
 
@@ -261,7 +261,10 @@ void TextManager::refreshSources()
                 items << new QStandardItem(row[1]);
                 items << new QStandardItem(row[2]);
                 items << new QStandardItem(row[3]);
-                items << new QStandardItem(QString::number(row[4].toDouble(), 'f', 1));
+                if (row[4].toDouble() == 0)
+                        items << new QStandardItem("");
+                else
+                        items << new QStandardItem(QString::number(row[4].toDouble(), 'f', 1));
                 QString dis = (row[5].isEmpty()) ? "Yes" : "";
                 items << new QStandardItem(dis);
 
@@ -296,7 +299,7 @@ void TextManager::populateTexts(const QModelIndex& index)
                 << "Text"
                 << "Length"
                 << "Results"
-                << "WPM"
+                << "med WPM"
                 << "Dis";
         textsModel->setHorizontalHeaderLabels(headers);
 
@@ -313,8 +316,11 @@ void TextManager::populateTexts(const QModelIndex& index)
                 items << new QStandardItem(row[1].simplified());
                 items << new QStandardItem(row[2]);
                 items << new QStandardItem(row[3]);
-                items << new QStandardItem(QString::number(row[4].toDouble(), 'f', 1));
-                QString dis = (row[5].isEmpty()) ? "Yes" : "";
+                if (row[4].toDouble() == 0)
+                        items << new QStandardItem("");
+                else
+                        items << new QStandardItem(QString::number(row[4].toDouble(), 'f', 1));
+                QString dis = (row[5].isEmpty()) ? "" : "Yes";
                 items << new QStandardItem(dis);
 
                 for (QStandardItem* item : items)

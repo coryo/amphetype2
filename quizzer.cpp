@@ -34,8 +34,10 @@ Quizzer::Quizzer(QWidget *parent) :
         ui->typerColsSpinBox->setValue(s.value("typer_cols").toInt());
 
         // create the two graphs in the plot
+        ui->plot->addLayer("TopLayer", ui->plot->layer("main"), QCustomPlot::limAbove);
         ui->plot->addGraph();
         ui->plot->addGraph();   
+        ui->plot->graph(0)->setLayer("TopLayer");
         ui->plot->xAxis->setVisible(false);
         ui->plot->yAxis->setTickLabels(false);
 

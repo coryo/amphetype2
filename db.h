@@ -48,13 +48,11 @@ public:
 private:
         static QString db_path;
         // functions for sqlite extending 
-        static void addFunctions(sqlite3pp::database*);
-        void med_step(sqlite3pp::ext::context&);
-        void med_finalize(sqlite3pp::ext::context&);
-
+        static int counter();
+        static int _count;
         // general functions for retrieving data with a given query
-        static QStringList getOneRow(const QString&);
-        static QList<QStringList> getRows(const QString&);
+        static QStringList getOneRow(const QString&, bool=false);
+        static QList<QStringList> getRows(const QString&, bool=false);
         // general functions for executing commands
         static void execCommand(sqlite3pp::database*, const QString&);
         static void execCommand(const QString&);

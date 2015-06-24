@@ -17,6 +17,30 @@
 
 QString DB::db_path = QString();
 
+//////////////////////////////////////////////////////
+// Sqlite extension functions
+//////////////////////////////////////////////////////
+int DB::_count = -1;
+int DB::counter() { _count +=1; return _count; }
+struct agg_median
+{
+        void step(double x) {
+                l.push_back(x);
+        }
+        double finish() {
+                if (l.empty()) return 0;
+                std::sort(l.begin(), l.end());
+                double median;
+                int length = l.size();
+                if (length % 2 == 0)
+                        median = (l[length / 2] + l[length / 2 - 1]) / 2;
+                else
+                        median = l[length / 2];
+                return median;
+        }
+        std::vector<double> l;
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -295,7 +319,7 @@ void DB::addMistakes(const QString& time, const QHash<QPair<QChar, QChar>, int>&
                 "select agg_median(wpm), agg_median(acc) "
                 "from (select wpm,100.0*accuracy as acc from result "
                         "order by datetime(w) desc limit %1)").arg(n);
-        QStringList cols = getOneRow(query);
+        QStringList cols = getOneRow(query, true);
         return {cols[0].toDouble(), cols[1].toDouble()};
  }
 
@@ -326,12 +350,12 @@ QList<QStringList> DB::getTextsData(int source)
                 "select t.rowid, substr(t.text,0,30)||' ...', "
                         "length(t.text), r.count, r.m, t.disabled "
                 "from (select rowid,* from text where source = %1) as t "
-                "left join (select text_id,count(*) as count, avg(wpm) "
+                "left join (select text_id,count(*) as count, agg_median(wpm) "
                         "as m from result group by text_id) "
                         "as r on (t.id = r.text_id) "
                 "order by t.rowid").arg(source);
         QList<QStringList> rows;
-        rows = getRows(sql);
+        rows = getRows(sql, true);
         return rows;
 }
 
@@ -367,6 +391,10 @@ QList<QStringList> DB::getPerformanceData(int w, int source, int limit)
         // TODO: add grouping
         QString group;
         int gn = s.value("def_group_by").toInt();
+        if (g == 1) // days
+                group = "GROUP BY cast(strftime('%s', w)/86400 as int)";
+        else if (g == 2)
+                group = QString("GROUP BY cast(counter()/%1 as int)").arg(gn);
         //
 
         QString sql;
@@ -379,19 +407,21 @@ QList<QStringList> DB::getPerformanceData(int w, int source, int limit)
                         .arg(where).arg(group).arg(limit);
         } else {
                 sql = QString(
-                        "select agg_first(text_id),"
-                               "avg(r.w) as w,"
+                        "select count(text_id),"
+                               "strftime('%Y-%m-%dT%H:%M:%f', datetime(avg(strftime('%s', r.w)), 'unixepoch')) as w,"
+                               //"avg(strftime('%s', r.w)) as w,"
                                "count(r.rowid) || ' result(s)',"
                                "agg_median(r.wpm),"
                                "100.0 * agg_median(r.accuracy),"
                                "agg_median(r.viscosity) "
                         "from result as r "
                         "left join source as s on(r.source = s.rowid) "
-                        "%1 %2 order by datetime(w) DESC limit %3")
+                        "%1 %2 order by w DESC limit %3")
                       .arg(where).arg(group).arg(limit);
         }
+
         QList<QStringList> rows;
-        rows = getRows(sql);
+        rows = getRows(sql, true);
         return rows;     
 }
 
@@ -431,7 +461,7 @@ QList<QStringList> DB::getStatisticsData(const QString& when, int type, int coun
                 "order by %4 limit %5").arg(when).arg(type).arg(count).arg(order).arg(limit);
 
         QList<QStringList> rows;
-        rows = getRows(sql);
+        rows = getRows(sql, true);
         return rows;
 }
 
@@ -526,11 +556,20 @@ Text* DB::getNextText(int selectMethod)
 // PRIVATE FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-QStringList DB::getOneRow(const QString& sql)
+QStringList DB::getOneRow(const QString& sql, bool extensions)
 {
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
-                DB::addFunctions(&db);
+                
+                sqlite3pp::ext::function func(db);
+                sqlite3pp::ext::aggregate aggr(db);
+                if (extensions) {
+                        // add functions
+                        //DB::addFunctions(&db);
+                        DB::_count = -1;
+                        func.create<int ()>("counter", &counter);
+                        aggr.create<agg_median, double>("agg_median");
+                }
 
                 sqlite3pp::query qry(db, sql.toUtf8().data());
                 QStringList row;
@@ -546,13 +585,25 @@ QStringList DB::getOneRow(const QString& sql)
         }
 }
 
-QList<QStringList> DB::getRows(const QString& sql)
+QList<QStringList> DB::getRows(const QString& sql, bool extensions)
 {
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
-                DB::addFunctions(&db);
+
+                sqlite3pp::ext::function func(db);
+                sqlite3pp::ext::aggregate aggr(db);
+                //aggr.create<agg_median, double>("agg_median");
+                if (extensions) {
+                        // add functions
+                        //DB::addFunctions(&db);
+
+                        DB::_count = -1;
+                        func.create<int ()>("counter", &counter);
+                        aggr.create<agg_median, double>("agg_median");
+                }
 
                 sqlite3pp::query qry(db, sql.toUtf8().data());
+
                 QList<QStringList> rows;
                 for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
                         QStringList row;
@@ -666,33 +717,4 @@ Text* DB::getTextWithQuery(const QString& query)
                 std::cerr << e.what() << std::endl;
                 return new Text();
         }
-}
-
-struct agg_median
-{
-        void step(double x) {
-                l.push_back(x);
-        }
-        double finish() {
-                if (l.empty()) return 0;
-                std::sort(l.begin(), l.end());
-                double median;
-                int length = l.size();
-                if (length % 2 == 0)
-                        median = (l[length / 2] + l[length / 2 - 1]) / 2;
-                else
-                        median = l[length / 2];
-                return median;
-        }
-        std::vector<double> l;
-};
-
-void DB::addFunctions(sqlite3pp::database* db)
-{
-        try {
-                sqlite3pp::ext::aggregate aggr(*db);
-                aggr.create<agg_median, double>("agg_median"); 
-        } catch (const std::exception& e) {
-                std::cout << e.what() << std::endl;
-        } 
 }
