@@ -312,8 +312,7 @@ void PerformanceHistory::showPlot(int p)
         } else {
                 ui->performancePlot->xAxis->setTickLabelType(QCPAxis::ltNumber);
                 ui->performancePlot->xAxis->setAutoTickStep(false);
-                ui->performancePlot->xAxis->setTickStep(1);//ui->performancePlot->graph(p)->data()->size()/10);
-                //ui->performancePlot->xAxis->setSubTickCount(ui->performancePlot->graph(p)->data()->size()/100);   
+                ui->performancePlot->xAxis->setTickStep(std::max(1, ui->performancePlot->graph(p)->data()->size()/10));
                 //ui->performancePlot->xAxis->setLabel("Test Result #");
         }
 
