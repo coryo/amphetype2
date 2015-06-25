@@ -30,7 +30,6 @@ Quizzer::Quizzer(QWidget *parent) :
         ui->plotCheckBox->setCheckState(Qt::Checked);
         ui->result->setVisible(s.value("show_last").toBool());
         setPreviousResultText(0,0);
-
         ui->typerColsSpinBox->setValue(s.value("typer_cols").toInt());
 
         // create the two graphs in the plot
@@ -300,9 +299,6 @@ void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)
 void Quizzer::setText(Text* t)
 {
         text = t;
-
-        const QString& te = text->getText();
-
         ui->typer->setTextTarget(text->getText());
         ui->typerDisplay->setTextTarget(text->getText());
         ui->textInfoLabel->setText(QString("%1 #%2").arg(text->getSourceName(), QString::number(text->getTextNumber())));
@@ -323,12 +319,12 @@ void Quizzer::addPlotPoint(int i, double x, double y)
 void Quizzer::updatePlotRangeY(int max, int min)
 {
         ui->plot->yAxis->setTickLabels(true);
-        ui->plot->yAxis->setRange(min - 1, max + 1);
+        ui->plot->yAxis->setRange(min - 5, max + 5);
 }
 
 void Quizzer::updatePlotRangeX(int max, int min)
 {
-        ui->plot->xAxis->setRange(min, max);
+        ui->plot->xAxis->setRange(min - 1, max + 1);
 }
 
 void Quizzer::clearPlotData()

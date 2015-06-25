@@ -61,6 +61,7 @@ void loadSettings()
                 s.setValue("str_extra", 10);
                 s.setValue("str_what", 'e');
                 s.setValue("typer_cols", 80);
+                s.setValue("stylesheet", "dark-1");
                 loadSettings();
         }        
 }
@@ -84,7 +85,7 @@ int main(int argc, char *argv[])
 
         DB::initDB();
 
-        QFile file(":/stylesheets/dark-1.qss");
+        QFile file(":/stylesheets/"+s.value("stylesheet").toString() +".qss");
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                a.setStyleSheet(file.readAll());
                file.close(); 

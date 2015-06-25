@@ -50,6 +50,7 @@ private slots:
         void enableSource();
         void disableSource();
         void toggleTextsWidget();
+        void editText();
 };
 
 #endif // TEXTMANAGER_H

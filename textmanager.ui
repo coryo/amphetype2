@@ -302,7 +302,7 @@
       </property>
       <item>
        <layout class="QGridLayout" name="Layout">
-        <item row="0" column="0" colspan="4">
+        <item row="0" column="0" colspan="5">
          <widget class="QTableView" name="textsTable">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -318,7 +318,7 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="2" colspan="2">
+        <item row="1" column="3" colspan="2">
          <spacer name="horizontalSpacer_5">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -357,7 +357,7 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="3">
+        <item row="2" column="4">
          <spacer name="horizontalSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -370,10 +370,23 @@
           </property>
          </spacer>
         </item>
-        <item row="2" column="0" colspan="3">
+        <item row="2" column="0" colspan="4">
          <widget class="QLabel" name="label_2">
           <property name="text">
            <string>Double click a Text to send it to the Typer.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QPushButton" name="editTextButton">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Edit Selected</string>
           </property>
          </widget>
         </item>

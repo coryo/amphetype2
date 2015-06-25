@@ -16,8 +16,9 @@ SettingsWidget::SettingsWidget(QWidget *parent) :
 
         ui->fontLabel->setFont(qvariant_cast<QFont>(s.value("typer_font")));
 
-        ui->styleSheetComboBox->addItem("Dark Theme", "dark-1.qss");
-        ui->styleSheetComboBox->addItem("Basic Theme", "empty.qss");
+        ui->styleSheetComboBox->addItem("Dark Theme", "dark-1");
+        ui->styleSheetComboBox->addItem("Basic Theme", "basic");
+        ui->styleSheetComboBox->setCurrentIndex(ui->styleSheetComboBox->findData(s.value("stylesheet").toString()));
 
         connect(ui->fontButton, SIGNAL(pressed()), this, SLOT(selectFont()));
         connect(ui->styleSheetComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeStyleSheet(int)));
@@ -30,12 +31,14 @@ SettingsWidget::~SettingsWidget()
 
 void SettingsWidget::changeStyleSheet(int i)
 {
-        QString ss = ui->styleSheetComboBox->itemData(i, Qt::UserRole).toString();
+        QSettings s;
+        QString ss = ui->styleSheetComboBox->itemData(i).toString();
 
-        QFile file(":/stylesheets/"+ss);
+        QFile file(":/stylesheets/"+ss+".qss");
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                qApp->setStyleSheet(file.readAll());
-               file.close(); 
+               file.close();
+               s.setValue("stylesheet", ss);
         }
 }
 
@@ -49,7 +52,5 @@ void SettingsWidget::selectFont()
                 s.setValue("typer_font", font);
                 ui->fontLabel->setFont(font);
                 emit settingsChanged();
-        } else {
-
         }
 }

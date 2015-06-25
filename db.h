@@ -1,22 +1,20 @@
 #ifndef DB_H
 #define DB_H
 
-#include <QVariantList>
-
 #include "inc/sqlite3pp.h"
 #include "inc/sqlite3ppext.h"
 
-class QString;
-class QStringList;
+#include <QVariantList>
+
 class Text;
 
 class DB
 {
 public:
-        static void setDBPath(const QString&);
-        
         static void initDB();
-        
+
+        static void setDBPath(const QString&);
+             
         static int  getSource(const QString&, int = -1);
 
         // specific insertion functions
@@ -28,10 +26,10 @@ public:
                                   const QMultiHash<QStringRef, int>&);
         static void addMistakes(const QString&, const QHash<QPair<QChar, QChar>, int>&);
 
-        static void deleteSource(const QList<int>&);
-        static void deleteText(const QList<int>&);
+        static void deleteSource (const QList<int>&);
+        static void deleteText   (const QList<int>&);
         static void disableSource(const QList<int>&);
-        static void enableSource(const QList<int>&);
+        static void enableSource (const QList<int>&);
 
         // specific query functions
         static std::pair<double,double> getMedianStats(int);
@@ -45,14 +43,16 @@ public:
         static Text* getText(int);              // get a text with a given rowid
         static Text* getText(const QString&);   // get a text with a given hashid
 
+        static void updateText(int, const QString&);
+
 private:
         static QString db_path;
         // functions for sqlite extending 
         static int counter();
         static int _count;
         // general functions for retrieving data with a given query
-        static QStringList getOneRow(const QString&, bool=false);
-        static QList<QStringList> getRows(const QString&, bool=false);
+        static QStringList        getOneRow(const QString&, bool=false);
+        static QList<QStringList> getRows  (const QString&, bool=false);
         // general functions for executing commands
         static void execCommand(sqlite3pp::database*, const QString&);
         static void execCommand(const QString&);

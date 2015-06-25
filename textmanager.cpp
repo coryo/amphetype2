@@ -77,6 +77,8 @@ TextManager::TextManager(QWidget *parent) :
                 this,                   SLOT  (disableSource()));
 
         connect(ui->showTextsButton, SIGNAL(pressed()), this, SLOT(toggleTextsWidget()));
+
+        connect(ui->editTextButton, SIGNAL(pressed()), this, SLOT(editText()));
 }
 
 TextManager::~TextManager()
@@ -86,6 +88,40 @@ TextManager::~TextManager()
         delete textsModel;
 }
 
+void TextManager::editText()
+{
+        const QModelIndexList& sourceIndexes = ui->sourcesTable->selectionModel()->selectedIndexes();
+        const QModelIndexList& textIndexes   = ui->textsTable->selectionModel()->selectedIndexes();
+        if (sourceIndexes.isEmpty() || textIndexes.isEmpty())
+                return;
+
+        int row = textIndexes[0].row();
+        const QModelIndex& textRow = textsModel->index(row, 0);
+
+        const QModelIndex& sourceRow = sourcesModel->index(sourceIndexes[0].row(), 0);
+
+        int source = sourceRow.data().toInt();
+        int rowid = textRow.data().toInt();
+
+        Text* t = DB::getText(rowid);
+
+        bool ok;
+        QString text = QInputDialog::getMultiLineText(this, tr("Edit Text:"),
+                tr("Text:"), t->getText(), &ok);
+
+        if (ok && !text.isEmpty()) {
+                if (text == t->getText()) {
+                        delete t;
+                        return;
+                }
+                DB::updateText(rowid, text);
+                refreshSources();
+                ui->sourcesTable->selectRow(sourceRow.row());
+                populateTexts(sourceRow);
+        }
+
+        delete t;
+}
 void TextManager::toggleTextsWidget()
 {
         if (ui->textsWidget->isVisible()) {
@@ -365,6 +401,8 @@ void TextManager::addFiles()
         files = QFileDialog::getOpenFileNames(
                 this, tr("Import"), ".",
                 tr("UTF-8 text files (*.txt);;All files (*)"));
+        if (files.isEmpty())
+                return;
 
         ui->progress->show();
         ui->progressText->show();

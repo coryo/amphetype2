@@ -75,10 +75,18 @@ PerformanceHistory::~PerformanceHistory()
 
 void PerformanceHistory::updateColors()
 {
+        QLinearGradient axisRectGradient;
+        axisRectGradient.setStart(0, 0);
+        axisRectGradient.setFinalStop(0, 350);
+        axisRectGradient.setColorAt(0, plotBackgroundColor);
+        QColor darker = plotBackgroundColor.darker(110);
+        axisRectGradient.setColorAt(1, darker);
+        ui->performancePlot->setBackground(axisRectGradient);
+
         ui->performancePlot->graph(0)->setPen(QPen(wpmLineColor, 2));
         ui->performancePlot->graph(1)->setPen(QPen(wpmLineColor, 2));
         ui->performancePlot->graph(2)->setPen(QPen(wpmLineColor, 2));
-        ui->performancePlot->setBackground(QBrush(plotBackgroundColor));
+        //ui->performancePlot->setBackground(QBrush(plotBackgroundColor));
         ui->performancePlot->yAxis->setBasePen(QPen(plotForegroundColor, 1));
         ui->performancePlot->yAxis->setTickPen(QPen(plotForegroundColor, 1));
         ui->performancePlot->yAxis->setTickLabelColor(plotForegroundColor);
@@ -88,6 +96,15 @@ void PerformanceHistory::updateColors()
         ui->performancePlot->xAxis->setTickPen(QPen(plotForegroundColor, 1));
         ui->performancePlot->xAxis->setSubTickPen(QPen(plotForegroundColor, 1));
         ui->performancePlot->xAxis->setTickLabelColor(plotForegroundColor);
+
+        QColor subGridColor = plotForegroundColor;
+        subGridColor.setAlpha(30);      // sub grid will be same color with reduced alpha
+        ui->performancePlot->xAxis->grid()->setPen(QPen(plotForegroundColor, 1, Qt::DotLine));
+        ui->performancePlot->yAxis->grid()->setPen(QPen(plotForegroundColor, 1, Qt::DotLine));
+        ui->performancePlot->xAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
+        ui->performancePlot->yAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
+        ui->performancePlot->xAxis->grid()->setSubGridVisible(true);
+        ui->performancePlot->yAxis->grid()->setSubGridVisible(true);
 }
 
 void PerformanceHistory::togglePlot(int i)
@@ -325,7 +342,20 @@ void PerformanceHistory::showPlot(int p)
                         ui->performancePlot->yAxis->setRangeUpper(100);
                 else
                         ui->performancePlot->yAxis->setRangeLower(0);
+                        ui->performancePlot->yAxis->grid()->setZeroLinePen(Qt::NoPen);
         }
 
+        // add some padding to the axes ranges so points at edges arent cut off
+        double padding = 0.01; //percent
+        double xDiff = ui->performancePlot->xAxis->range().upper - ui->performancePlot->xAxis->range().lower;
+        double yDiff = ui->performancePlot->yAxis->range().upper - ui->performancePlot->yAxis->range().lower;
+        ui->performancePlot->xAxis->setRange(
+                ui->performancePlot->xAxis->range().lower - xDiff*padding,
+                ui->performancePlot->xAxis->range().upper + xDiff*padding);
+        ui->performancePlot->yAxis->setRange(
+                ui->performancePlot->yAxis->range().lower - yDiff*padding,
+                ui->performancePlot->yAxis->range().upper + yDiff*padding);
+
+        // draw it
         ui->performancePlot->replot();
 }

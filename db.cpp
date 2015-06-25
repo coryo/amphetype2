@@ -3,15 +3,10 @@
 
 #include "inc/sqlite3pp.h"
 
-#include <QString>
-#include <QStringList>
 #include <QSettings>
-#include <QApplication>
-#include <QDir>
 #include <QCryptographicHash>
 
 #include <iostream>
-#include <string>
 #include <vector>
 #include <algorithm>
 
@@ -163,7 +158,8 @@ void DB::addText(int source, const QString& text, int lesson, bool update)
                 sqlite3pp::database db(DB::db_path.toStdString().c_str());
                 sqlite3pp::transaction xct(db);
                 {
-                        QByteArray txt_id = QCryptographicHash::hash(text.toUtf8(), QCryptographicHash::Sha1);
+                        QByteArray txt_id = QCryptographicHash::hash(text.toUtf8(),
+                                QCryptographicHash::Sha1);
                         txt_id = txt_id.toHex();
                         int dis = ((lesson == 2) ? 1 : 0);
 
@@ -192,7 +188,8 @@ void DB::addTexts(int source, const QStringList& lessons, int lesson, bool updat
                 sqlite3pp::transaction xct(db);
                 {
                         for (QString text : lessons) {
-                                QByteArray txt_id = QCryptographicHash::hash(text.toUtf8(), QCryptographicHash::Sha1);
+                                QByteArray txt_id = QCryptographicHash::hash(text.toUtf8(),
+                                        QCryptographicHash::Sha1);
                                 txt_id = txt_id.toHex();
                                 int dis = ((lesson == 2) ? 1 : 0);
 
@@ -214,7 +211,8 @@ void DB::addTexts(int source, const QStringList& lessons, int lesson, bool updat
         }
 }
 
-void DB::addResult(const QString& time, const QByteArray& id, int source, double wpm, double acc, double vis)
+void DB::addResult(const QString& time, const QByteArray& id, int source, double wpm, double acc,
+        double vis)
 {
         try {
                 QString sql = "insert into result (w,text_id,source,wpm,accuracy,viscosity)"
@@ -327,7 +325,6 @@ QList<QStringList> DB::getSourcesData()
  {
         QString sql =
                 "select s.rowid, s.name, t.count, r.count, r.wpm, "
-                        //"disabled "
                         "nullif(t.dis,t.count) "
                 "from source as s "
                 "left join (select source,count(*) as count, "
@@ -388,14 +385,13 @@ QList<QStringList> DB::getPerformanceData(int w, int source, int limit)
         else
                 where = "";
 
-        // TODO: add grouping
+        // Grouping
         QString group;
         int gn = s.value("def_group_by").toInt();
         if (g == 1) // days
                 group = "GROUP BY cast(strftime('%s', w)/86400 as int)";
         else if (g == 2)
                 group = QString("GROUP BY cast(counter()/%1 as int)").arg(gn);
-        //
 
         QString sql;
         if (!grouping) {
@@ -409,7 +405,6 @@ QList<QStringList> DB::getPerformanceData(int w, int source, int limit)
                 sql = QString(
                         "select count(text_id),"
                                "strftime('%Y-%m-%dT%H:%M:%f', datetime(avg(strftime('%s', r.w)), 'unixepoch')) as w,"
-                               //"avg(strftime('%s', r.w)) as w,"
                                "count(r.rowid) || ' result(s)',"
                                "agg_median(r.wpm),"
                                "100.0 * agg_median(r.accuracy),"
@@ -440,7 +435,6 @@ QList<QStringList> DB::getStatisticsData(const QString& when, int type, int coun
                 case 7: order = "damage desc"; break;
         }
         
-
         QString sql = QString(
                 "select data, "
                   "12.0/time as wpm, "
@@ -465,8 +459,6 @@ QList<QStringList> DB::getStatisticsData(const QString& when, int type, int coun
         return rows;
 }
 
-
-
 QList<QStringList> DB::getSourcesList()
 {
         QString sql = "select rowid, name from source order by name";
@@ -474,8 +466,6 @@ QList<QStringList> DB::getSourcesList()
         rows = getRows(sql);
         return rows;
 }
-
-
 
 Text* DB::getText(const QString& textHash)
 {
@@ -552,6 +542,16 @@ Text* DB::getNextText(int selectMethod)
         return new Text();
 }
 
+void DB::updateText(int rowid, const QString& newText)
+{
+        QByteArray txt_id = QCryptographicHash::hash(newText.toUtf8(),
+                                QCryptographicHash::Sha1);
+                        txt_id = txt_id.toHex();
+        QString sql = QString("UPDATE text SET id=\"%1\", text=\"%2\" WHERE rowid=%3").arg(QString(txt_id)).arg(newText).arg(rowid);
+
+        DB::execCommand(sql);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // PRIVATE FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -565,7 +565,6 @@ QStringList DB::getOneRow(const QString& sql, bool extensions)
                 sqlite3pp::ext::aggregate aggr(db);
                 if (extensions) {
                         // add functions
-                        //DB::addFunctions(&db);
                         DB::_count = -1;
                         func.create<int ()>("counter", &counter);
                         aggr.create<agg_median, double>("agg_median");
@@ -592,11 +591,8 @@ QList<QStringList> DB::getRows(const QString& sql, bool extensions)
 
                 sqlite3pp::ext::function func(db);
                 sqlite3pp::ext::aggregate aggr(db);
-                //aggr.create<agg_median, double>("agg_median");
                 if (extensions) {
                         // add functions
-                        //DB::addFunctions(&db);
-
                         DB::_count = -1;
                         func.create<int ()>("counter", &counter);
                         aggr.create<agg_median, double>("agg_median");
@@ -668,7 +664,7 @@ void DB::execCommand(sqlite3pp::database* db, const QString& sql)
                 sqlite3pp::command cmd(*db, sql.toUtf8().data());
                 cmd.execute();
         }
-        catch(const std::exception& e) {
+        catch (const std::exception& e) {
                 std::cerr << e.what() << '\n';
         }
 }
@@ -679,7 +675,7 @@ void DB::execCommand(const QString& sql)
                 sqlite3pp::command cmd(db, sql.toUtf8().data());
                 cmd.execute();
         }
-        catch(const std::exception& e) {
+        catch (const std::exception& e) {
                 std::cerr << e.what() << '\n';
         }
 }
@@ -713,7 +709,7 @@ Text* DB::getTextWithQuery(const QString& query)
 
                 return new Text(data[0].toUtf8(), data[1].toInt(), data[2], data[3], data[4].toInt());
         }
-        catch(const std::exception& e) {
+        catch (const std::exception& e) {
                 std::cerr << e.what() << std::endl;
                 return new Text();
         }

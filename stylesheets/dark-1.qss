@@ -139,9 +139,9 @@ QTextEdit {
 }
 
 QPushButton {
-        padding: 2px;
+        padding: 4px;
         border: 2px solid #222222;
-        background-color: #444444;
+        background-color: #333333;
 }
 
 QCheckBox::indicator {
@@ -198,7 +198,8 @@ QComboBox::drop-down {
         width: 15px;
         border-left-width: 1px;
         border-left-color: #222222;
-        border-left-style: solid;      
+        border-left-style: solid;
+        background: #333333;   
 }
 
 QComboBox::down-arrow {
