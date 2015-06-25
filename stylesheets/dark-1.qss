@@ -138,10 +138,23 @@ QTextEdit {
         border: 0px;
 }
 
+QProgressBar {
+    border: 2px solid grey;
+    border-radius: 5px;
+    text-align: center;
+}
+QProgressBar::chunk {
+    background-color: #995555;
+    width: 20px;
+}
+
 QPushButton {
         padding: 4px;
         border: 2px solid #222222;
         background-color: #333333;
+}
+QPushButton:hover {
+        background: #995555;
 }
 
 QCheckBox::indicator {
