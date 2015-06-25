@@ -9,12 +9,7 @@
 #include <QSettings>
 #include <QByteArray>
 #include <QStandardItemModel>
-
-#include "boost/date_time/posix_time/posix_time.hpp"
-#include "boost/date_time/gregorian/gregorian.hpp"
-namespace bpt = boost::posix_time;
-namespace bdt = boost::date_time;
-namespace bg = boost::gregorian;
+#include <QDateTime>
 
 PerformanceHistory::PerformanceHistory(QWidget* parent)
         : QWidget(parent), ui(new Ui::PerformanceHistory),
@@ -241,23 +236,18 @@ void PerformanceHistory::refreshPerformance()
                 QList<QStandardItem*> items;
                 // add hash from db
                 items << new QStandardItem(row[0]);
-                // turn the time string from db into a ptime
-                // its stored as delimited extended iso
-                boost::posix_time::ptime t;
-                t = bdt::parse_delimited_time<bpt::ptime>(row[1].toUtf8().data(), 'T');
+
                 // add time. convert it to nicer display first
-                items << new QStandardItem(QString::fromStdString(bg::to_simple_string(t.date())));
+                QDateTime t = QDateTime::fromString(row[1].toUtf8().data(), Qt::ISODate);
+                items << new QStandardItem(t.toString(Qt::SystemLocaleShortDate));
 
                 // add source
                 items << new QStandardItem(row[2]);
 
                 // add points to each of the plots
                 // if chrono x, make the x value seconds since epoch
-                if (s.value("chrono_x").toBool()) {
-                        bpt::ptime epoch(bg::date(1970,1,1));
-                        bpt::time_duration::sec_type sec = (t - epoch).total_seconds();
-                        x = time_t(sec);
-                }  
+                if (s.value("chrono_x").toBool())
+                        x = t.toTime_t();
                 double wpm = row[3].toDouble();
                 double acc = row[4].toDouble();
                 double vis = row[5].toDouble();
@@ -316,14 +306,14 @@ void PerformanceHistory::showPlot(int p)
         // axis properties dependent on time scaling or not
         if (s.value("chrono_x").toBool()) {
                 ui->performancePlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-                ui->performancePlot->xAxis->setDateTimeFormat("M/dd");
+                ui->performancePlot->xAxis->setDateTimeFormat("M/dd\nHH:mm");
                 ui->performancePlot->xAxis->setAutoTickStep(true);
                 //ui->performancePlot->xAxis->setLabel("Time of Result");
         } else {
                 ui->performancePlot->xAxis->setTickLabelType(QCPAxis::ltNumber);
                 ui->performancePlot->xAxis->setAutoTickStep(false);
-                ui->performancePlot->xAxis->setTickStep(ui->performancePlot->graph(p)->data()->size()/10);
-                ui->performancePlot->xAxis->setSubTickCount(ui->performancePlot->graph(p)->data()->size()/100);   
+                ui->performancePlot->xAxis->setTickStep(1);//ui->performancePlot->graph(p)->data()->size()/10);
+                //ui->performancePlot->xAxis->setSubTickCount(ui->performancePlot->graph(p)->data()->size()/100);   
                 //ui->performancePlot->xAxis->setLabel("Test Result #");
         }
 
@@ -346,15 +336,17 @@ void PerformanceHistory::showPlot(int p)
         }
 
         // add some padding to the axes ranges so points at edges arent cut off
-        double padding = 0.01; //percent
-        double xDiff = ui->performancePlot->xAxis->range().upper - ui->performancePlot->xAxis->range().lower;
-        double yDiff = ui->performancePlot->yAxis->range().upper - ui->performancePlot->yAxis->range().lower;
-        ui->performancePlot->xAxis->setRange(
-                ui->performancePlot->xAxis->range().lower - xDiff*padding,
-                ui->performancePlot->xAxis->range().upper + xDiff*padding);
-        ui->performancePlot->yAxis->setRange(
-                ui->performancePlot->yAxis->range().lower - yDiff*padding,
-                ui->performancePlot->yAxis->range().upper + yDiff*padding);
+        if (ui->performancePlot->graph(p)->data()->size() > 1) {
+                double padding = 0.01; //percent
+                double xDiff = ui->performancePlot->xAxis->range().upper - ui->performancePlot->xAxis->range().lower;
+                double yDiff = ui->performancePlot->yAxis->range().upper - ui->performancePlot->yAxis->range().lower;
+                ui->performancePlot->xAxis->setRange(
+                        ui->performancePlot->xAxis->range().lower - xDiff*padding,
+                        ui->performancePlot->xAxis->range().upper + xDiff*padding);
+                ui->performancePlot->yAxis->setRange(
+                        ui->performancePlot->yAxis->range().lower - yDiff*padding,
+                        ui->performancePlot->yAxis->range().upper + yDiff*padding);
+        }
 
         // draw it
         ui->performancePlot->replot();
