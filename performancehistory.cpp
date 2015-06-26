@@ -13,7 +13,7 @@
 
 PerformanceHistory::PerformanceHistory(QWidget* parent)
         : QWidget(parent), ui(new Ui::PerformanceHistory),
-          modelb(new QStandardItemModel())
+          model(new QStandardItemModel())
 {
         ui->setupUi(this);
 
@@ -48,25 +48,25 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         // settings signals
         // these are setup to the plot data only has to be recalculated when needed
         // refreshPerformance recalcs the data, refreshCurrentPlot just adjusts the plot properties
-        connect(ui->updateButton,   SIGNAL(pressed()),                this, SLOT(refreshPerformance()));
-        connect(ui->sourceComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
-        connect(ui->sourceComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(refreshPerformance()));
+        connect(ui->updateButton,    SIGNAL(pressed()),                this, SLOT(refreshPerformance()));
+        connect(ui->sourceComboBox,  SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->sourceComboBox,  SIGNAL(currentIndexChanged(int)), this, SLOT(refreshPerformance()));
         connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
         connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(refreshPerformance()));
-        connect(ui->plotSelector,   SIGNAL(currentIndexChanged(int)), this, SLOT(showPlot(int)));
+        connect(ui->plotSelector,    SIGNAL(currentIndexChanged(int)), this, SLOT(showPlot(int)));
         // plot settings. 
-        connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
-        connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(refreshPerformance()));
-        connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
-        connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
-        connect(ui->dampenCheckBox,     SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
-        connect(ui->dampenCheckBox,     SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
-        connect(ui->smaWindowSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(writeSettings()));
-        connect(ui->smaWindowSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(refreshCurrentPlot()));
-        connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
-        connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
-        connect(ui->targetWpmSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(writeSettings()));
-        connect(ui->targetWpmSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(refreshCurrentPlot()));
+        connect(ui->timeScaleCheckBox,      SIGNAL(stateChanged(int)),    this, SLOT(writeSettings()));
+        connect(ui->timeScaleCheckBox,      SIGNAL(stateChanged(int)),    this, SLOT(refreshPerformance()));
+        connect(ui->fullRangeYCheckBox,     SIGNAL(stateChanged(int)),    this, SLOT(writeSettings()));
+        connect(ui->fullRangeYCheckBox,     SIGNAL(stateChanged(int)),    this, SLOT(refreshCurrentPlot()));
+        connect(ui->dampenCheckBox,         SIGNAL(stateChanged(int)),    this, SLOT(writeSettings()));
+        connect(ui->dampenCheckBox,         SIGNAL(stateChanged(int)),    this, SLOT(refreshCurrentPlot()));
+        connect(ui->smaWindowSpinBox,       SIGNAL(valueChanged(int)),    this, SLOT(writeSettings()));
+        connect(ui->smaWindowSpinBox,       SIGNAL(valueChanged(int)),    this, SLOT(refreshCurrentPlot()));
+        connect(ui->plotCheckBox,           SIGNAL(stateChanged(int)),    this, SLOT(writeSettings()));
+        connect(ui->plotCheckBox,           SIGNAL(stateChanged(int)),    this, SLOT(refreshCurrentPlot()));
+        connect(ui->targetWpmSpinBox,       SIGNAL(valueChanged(int)),    this, SLOT(writeSettings()));
+        connect(ui->targetWpmSpinBox,       SIGNAL(valueChanged(int)),    this, SLOT(refreshCurrentPlot()));
         connect(ui->targetAccDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(writeSettings()));
         connect(ui->targetAccDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshCurrentPlot()));
         connect(ui->targetVisDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(writeSettings()));
@@ -78,7 +78,7 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
 PerformanceHistory::~PerformanceHistory()
 {
         delete ui;
-        delete modelb;
+        delete model;
 }
 
 void PerformanceHistory::updateColors()
@@ -126,24 +126,15 @@ void PerformanceHistory::updateColors()
         ui->performancePlot->yAxis->grid()->setSubGridVisible(true);
 }
 
-void PerformanceHistory::togglePlot(int i)
-{
-        if (i == 0)
-                ui->performancePlot->graph(ui->plotSelector->currentIndex())->setVisible(true);
-        else
-                ui->performancePlot->graph(ui->plotSelector->currentIndex())->setVisible(false);
-        ui->performancePlot->replot();
-}
-
-// add a graph to the plot that is the SMA of the given graph
-// Simple moving average
+// create a new graph that is the simple moving average of the given graph
 QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
 {
         QCPDataMap* data = graph->data();
-        QCPGraph* newGraph = ui->performancePlot->addGraph();
-
+        
         if (n > data->size())
                 return 0;
+
+        QCPGraph* newGraph = new QCPGraph(graph->keyAxis(), graph->valueAxis());
 
         double s = 0;
         QList<double> x;
@@ -170,12 +161,12 @@ QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
 void PerformanceHistory::writeSettings()
 {
         QSettings s;
-        s.setValue("perf_items", ui->limitNumberSpinBox->value());
-        s.setValue("perf_group_by", ui->groupByComboBox->currentIndex());
+        s.setValue("perf_items",     ui->limitNumberSpinBox->value());
+        s.setValue("perf_group_by",  ui->groupByComboBox->currentIndex());
         s.setValue("dampen_average", ui->smaWindowSpinBox->value());
-        s.setValue("target_wpm", ui->targetWpmSpinBox->value());
-        s.setValue("target_acc", ui->targetAccDoubleSpinBox->value());
-        s.setValue("target_vis", ui->targetVisDoubleSpinBox->value());
+        s.setValue("target_wpm",     ui->targetWpmSpinBox->value());
+        s.setValue("target_acc",     ui->targetAccDoubleSpinBox->value());
+        s.setValue("target_vis",     ui->targetVisDoubleSpinBox->value());
         if (ui->timeScaleCheckBox->checkState() == Qt::Unchecked)
                 s.setValue("chrono_x", false);
         else
@@ -210,7 +201,7 @@ void PerformanceHistory::refreshSources()
 void PerformanceHistory::doubleClicked(const QModelIndex& idx)
 {       
         int row = idx.row();
-        const QModelIndex& f = modelb->index(row, 0);
+        const QModelIndex& f = model->index(row, 0);
 
         Text* t = DB::getText(f.data().toString());
 
@@ -224,26 +215,29 @@ void PerformanceHistory::refreshPerformance()
 
         ui->tableView->hide();
         
-        modelb->clear();
+        model->clear();
         
         QStringList headers;
         headers << "id"
-                 << "When"
-                 << "Source"
-                 << "WPM"
-                 << "Accuracy"
-                 << "Viscosity";
-        modelb->setHorizontalHeaderLabels(headers);
-        ui->tableView->setModel(modelb);
+                << "When"
+                << "Source"
+                << "WPM"
+                << "Accuracy"
+                << "Viscosity";
+        model->setHorizontalHeaderLabels(headers);
+        ui->tableView->setModel(model);
         ui->tableView->setSortingEnabled(false);
         ui->tableView->setColumnHidden(0, true);
-
         ui->tableView->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
         ui->tableView->verticalHeader()->setDefaultSectionSize(24);
         
         // clear the data in the plots
-        for (int i = 0; i <ui->performancePlot->graphCount(); ++i)
-                ui->performancePlot->graph(i)->clearData();
+        for (int i = 0; i <ui->performancePlot->graphCount(); ++i) {
+                if (i > 2)
+                        ui->performancePlot->removeGraph(i);
+                else
+                        ui->performancePlot->graph(i)->clearData();
+        }
 
         // get rows from db
         QList<QStringList> rows =
@@ -256,14 +250,11 @@ void PerformanceHistory::refreshPerformance()
                 QList<QStandardItem*> items;
                 // add hash from db
                 items << new QStandardItem(row[0]);
-
                 // add time. convert it to nicer display first
                 QDateTime t = QDateTime::fromString(row[1].toUtf8().data(), Qt::ISODate);
                 items << new QStandardItem(t.toString(Qt::SystemLocaleShortDate));
-
                 // add source
                 items << new QStandardItem(row[2]);
-
                 // add points to each of the plots
                 // if chrono x, make the x value seconds since epoch
                 if (s.value("chrono_x").toBool())
@@ -274,23 +265,22 @@ void PerformanceHistory::refreshPerformance()
                 ui->performancePlot->graph(0)->addData(x, wpm);
                 ui->performancePlot->graph(1)->addData(x, acc);
                 ui->performancePlot->graph(2)->addData(x, vis);
-
                 // add wpm,acc,vis, 1 sigificant digit
                 items << new QStandardItem(QString::number(wpm, 'f', 1));
                 items << new QStandardItem(QString::number(acc, 'f', 1));
                 items << new QStandardItem(QString::number(vis, 'f', 1));
-
+                // set flags
                 for (QStandardItem* item : items)
                         item->setFlags(Qt::ItemIsEnabled|Qt::ItemIsSelectable);
-
-                modelb->appendRow(items);
+                // add the row to the model
+                model->appendRow(items);
                 --x;
         }
 
         ui->tableView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
         ui->tableView->resizeColumnsToContents();
-
         ui->tableView->show();
+
         showPlot(ui->plotSelector->currentIndex());
 }
 
@@ -326,6 +316,7 @@ void PerformanceHistory::showPlot(int p)
                         _lighter.setAlpha(25);
                         sma->setBrush(QBrush(_lighter));
                         sma->setVisible(true);
+                        ui->performancePlot->addPlottable(sma);
                 }
         }
 
@@ -357,6 +348,14 @@ void PerformanceHistory::showPlot(int p)
                                 ui->performancePlot->yAxis->range().upper));
                 break;
         }
+        // set the min or max of the y axis if needed
+        if (s.value("show_xaxis").toBool()) {
+                if (p == 1) // accuracy plot
+                        ui->performancePlot->yAxis->setRangeUpper(100);
+                else
+                        ui->performancePlot->yAxis->setRangeLower(0);     
+        }
+        ui->performancePlot->yAxis->grid()->setZeroLinePen(Qt::NoPen);
 
         // axis properties dependent on time scaling or not
         if (s.value("chrono_x").toBool()) {
@@ -367,19 +366,12 @@ void PerformanceHistory::showPlot(int p)
         } else {
                 ui->performancePlot->xAxis->setTickLabelType(QCPAxis::ltNumber);
                 ui->performancePlot->xAxis->setAutoTickStep(false);
-                ui->performancePlot->xAxis->setTickStep(std::max(1, ui->performancePlot->graph(p)->data()->size()/10));
+                ui->performancePlot->xAxis->setTickStep(
+                        std::max(1, ui->performancePlot->graph(p)->data()->size()/10));
                 //ui->performancePlot->xAxis->setLabel("Test Result #");
         }
 
-        // set the min or max of the y axis if needed
-        if (s.value("show_xaxis").toBool()) {
-                if (p == 1) // accuracy plot
-                        ui->performancePlot->yAxis->setRangeUpper(100);
-                else
-                        ui->performancePlot->yAxis->setRangeLower(0);
-                ui->performancePlot->yAxis->grid()->setZeroLinePen(Qt::NoPen);
-        }
-        // add some padding to the axes ranges so points at edges arent cut off
+        // add some padding to the axes ranges so points at edges aren't cut off
         if (ui->performancePlot->graph(p)->data()->size() > 1) {
                 double padding = 0.01; //percent
                 double xDiff = ui->performancePlot->xAxis->range().upper - ui->performancePlot->xAxis->range().lower;

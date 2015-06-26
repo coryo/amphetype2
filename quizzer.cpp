@@ -96,7 +96,7 @@ void Quizzer::updatePlotTargetLine()
         ui->plot->clearItems();
         QCPItemStraightLine* line = new QCPItemStraightLine(ui->plot);
         line->setPen(QPen(targetLineColor, 2));
-        line->point1->setCoords(0, s.value("target_wpm").toInt());
+        line->point1->setCoords(0,   s.value("target_wpm").toInt());
         line->point2->setCoords(999, s.value("target_wpm").toInt());
         ui->plot->addItem(line);
         ui->plot->replot();
@@ -106,11 +106,11 @@ void Quizzer::updateColors()
 {
         ui->plot->graph(0)->setPen(QPen(wpmLineColor, 3));
         ui->plot->graph(1)->setPen(QPen(apmLineColor, 2));
-        ui->plot->setBackground(QBrush(plotBackgroundColor));
-        ui->plot->yAxis->setBasePen(QPen(plotForegroundColor, 1));
-        ui->plot->yAxis->setTickPen(QPen(plotForegroundColor, 1));
+        ui->plot->setBackground     (QBrush(plotBackgroundColor));
+        ui->plot->yAxis->setBasePen   (QPen(plotForegroundColor, 1));
+        ui->plot->yAxis->setTickPen   (QPen(plotForegroundColor, 1));
         ui->plot->yAxis->setSubTickPen(QPen(plotForegroundColor, 1));
-        ui->plot->yAxis->setTickLabelColor(plotForegroundColor);
+        ui->plot->yAxis->setTickLabelColor (plotForegroundColor);
         timerLabelStop();
 }
 
@@ -145,7 +145,7 @@ void Quizzer::timerLabelStop()
 void Quizzer::timerLabelReset()
 {
         timerLabelStop();
-        lessonTime = QTime(0,0,0,0);
+        lessonTime = QTime(0, 0, 0, 0);
         ui->timerLabel->setText(lessonTime.toString("mm:ss"));
 }
 
@@ -317,7 +317,9 @@ void Quizzer::setText(Text* t)
         text = t;
         ui->typer->setTextTarget(text->getText());
         ui->typerDisplay->setTextTarget(text->getText());
-        ui->textInfoLabel->setText(QString("%1 #%2").arg(text->getSourceName(), QString::number(text->getTextNumber())));
+        ui->textInfoLabel->setText(
+                QString("%1 #%2")
+                        .arg(text->getSourceName(), QString::number(text->getTextNumber())));
 }
 
 void Quizzer::setTyperFont() // readjust

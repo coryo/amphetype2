@@ -18,9 +18,9 @@ class PerformanceHistory;
 class PerformanceHistory : public QWidget
 {
         Q_OBJECT
-        Q_PROPERTY(QColor wpmLineColor MEMBER wpmLineColor NOTIFY colorChanged)
-        Q_PROPERTY(QColor smaLineColor MEMBER smaLineColor NOTIFY colorChanged)
-        Q_PROPERTY(QColor targetLineColor MEMBER targetLineColor NOTIFY colorChanged)
+        Q_PROPERTY(QColor wpmLineColor        MEMBER wpmLineColor        NOTIFY colorChanged)
+        Q_PROPERTY(QColor smaLineColor        MEMBER smaLineColor        NOTIFY colorChanged)
+        Q_PROPERTY(QColor targetLineColor     MEMBER targetLineColor     NOTIFY colorChanged)
         Q_PROPERTY(QColor plotBackgroundColor MEMBER plotBackgroundColor NOTIFY colorChanged)
         Q_PROPERTY(QColor plotForegroundColor MEMBER plotForegroundColor NOTIFY colorChanged)
 
@@ -30,7 +30,7 @@ public:
 
 private:
         Ui::PerformanceHistory* ui;
-        QStandardItemModel* modelb;
+        QStandardItemModel* model;
         QCPGraph* dampen(QCPGraph*, int n = 10);
 
         QColor wpmLineColor;
@@ -52,7 +52,6 @@ private slots:
         void showPlot(int=0);
         void refreshCurrentPlot();
         void writeSettings();
-        void togglePlot(int);
         void updateColors();
 };
 
