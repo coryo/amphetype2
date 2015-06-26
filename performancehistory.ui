@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>628</width>
-    <height>408</height>
+    <width>821</width>
+    <height>414</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -184,6 +184,25 @@
       </property>
       <item>
        <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="13">
+         <widget class="QDoubleSpinBox" name="targetVisDoubleSpinBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="decimals">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <double>100.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+         </widget>
+        </item>
         <item row="0" column="1">
          <widget class="QComboBox" name="plotSelector">
           <item>
@@ -203,17 +222,17 @@
           </item>
          </widget>
         </item>
-        <item row="0" column="4">
-         <widget class="QCheckBox" name="fullRangeYCheckBox">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_4">
           <property name="text">
-           <string>Full Range Y</string>
+           <string>Plot:</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="5">
-         <widget class="QCheckBox" name="dampenCheckBox">
+        <item row="0" column="4">
+         <widget class="QCheckBox" name="fullRangeYCheckBox">
           <property name="text">
-           <string>SMA n =</string>
+           <string>Full Y</string>
           </property>
          </widget>
         </item>
@@ -224,17 +243,36 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_4">
+        <item row="0" column="5">
+         <widget class="QCheckBox" name="dampenCheckBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
-           <string>Plot:</string>
+           <string>SMA n:</string>
           </property>
          </widget>
+        </item>
+        <item row="0" column="14">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
         <item row="0" column="3">
          <widget class="QCheckBox" name="timeScaleCheckBox">
           <property name="text">
-           <string>Time Scaled X</string>
+           <string>Time X</string>
           </property>
          </widget>
         </item>
@@ -260,20 +298,7 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="7">
-         <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="1" column="0" colspan="8">
+        <item row="1" column="0" colspan="15">
          <widget class="QCustomPlot" name="performancePlot" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -286,6 +311,66 @@
             <width>0</width>
             <height>0</height>
            </size>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="11">
+         <widget class="QDoubleSpinBox" name="targetAccDoubleSpinBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="decimals">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <double>100.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="7">
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Targets:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="8">
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>W:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="10">
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>A:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="9">
+         <widget class="QSpinBox" name="targetWpmSpinBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximum">
+           <number>999</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="12">
+         <widget class="QLabel" name="label_9">
+          <property name="text">
+           <string>V:</string>
           </property>
          </widget>
         </item>

@@ -18,6 +18,7 @@ class Quizzer : public QWidget {
         Q_OBJECT
         Q_PROPERTY(QColor wpmLineColor MEMBER wpmLineColor NOTIFY colorChanged)
         Q_PROPERTY(QColor apmLineColor MEMBER apmLineColor NOTIFY colorChanged)
+        Q_PROPERTY(QColor targetLineColor MEMBER targetLineColor NOTIFY colorChanged)
         Q_PROPERTY(QColor plotBackgroundColor MEMBER plotBackgroundColor NOTIFY colorChanged)
         Q_PROPERTY(QColor plotForegroundColor MEMBER plotForegroundColor NOTIFY colorChanged)
         Q_PROPERTY(QString goColor MEMBER goColor NOTIFY colorChanged)
@@ -38,6 +39,7 @@ private:
 
         QColor wpmLineColor;
         QColor apmLineColor;
+        QColor targetLineColor;
         QColor plotBackgroundColor;
         QColor plotForegroundColor;
         QString goColor;
@@ -63,6 +65,7 @@ private slots:
         void showGraphs();
         void setPlotVisible(int);
         void updateColors();
+        void updatePlotTargetLine();
 
         void timerLabelUpdate();
         void timerLabelReset();

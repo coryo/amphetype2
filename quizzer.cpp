@@ -33,10 +33,11 @@ Quizzer::Quizzer(QWidget *parent) :
         ui->typerColsSpinBox->setValue(s.value("typer_cols").toInt());
 
         // create the two graphs in the plot
-        ui->plot->addLayer("TopLayer", ui->plot->layer("main"), QCustomPlot::limAbove);
+        ui->plot->addLayer("topLayer", ui->plot->layer("main"), QCustomPlot::limAbove);
+        ui->plot->addLayer("lineLayer", ui->plot->layer("grid"), QCustomPlot::limAbove);
         ui->plot->addGraph();
         ui->plot->addGraph();   
-        ui->plot->graph(0)->setLayer("TopLayer");
+        ui->plot->graph(0)->setLayer("topLayer");
         ui->plot->xAxis->setVisible(false);
         ui->plot->yAxis->setTickLabels(false);
 
@@ -60,6 +61,7 @@ Quizzer::Quizzer(QWidget *parent) :
                 this,             SLOT  (setPlotVisible(int)));
 
         connect(this, SIGNAL(colorChanged()), this, SLOT(updateColors()));
+        connect(this, SIGNAL(colorChanged()), this, SLOT(updatePlotTargetLine()));
         // timer stuff
         lessonTimer.setInterval(1000);
         connect(ui->typer, SIGNAL(testStarted(int)), &lessonTimer, SLOT(start()));
@@ -86,6 +88,20 @@ Quizzer::~Quizzer()
         delete ui;
         delete text;
 }
+
+void Quizzer::updatePlotTargetLine()
+{
+        QSettings s;
+
+        ui->plot->clearItems();
+        QCPItemStraightLine* line = new QCPItemStraightLine(ui->plot);
+        line->setPen(QPen(targetLineColor, 2));
+        line->point1->setCoords(0, s.value("target_wpm").toInt());
+        line->point2->setCoords(999, s.value("target_wpm").toInt());
+        ui->plot->addItem(line);
+        ui->plot->replot();
+}
+
 void Quizzer::updateColors()
 {
         ui->plot->graph(0)->setPen(QPen(wpmLineColor, 3));

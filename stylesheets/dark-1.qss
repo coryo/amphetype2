@@ -127,7 +127,7 @@ QHeaderView::section {
 QTextEdit,
 QLineEdit,
 QComboBox,
-QSpinBox {
+QSpinBox, QDoubleSpinBox {
         padding: 2px;
         border: 2px solid #222222;
         background: #444444;
@@ -172,11 +172,14 @@ QCheckBox::indicator:checked {
 }
 
 QSpinBox::up-button:hover,
-QSpinBox::down-button:hover {
+QSpinBox::down-button:hover,
+QDoubleSpinBox::up-button:hover,
+QDoubleSpinBox::down-button:hover {
         background: #995555;
 }
 
-QSpinBox::up-button {
+QSpinBox::up-button,
+QDoubleSpinBox::up-button {
         subcontrol-origin: border;
         subcontrol-position: top right;      
         width: 16px;
@@ -184,7 +187,8 @@ QSpinBox::up-button {
         background: #333333;
 }
 
-QSpinBox::down-button {
+QSpinBox::down-button,
+QDoubleSpinBox::down-button {
         subcontrol-origin: border;
         subcontrol-position: bottom right;
         width: 16px;
@@ -193,13 +197,15 @@ QSpinBox::down-button {
         background: #333333;
 }
 
-QSpinBox::up-arrow {
+QSpinBox::up-arrow,
+QDoubleSpinBox::up-arrow {
         background: #FFFFFF;
         width: 3px;
         height: 3px;
 }
 
-QSpinBox::down-arrow {
+QSpinBox::down-arrow,
+QDoubleSpinBox::down-arrow {
         background: #FFFFFF;
         width: 3px;
         height: 3px;
@@ -236,6 +242,7 @@ TyperDisplay {
 Quizzer {
         qproperty-wpmLineColor: rgb(121, 178, 33);
         qproperty-apmLineColor: rgb(153, 85, 85);/*rgba(214, 187, 187, 80);*/
+        qproperty-targetLineColor: rgba(255, 0, 0, 255);
         qproperty-plotBackgroundColor: rgb(51, 51, 51);
         qproperty-plotForegroundColor: rgb(255, 255, 255);
         qproperty-goColor: #557D17;
@@ -245,6 +252,7 @@ Quizzer {
 PerformanceHistory {
         qproperty-wpmLineColor: rgb(153, 85, 85);/*rgba(214, 187, 187, 80);rgba(121, 178, 33, 150);*/
         qproperty-smaLineColor: rgb(121, 178, 33);
+        qproperty-targetLineColor: rgba(255, 0, 0, 200);
         qproperty-plotBackgroundColor: rgb(51, 51, 51);
         qproperty-plotForegroundColor: rgb(255, 255, 255);
 }

@@ -22,43 +22,56 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         // set states of checkboxes based on settings file
         if (s.value("chrono_x").toBool())
                 ui->timeScaleCheckBox->setCheckState(Qt::Checked);
-
         if (s.value("show_xaxis").toBool())
                 ui->fullRangeYCheckBox->setCheckState(Qt::Checked);
-
         if (s.value("dampen_graph").toBool())
                 ui->dampenCheckBox->setCheckState(Qt::Checked);        
-
-        ui->smaWindowSpinBox->setValue(s.value("dampen_average").toInt());
+        // set default values
+        ui->smaWindowSpinBox->      setValue(s.value("dampen_average").toInt());
+        ui->targetWpmSpinBox->      setValue(s.value("target_wpm").toInt());
+        ui->targetAccDoubleSpinBox->setValue(s.value("target_acc").toDouble());
+        ui->targetVisDoubleSpinBox->setValue(s.value("target_vis").toDouble());
+        ui->limitNumberSpinBox->    setValue(s.value("perf_items").toInt());
+        ui->groupByComboBox->       setCurrentIndex(s.value("perf_group_by").toInt());
+        ui->groupByComboBox->       setItemText(2, QString("%1 Results").arg(s.value("def_group_by").toInt()));
+        // populate sources combobox
+        refreshSources();
 
         // add the 3 graphs we will use
         ui->performancePlot->addGraph();
         ui->performancePlot->addGraph();
         ui->performancePlot->addGraph();
-        ui->performancePlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc,3));
-        ui->performancePlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc,3));
-        ui->performancePlot->graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc,3));
-
-        ui->limitNumberSpinBox->setValue(s.value("perf_items").toInt());
-        ui->groupByComboBox->setCurrentIndex(s.value("perf_group_by").toInt());
-        QString _groupbyx = QString("%1 Results").arg(s.value("def_group_by").toInt());
-        ui->groupByComboBox->setItemText(2, _groupbyx);
-
-        refreshSources();
+        ui->performancePlot->addLayer("lineLayer", ui->performancePlot->layer("grid"), QCustomPlot::limAbove);
 
         // double clicking an item in the list
         connect(ui->tableView, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(doubleClicked(const QModelIndex&)));
-        // settings
-        connect(ui->updateButton,   SIGNAL(pressed()),                this, SLOT(writeSettings()));
+        // settings signals
+        // these are setup to the plot data only has to be recalculated when needed
+        // refreshPerformance recalcs the data, refreshCurrentPlot just adjusts the plot properties
+        connect(ui->updateButton,   SIGNAL(pressed()),                this, SLOT(refreshPerformance()));
         connect(ui->sourceComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->sourceComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(refreshPerformance()));
         connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(refreshPerformance()));
         connect(ui->plotSelector,   SIGNAL(currentIndexChanged(int)), this, SLOT(showPlot(int)));
-        // checkboxes for plot settings
+        // plot settings. 
         connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(refreshPerformance()));
         connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
         connect(ui->dampenCheckBox,     SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->dampenCheckBox,     SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
         connect(ui->smaWindowSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->smaWindowSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(refreshCurrentPlot()));
         connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
+        connect(ui->targetWpmSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->targetWpmSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(refreshCurrentPlot()));
+        connect(ui->targetAccDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(writeSettings()));
+        connect(ui->targetAccDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshCurrentPlot()));
+        connect(ui->targetVisDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(writeSettings()));
+        connect(ui->targetVisDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshCurrentPlot()));
+
         connect(this, SIGNAL(colorChanged()), this, SLOT(updateColors()));
 }
 
@@ -70,6 +83,7 @@ PerformanceHistory::~PerformanceHistory()
 
 void PerformanceHistory::updateColors()
 {
+        // background
         QLinearGradient axisRectGradient;
         axisRectGradient.setStart(0, 0);
         axisRectGradient.setFinalStop(0, 350);
@@ -77,28 +91,38 @@ void PerformanceHistory::updateColors()
         QColor darker = plotBackgroundColor.darker(110);
         axisRectGradient.setColorAt(1, darker);
         ui->performancePlot->setBackground(axisRectGradient);
-
+        // graph colors and point style
+        QColor wpmLighterColor(wpmLineColor);
+        wpmLighterColor.setAlpha(25);
         ui->performancePlot->graph(0)->setPen(QPen(wpmLineColor, 2));
+        ui->performancePlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black, 1.5), QBrush(wpmLineColor), 8));
+        ui->performancePlot->graph(0)->setBrush(QBrush(wpmLighterColor));
         ui->performancePlot->graph(1)->setPen(QPen(wpmLineColor, 2));
+        ui->performancePlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black, 1.5), QBrush(wpmLineColor), 8));
+        ui->performancePlot->graph(1)->setBrush(QBrush(wpmLighterColor));
         ui->performancePlot->graph(2)->setPen(QPen(wpmLineColor, 2));
-        //ui->performancePlot->setBackground(QBrush(plotBackgroundColor));
-        ui->performancePlot->yAxis->setBasePen(QPen(plotForegroundColor, 1));
-        ui->performancePlot->yAxis->setTickPen(QPen(plotForegroundColor, 1));
-        ui->performancePlot->yAxis->setTickLabelColor(plotForegroundColor);
-        ui->performancePlot->yAxis->setSubTickPen(QPen(plotForegroundColor, 1));
-
+        ui->performancePlot->graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black, 1.5), QBrush(wpmLineColor), 8));
+        ui->performancePlot->graph(2)->setBrush(QBrush(wpmLighterColor));
+        // axes
+        QColor subGridColor = plotForegroundColor;
+        subGridColor.setAlpha(30);
+        // x
         ui->performancePlot->xAxis->setBasePen(QPen(plotForegroundColor, 1));
         ui->performancePlot->xAxis->setTickPen(QPen(plotForegroundColor, 1));
         ui->performancePlot->xAxis->setSubTickPen(QPen(plotForegroundColor, 1));
         ui->performancePlot->xAxis->setTickLabelColor(plotForegroundColor);
-
-        QColor subGridColor = plotForegroundColor;
-        subGridColor.setAlpha(30);      // sub grid will be same color with reduced alpha
+        ui->performancePlot->xAxis->setLabelColor(plotForegroundColor);
         ui->performancePlot->xAxis->grid()->setPen(QPen(plotForegroundColor, 1, Qt::DotLine));
-        ui->performancePlot->yAxis->grid()->setPen(QPen(plotForegroundColor, 1, Qt::DotLine));
         ui->performancePlot->xAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
-        ui->performancePlot->yAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
         ui->performancePlot->xAxis->grid()->setSubGridVisible(true);
+        // y
+        ui->performancePlot->yAxis->setBasePen(QPen(plotForegroundColor, 1));
+        ui->performancePlot->yAxis->setTickPen(QPen(plotForegroundColor, 1));
+        ui->performancePlot->yAxis->setTickLabelColor(plotForegroundColor);
+        ui->performancePlot->yAxis->setSubTickPen(QPen(plotForegroundColor, 1));
+        ui->performancePlot->yAxis->setLabelColor(plotForegroundColor);
+        ui->performancePlot->yAxis->grid()->setPen(QPen(plotForegroundColor, 1, Qt::DotLine));
+        ui->performancePlot->yAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
         ui->performancePlot->yAxis->grid()->setSubGridVisible(true);
 }
 
@@ -140,11 +164,6 @@ QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
                 newGraph->addData(x[i], s * q);
                 s += y[i] - y[i - n];
         }
-
-        // style the graph
-        //newGraph->setScatterStyle(QCPScatterStyle::ssDisc);
-        newGraph->setPen(QPen(smaLineColor, 3));
-
         return newGraph;
 }
 
@@ -153,7 +172,10 @@ void PerformanceHistory::writeSettings()
         QSettings s;
         s.setValue("perf_items", ui->limitNumberSpinBox->value());
         s.setValue("perf_group_by", ui->groupByComboBox->currentIndex());
-
+        s.setValue("dampen_average", ui->smaWindowSpinBox->value());
+        s.setValue("target_wpm", ui->targetWpmSpinBox->value());
+        s.setValue("target_acc", ui->targetAccDoubleSpinBox->value());
+        s.setValue("target_vis", ui->targetVisDoubleSpinBox->value());
         if (ui->timeScaleCheckBox->checkState() == Qt::Unchecked)
                 s.setValue("chrono_x", false);
         else
@@ -168,9 +190,7 @@ void PerformanceHistory::writeSettings()
                 s.setValue("dampen_graph", false);
         else
                 s.setValue("dampen_graph", true);
-        s.setValue("dampen_average", ui->smaWindowSpinBox->value());
-
-        refreshPerformance();
+        emit settingsChanged();
 }
 
 void PerformanceHistory::refreshSources()
@@ -274,34 +294,69 @@ void PerformanceHistory::refreshPerformance()
         showPlot(ui->plotSelector->currentIndex());
 }
 
+void PerformanceHistory::refreshCurrentPlot()
+{
+        showPlot(ui->plotSelector->currentIndex());
+}
+
 void PerformanceHistory::showPlot(int p)
 {
-        if (p >= ui->performancePlot->graphCount())
+        if (p >= ui->performancePlot->graphCount() || p < 0)
                 return;
 
         QSettings s;
 
         // hide all the plots
-        for (int i = 0; i < ui->performancePlot->graphCount(); i++)
+        for (int i = 0; i < ui->performancePlot->graphCount(); i++) 
                 ui->performancePlot->graph(i)->setVisible(false);
 
         // show the plot we want
-        if (ui->plotCheckBox->checkState() == 0)
+        if (ui->plotCheckBox->checkState() == 0) {
                 ui->performancePlot->graph(p)->setVisible(true);
+        }
+
+        // make a SMA graph out of the current one and show it
+        QCPGraph* smaGraph = 0;
+        if (s.value("dampen_graph").toBool()) {
+                QCPGraph* sma = dampen(ui->performancePlot->graph(p), s.value("dampen_average").toInt());
+                smaGraph = sma;
+                if (sma != 0) {
+                        sma->setPen(QPen(smaLineColor, 3));
+                        QColor _lighter = smaLineColor;
+                        _lighter.setAlpha(25);
+                        sma->setBrush(QBrush(_lighter));
+                        sma->setVisible(true);
+                }
+        }
+
+        ui->performancePlot->rescaleAxes(true);        
 
         // set correct y axis label
-        /*
+        // and get the y 'target' value from settings
+        double yTarget;
         switch (p) {
         case 0:
                 ui->performancePlot->yAxis->setLabel("Words per Minute (wpm)");
+                yTarget = s.value("target_wpm").toDouble();
+                ui->performancePlot->yAxis->setRangeUpper(
+                        std::max(s.value("target_wpm").toDouble(),
+                                ui->performancePlot->yAxis->range().upper));
                 break;
         case 1:
                 ui->performancePlot->yAxis->setLabel("Accuracy (%)");
+                yTarget = s.value("target_acc").toDouble();
+                ui->performancePlot->yAxis->setRangeLower(
+                        std::min(s.value("target_acc").toDouble(),
+                                ui->performancePlot->yAxis->range().lower));
                 break;
         case 2:
                 ui->performancePlot->yAxis->setLabel("viscosity");
+                yTarget = s.value("target_vis").toDouble();
+                ui->performancePlot->yAxis->setRangeUpper(
+                        std::max(s.value("target_vis").toDouble(),
+                                ui->performancePlot->yAxis->range().upper));
                 break;
-        }*/
+        }
 
         // axis properties dependent on time scaling or not
         if (s.value("chrono_x").toBool()) {
@@ -316,24 +371,14 @@ void PerformanceHistory::showPlot(int p)
                 //ui->performancePlot->xAxis->setLabel("Test Result #");
         }
 
-        // make a SMA graph out of the current one and show it
-        if (s.value("dampen_graph").toBool()) {
-                QCPGraph* sma = dampen(ui->performancePlot->graph(p), s.value("dampen_average").toInt()); 
-                if (sma != 0)
-                        sma->setVisible(true); 
-        }
-
-        ui->performancePlot->rescaleAxes(true);
-
         // set the min or max of the y axis if needed
         if (s.value("show_xaxis").toBool()) {
                 if (p == 1) // accuracy plot
                         ui->performancePlot->yAxis->setRangeUpper(100);
                 else
                         ui->performancePlot->yAxis->setRangeLower(0);
-                        ui->performancePlot->yAxis->grid()->setZeroLinePen(Qt::NoPen);
+                ui->performancePlot->yAxis->grid()->setZeroLinePen(Qt::NoPen);
         }
-
         // add some padding to the axes ranges so points at edges arent cut off
         if (ui->performancePlot->graph(p)->data()->size() > 1) {
                 double padding = 0.01; //percent
@@ -346,6 +391,22 @@ void PerformanceHistory::showPlot(int p)
                         ui->performancePlot->yAxis->range().lower - yDiff*padding,
                         ui->performancePlot->yAxis->range().upper + yDiff*padding);
         }
+
+        // the 'target' line that the graph will fill to
+        QCPGraph* fillGraph = ui->performancePlot->graph(p)->channelFillGraph();
+        if (fillGraph != 0)
+                ui->performancePlot->removeGraph(fillGraph);
+        QCPGraph* min = new QCPGraph(ui->performancePlot->xAxis, ui->performancePlot->yAxis);
+        min->setPen(QPen(targetLineColor, 2));
+
+        for (double x : ui->performancePlot->graph(p)->data()->keys())
+                min->addData(x, yTarget);
+
+        min->setLayer("lineLayer");
+        ui->performancePlot->addPlottable(min);
+        ui->performancePlot->graph(p)->setChannelFillGraph(min);
+        if(smaGraph)
+                smaGraph->setChannelFillGraph(min);
 
         // draw it
         ui->performancePlot->replot();
