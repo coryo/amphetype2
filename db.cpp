@@ -546,7 +546,7 @@ void DB::updateText(int rowid, const QString& newText)
 {
         QByteArray txt_id = QCryptographicHash::hash(newText.toUtf8(),
                                 QCryptographicHash::Sha1);
-                        txt_id = txt_id.toHex();
+        txt_id = txt_id.toHex();
         QString sql = QString("UPDATE text SET id=\"%1\", text=\"%2\" WHERE rowid=%3").arg(QString(txt_id)).arg(newText).arg(rowid);
 
         DB::execCommand(sql);

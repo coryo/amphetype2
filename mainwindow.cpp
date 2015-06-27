@@ -20,7 +20,8 @@ MainWindow::MainWindow(QWidget* parent)
                 ui->quizzer,            SLOT  (setText(Text*)));
         connect(ui->performanceHistory, SIGNAL(gotoTab(int)),
                 this,                   SLOT  (gotoTab(int)));
-        connect(ui->performanceHistory, SIGNAL(settingsChanged()), ui->quizzer, SLOT(updatePlotTargetLine()));
+        connect(ui->performanceHistory, SIGNAL(settingsChanged()),
+                ui->quizzer,            SLOT  (updatePlotTargetLine()));
 
         connect(ui->tabWidget,   SIGNAL(currentChanged(int)),
                 ui->textManager, SLOT  (tabActive(int)));
