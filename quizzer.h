@@ -16,13 +16,13 @@ class Quizzer;
 
 class Quizzer : public QWidget {
         Q_OBJECT
-        Q_PROPERTY(QColor wpmLineColor MEMBER wpmLineColor NOTIFY colorChanged)
-        Q_PROPERTY(QColor apmLineColor MEMBER apmLineColor NOTIFY colorChanged)
-        Q_PROPERTY(QColor targetLineColor MEMBER targetLineColor NOTIFY colorChanged)
+        Q_PROPERTY(QColor wpmLineColor        MEMBER wpmLineColor        NOTIFY colorChanged)
+        Q_PROPERTY(QColor apmLineColor        MEMBER apmLineColor        NOTIFY colorChanged)
+        Q_PROPERTY(QColor targetLineColor     MEMBER targetLineColor     NOTIFY colorChanged)
         Q_PROPERTY(QColor plotBackgroundColor MEMBER plotBackgroundColor NOTIFY colorChanged)
         Q_PROPERTY(QColor plotForegroundColor MEMBER plotForegroundColor NOTIFY colorChanged)
-        Q_PROPERTY(QString goColor MEMBER goColor NOTIFY colorChanged)
-        Q_PROPERTY(QString stopColor MEMBER stopColor NOTIFY colorChanged)
+        Q_PROPERTY(QString goColor            MEMBER goColor             NOTIFY colorChanged)
+        Q_PROPERTY(QString stopColor          MEMBER stopColor           NOTIFY colorChanged)
 
 public:
         explicit Quizzer(QWidget *parent = 0);
@@ -30,18 +30,17 @@ public:
 
 private:
         void resizeEvent(QResizeEvent*);
-
         Ui::Quizzer* ui;
-        Text*  text;
-        QTimer resizeTimer;
-        QTimer lessonTimer;
-        QTime  lessonTime;
-
-        QColor wpmLineColor;
-        QColor apmLineColor;
-        QColor targetLineColor;
-        QColor plotBackgroundColor;
-        QColor plotForegroundColor;
+        Text*        text;
+        QTimer       resizeTimer;
+        QTimer       lessonTimer;
+        QTime        lessonTime;
+        // colors
+        QColor  wpmLineColor;
+        QColor  apmLineColor;
+        QColor  targetLineColor;
+        QColor  plotBackgroundColor;
+        QColor  plotForegroundColor;
         QString goColor;
         QString stopColor;
 

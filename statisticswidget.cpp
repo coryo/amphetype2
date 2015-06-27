@@ -21,10 +21,8 @@ StatisticsWidget::StatisticsWidget(QWidget *parent) :
 
         QSettings s;
 
-        ui->limitSpinBox->setValue(s.value("ana_many").toInt());
-        ui->minCountSpinBox->setValue(s.value("ana_count").toInt());
-
-        //ui->minCountEdit->setText(s.value("ana_count").toString());
+        ui->limitSpinBox->        setValue(s.value("ana_many").toInt());
+        ui->minCountSpinBox->     setValue(s.value("ana_count").toInt());
         ui->orderComboBox->setCurrentIndex(s.value("ana_which").toInt());
         ui->typeComboBox-> setCurrentIndex(s.value("ana_what").toInt());
 
