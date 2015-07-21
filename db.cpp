@@ -5,6 +5,7 @@
 
 #include <QSettings>
 #include <QCryptographicHash>
+#include <QDebug>
 
 #include <iostream>
 #include <vector>
@@ -129,7 +130,7 @@ void DB::deleteSource(const QList<int>& sources)
                 for (int source : sources) {
                         QString sql = QString("DELETE FROM text WHERE source = %1").arg(source);
                         DB::execCommand(&db, sql);
-                        sql = QString("UPDATE result SET source = 0 WHERE source = %1").arg(source);
+                        sql = QString("DELETE FROM result WHERE source = %1").arg(source);
                         DB::execCommand(&db, sql);
                         sql = QString("DELETE FROM source WHERE rowid = %1").arg(source);
                         DB::execCommand(&db, sql);
@@ -551,7 +552,7 @@ Text* DB::getNextText(Text* lastText)
                 "inner join source as s "
                 "on (t.source = s.rowid) "
                 "where t.rowid = (select rowid+1 from text where id = \"%1\")").arg(textid);
-        std::cout << "last id " << textid.toStdString() << std::endl;
+        qDebug() << "last id " << textid;
         return DB::getTextWithQuery(sql);
 }
 
