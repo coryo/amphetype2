@@ -44,41 +44,32 @@ TextManager::TextManager(QWidget *parent) :
 
         ui->selectionMethod->setCurrentIndex(s.value("select_method").toInt());
 
-        connect(ui->importButton, SIGNAL(clicked()),
-                this,             SLOT  (addFiles()));
-        // source tree signals
-        connect(ui->refreshSources, SIGNAL(clicked()),
-                this,               SLOT  (refreshSources()));
-
-        connect(ui->addSourceButton, SIGNAL(clicked()),
-                this,                SLOT(addSource()));
-
-        connect(ui->deleteSourceButton, SIGNAL(clicked()),
-                this,                   SLOT(deleteSource()));
-
-        connect(ui->addTextButton, SIGNAL(clicked()),
-                this,              SLOT(addText()));
-
-        connect(ui->deleteTextButton, SIGNAL(clicked()),
-                this,              SLOT(deleteText()));
-
-        connect(ui->textsTable,  SIGNAL(doubleClicked(const QModelIndex&)),
-                this,            SLOT  (doubleClicked(const QModelIndex&)));
-                        
-        connect(ui->sourcesTable, SIGNAL(pressed(const QModelIndex&)),
-                this,             SLOT  (populateTexts(const QModelIndex&)));
-
-        connect(ui->selectionMethod, SIGNAL(currentIndexChanged(int)),
-                this,                SLOT  (changeSelectMethod(int)));
-
-        connect(ui->enableSourceButton, SIGNAL(pressed()),
-                this,                   SLOT  (enableSource()));
+        connect(ui->importButton,        SIGNAL(clicked()),
+                this,                    SLOT  (addFiles()));
+        connect(ui->refreshSources,      SIGNAL(clicked()),
+                this,                    SLOT  (refreshSources()));
+        connect(ui->addSourceButton,     SIGNAL(clicked()),
+                this,                    SLOT  (addSource()));
+        connect(ui->deleteSourceButton,  SIGNAL(clicked()),
+                this,                    SLOT  (deleteSource()));
+        connect(ui->addTextButton,       SIGNAL(clicked()),
+                this,                    SLOT  (addText()));
+        connect(ui->deleteTextButton,    SIGNAL(clicked()),
+                this,                    SLOT  (deleteText()));
+        connect(ui->textsTable,          SIGNAL(doubleClicked(const QModelIndex&)),
+                this,                    SLOT  (doubleClicked(const QModelIndex&)));
+        connect(ui->sourcesTable,        SIGNAL(pressed(const QModelIndex&)),
+                this,                    SLOT  (populateTexts(const QModelIndex&)));
+        connect(ui->selectionMethod,     SIGNAL(currentIndexChanged(int)),
+                this,                    SLOT  (changeSelectMethod(int)));
+        connect(ui->enableSourceButton,  SIGNAL(pressed()),
+                this,                    SLOT  (enableSource()));
         connect(ui->disableSourceButton, SIGNAL(pressed()),
-                this,                   SLOT  (disableSource()));
-
-        connect(ui->showTextsButton, SIGNAL(pressed()), this, SLOT(toggleTextsWidget()));
-
-        connect(ui->editTextButton, SIGNAL(pressed()), this, SLOT(editText()));
+                this,                    SLOT  (disableSource()));
+        connect(ui->showTextsButton,     SIGNAL(pressed()),
+                this,                    SLOT  (toggleTextsWidget()));
+        connect(ui->editTextButton,      SIGNAL(pressed()),
+                this,                    SLOT  (editText()));
 }
 
 TextManager::~TextManager()
@@ -95,13 +86,11 @@ void TextManager::editText()
         if (sourceIndexes.isEmpty() || textIndexes.isEmpty())
                 return;
 
-        int row = textIndexes[0].row();
-        const QModelIndex& textRow = textsModel->index(row, 0);
-
+        const QModelIndex& textRow   = textsModel->  index(textIndexes[0].row(),   0);
         const QModelIndex& sourceRow = sourcesModel->index(sourceIndexes[0].row(), 0);
 
         int source = sourceRow.data().toInt();
-        int rowid = textRow.data().toInt();
+        int rowid  = textRow.data().toInt();
 
         Text* t = DB::getText(rowid);
 
@@ -119,9 +108,9 @@ void TextManager::editText()
                 ui->sourcesTable->selectRow(sourceRow.row());
                 populateTexts(sourceRow);
         }
-
         delete t;
 }
+
 void TextManager::toggleTextsWidget()
 {
         if (ui->textsWidget->isVisible()) {
@@ -284,7 +273,6 @@ void TextManager::refreshSources()
 
         ui->sourcesTable->setSortingEnabled(false);
         ui->sourcesTable->setColumnHidden(0, true);
-
         ui->sourcesTable->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
         ui->sourcesTable->verticalHeader()->setDefaultSectionSize(24);
         
@@ -312,7 +300,6 @@ void TextManager::refreshSources()
         }
 
         ui->sourcesTable->setModel(sourcesModel);
-
         ui->sourcesTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
         ui->sourcesTable->resizeColumnsToContents();
         ui->sourcesTable->show();
@@ -324,9 +311,7 @@ void TextManager::populateTexts(const QModelIndex& index)
                 return;
         ui->textsTable->hide();
 
-        QSettings s;
-        int row = index.row();
-        const QModelIndex& f = sourcesModel->index(row, 0);
+        const QModelIndex& f = sourcesModel->index(index.row(), 0);
 
         textsModel->clear();
 
@@ -341,7 +326,6 @@ void TextManager::populateTexts(const QModelIndex& index)
 
         ui->textsTable->setSortingEnabled(false);
         ui->textsTable->setColumnHidden(0, true);
-
         ui->textsTable->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
         ui->textsTable->verticalHeader()->setDefaultSectionSize(24);
 
@@ -372,13 +356,10 @@ void TextManager::populateTexts(const QModelIndex& index)
 
 void TextManager::doubleClicked(const QModelIndex& idx)
 {
-        int row = idx.row();
-        const QModelIndex& f = textsModel->index(row, 0);
-
+        const QModelIndex& f = textsModel->index(idx.row(), 0);
         int rowid = f.data().toInt();
 
         Text* t = DB::getText(rowid);
-
         emit setText(t);
         emit gotoTab(0);
 }
@@ -408,6 +389,7 @@ void TextManager::nextText(Text* lastText)
         nextText = DB::getNextText(selectMethod);
 
         emit setText(nextText);
+
 }
 
 void TextManager::addFiles()

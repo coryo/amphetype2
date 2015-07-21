@@ -98,20 +98,20 @@ void PerformanceHistory::updateColors()
         QColor subGridColor = plotForegroundColor;
         subGridColor.setAlpha(30);
         // x
-        ui->performancePlot->xAxis->setBasePen(QPen(plotForegroundColor, 1));
-        ui->performancePlot->xAxis->setTickPen(QPen(plotForegroundColor, 1));
-        ui->performancePlot->xAxis->setSubTickPen(QPen(plotForegroundColor, 1));
-        ui->performancePlot->xAxis->setTickLabelColor(plotForegroundColor);
-        ui->performancePlot->xAxis->setLabelColor(plotForegroundColor);
+        ui->performancePlot->xAxis->setBasePen    (QPen(plotForegroundColor, 1));
+        ui->performancePlot->xAxis->setTickPen    (QPen(plotForegroundColor, 1));
+        ui->performancePlot->xAxis->setSubTickPen (QPen(plotForegroundColor, 1));
+        ui->performancePlot->xAxis->setTickLabelColor  (plotForegroundColor);
+        ui->performancePlot->xAxis->setLabelColor      (plotForegroundColor);
         ui->performancePlot->xAxis->grid()->setPen(QPen(plotForegroundColor, 1, Qt::DotLine));
         ui->performancePlot->xAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
         ui->performancePlot->xAxis->grid()->setSubGridVisible(true);
         // y
-        ui->performancePlot->yAxis->setBasePen(QPen(plotForegroundColor, 1));
-        ui->performancePlot->yAxis->setTickPen(QPen(plotForegroundColor, 1));
-        ui->performancePlot->yAxis->setTickLabelColor(plotForegroundColor);
-        ui->performancePlot->yAxis->setSubTickPen(QPen(plotForegroundColor, 1));
-        ui->performancePlot->yAxis->setLabelColor(plotForegroundColor);
+        ui->performancePlot->yAxis->setBasePen    (QPen(plotForegroundColor, 1));
+        ui->performancePlot->yAxis->setTickPen    (QPen(plotForegroundColor, 1));
+        ui->performancePlot->yAxis->setTickLabelColor  (plotForegroundColor);
+        ui->performancePlot->yAxis->setSubTickPen (QPen(plotForegroundColor, 1));
+        ui->performancePlot->yAxis->setLabelColor      (plotForegroundColor);
         ui->performancePlot->yAxis->grid()->setPen(QPen(plotForegroundColor, 1, Qt::DotLine));
         ui->performancePlot->yAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
         ui->performancePlot->yAxis->grid()->setSubGridVisible(true);
@@ -126,7 +126,6 @@ QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
                 return 0;
 
         QCPGraph* newGraph = new QCPGraph(graph->keyAxis(), graph->valueAxis());
-
         double s = 0;
         QList<double> x;
         QList<double> y;
@@ -137,10 +136,8 @@ QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
                 x << it.value().key;
                 y << it.value().value;
         }
-
         for (int i = 0; i < n; ++i)
                 s += y[i];
-
         double q = 1.0 / n;
         for (int i = n; i < x.size(); ++i) {
                 newGraph->addData(x[i], s * q);
@@ -184,7 +181,6 @@ void PerformanceHistory::refreshSources()
         ui->sourceComboBox->addItem("<ALL LESSONS>");
 
         QList<QStringList> rows = DB::getSourcesList();
-
         for (QStringList row : rows)
                 ui->sourceComboBox->addItem(row[1], row[0].toInt());
 }
@@ -195,7 +191,6 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx)
         const QModelIndex& f = model->index(row, 0);
 
         Text* t = DB::getText(f.data().toString());
-
         emit setText(t);
         emit gotoTab(0);
 }

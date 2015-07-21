@@ -31,56 +31,43 @@ Quizzer::Quizzer(QWidget *parent) :
         ui->result->setVisible(s.value("show_last").toBool());
         setPreviousResultText(0,0);
         ui->typerColsSpinBox->setValue(s.value("typer_cols").toInt());
+        lessonTimer.setInterval(1000);
+        resizeTimer.setSingleShot(true);
 
         // create the two graphs in the plot
-        ui->plot->addLayer("topLayer", ui->plot->layer("main"), QCustomPlot::limAbove);
+        ui->plot->addLayer("topLayer",  ui->plot->layer("main"), QCustomPlot::limAbove);
         ui->plot->addLayer("lineLayer", ui->plot->layer("grid"), QCustomPlot::limAbove);
         ui->plot->addGraph();
         ui->plot->addGraph();   
         ui->plot->graph(0)->setLayer("topLayer");
         ui->plot->xAxis->setVisible(false);
         ui->plot->yAxis->setTickLabels(false);
-
-        // finishing or cancelling signals
-        connect(ui->typer, SIGNAL(done()),   this, SLOT(done()));
-        connect(ui->typer, SIGNAL(cancel()), this, SLOT(cancelled()));
-        // plot related signal connections
-        connect(ui->typer, SIGNAL(newPoint(int, double, double)),
-                this,      SLOT  (addPlotPoint(int, double, double)));
-        connect(ui->typer, SIGNAL(characterAdded(int,int)),
-                ui->plot,  SLOT  (replot()));
-        connect(ui->typer, SIGNAL(characterAdded(int,int)),
-                this,      SLOT  (updatePlotRangeY(int,int)));
-        connect(ui->typer, SIGNAL(testStarted(int)),
-                ui->plot,  SLOT  (replot()));
-        connect(ui->typer, SIGNAL(testStarted(int)),
-                this,      SLOT  (clearPlotData()));
-        connect(ui->typer, SIGNAL(testStarted(int)),
-                this,      SLOT  (updatePlotRangeX(int)));
-        connect(ui->plotCheckBox, SIGNAL(stateChanged(int)),
-                this,             SLOT  (setPlotVisible(int)));
+        
+        connect(ui->plotCheckBox,     SIGNAL(stateChanged(int)), this,             SLOT(setPlotVisible(int)));
+        connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), ui->typerDisplay, SLOT(wordWrap(int)));
 
         connect(this, SIGNAL(colorChanged()), this, SLOT(updateColors()));
         connect(this, SIGNAL(colorChanged()), this, SLOT(updatePlotTargetLine()));
-        // timer stuff
-        lessonTimer.setInterval(1000);
-        connect(ui->typer, SIGNAL(testStarted(int)), &lessonTimer, SLOT(start()));
-        connect(ui->typer, SIGNAL(done()), &lessonTimer, SLOT(stop()));
-        connect(ui->typer, SIGNAL(cancel()), &lessonTimer, SLOT(stop()));
-        connect(&lessonTimer, SIGNAL(timeout()), this, SLOT(timerLabelUpdate()));
-        connect(ui->typer, SIGNAL(testStarted(int)), this, SLOT(timerLabelReset()));
-        connect(ui->typer, SIGNAL(testStarted(int)), this, SLOT(timerLabelGo()));
-        connect(ui->typer, SIGNAL(done()), this, SLOT(timerLabelStop()));
-        connect(ui->typer, SIGNAL(cancel()), this, SLOT(timerLabelStop()));
-        // "cursor"
-        connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)),
-                ui->typerDisplay,     SLOT  (wordWrap(int)));
-        connect(ui->typer,            SIGNAL(positionChanged(int,int)),
-                ui->typerDisplay,     SLOT  (moveCursor(int,int)));
-        // resize timer, singleshot so it doesnt repeat
-        // when it times out, show the plot layer
-        resizeTimer.setSingleShot(true);
+
+        connect(&lessonTimer, SIGNAL(timeout()), this, SLOT(timerLabelUpdate()));      
         connect(&resizeTimer, SIGNAL(timeout()), this, SLOT(showGraphs()));
+
+        connect(ui->typer, SIGNAL(newPoint(int,double,double)), this,             SLOT(addPlotPoint(int,double,double)));
+        connect(ui->typer, SIGNAL(characterAdded(int,int)),     ui->plot,         SLOT(replot()));
+        connect(ui->typer, SIGNAL(characterAdded(int,int)),     this,             SLOT(updatePlotRangeY(int,int)));
+        connect(ui->typer, SIGNAL(testStarted(int)),            ui->plot,         SLOT(replot()));
+        connect(ui->typer, SIGNAL(testStarted(int)),            this,             SLOT(clearPlotData()));
+        connect(ui->typer, SIGNAL(testStarted(int)),            this,             SLOT(updatePlotRangeX(int)));
+        connect(ui->typer, SIGNAL(testStarted(int)),            &lessonTimer,     SLOT(start()));
+        connect(ui->typer, SIGNAL(testStarted(int)),            this,             SLOT(timerLabelReset()));
+        connect(ui->typer, SIGNAL(testStarted(int)),            this,             SLOT(timerLabelGo()));
+        connect(ui->typer, SIGNAL(done()),                      this,             SLOT(done()));
+        connect(ui->typer, SIGNAL(done()),                      &lessonTimer,     SLOT(stop()));
+        connect(ui->typer, SIGNAL(done()),                      this,             SLOT(timerLabelStop()));
+        connect(ui->typer, SIGNAL(cancel()),                    this,             SLOT(cancelled()));
+        connect(ui->typer, SIGNAL(cancel()),                    &lessonTimer,     SLOT(stop()));
+        connect(ui->typer, SIGNAL(cancel()),                    this,             SLOT(timerLabelStop()));
+        connect(ui->typer, SIGNAL(positionChanged(int,int)),    ui->typerDisplay, SLOT(moveCursor(int,int)));
 }
 
 Quizzer::~Quizzer()
@@ -106,7 +93,8 @@ void Quizzer::updateColors()
 {
         ui->plot->graph(0)->setPen(QPen(wpmLineColor, 3));
         ui->plot->graph(1)->setPen(QPen(apmLineColor, 2));
-        ui->plot->setBackground     (QBrush(plotBackgroundColor));
+        ui->plot->setBackground(QBrush(plotBackgroundColor));
+        
         ui->plot->yAxis->setBasePen   (QPen(plotForegroundColor, 1));
         ui->plot->yAxis->setTickPen   (QPen(plotForegroundColor, 1));
         ui->plot->yAxis->setSubTickPen(QPen(plotForegroundColor, 1));

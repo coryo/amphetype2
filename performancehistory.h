@@ -29,10 +29,11 @@ public:
         ~PerformanceHistory();
 
 private:
-        Ui::PerformanceHistory* ui;
-        QStandardItemModel* model;
         QCPGraph* dampen(QCPGraph*, int n = 10);
 
+        Ui::PerformanceHistory* ui;
+        QStandardItemModel*     model;
+        // colors
         QColor wpmLineColor;
         QColor smaLineColor;
         QColor targetLineColor;
