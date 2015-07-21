@@ -24,6 +24,8 @@ signals:
 private slots:
         void selectFont();
         void changeStyleSheet(int);
+        void changePerfLogging(int);
+        void writeTargets();
 };
 
 #endif // SETTINGSWIDGET_H

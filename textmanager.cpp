@@ -388,12 +388,26 @@ void TextManager::nextText(Text* lastText)
         QSettings s;
         int selectMethod = s.value("select_method").toInt();
 
-        if (lastText != 0)
+        Text* nextText;
+        if (lastText != 0) {
+                if (selectMethod == 1) {
+                        std::cout << "In order" << std::endl;
+                        nextText = DB::getNextText(lastText);
+                        emit setText(nextText);
+                        return;
+                }
+                if (selectMethod == 2) {
+                        std::cout << "Repeat" << std::endl;
+                        emit setText(lastText);
+                        return;
+                }
                 delete lastText;
+        }
 
-        Text* t = DB::getNextText(selectMethod);
+        std::cout << "Random" << std::endl;
+        nextText = DB::getNextText(selectMethod);
 
-        emit setText(t);
+        emit setText(nextText);
 }
 
 void TextManager::addFiles()

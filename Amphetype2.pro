@@ -27,7 +27,9 @@ SOURCES += main.cpp\
         inc/sqlite3ppext.cpp \
         inc/sqlite3.c \
         settingswidget.cpp \
-        typerdisplay.cpp
+        typerdisplay.cpp \
+        traininggenerator.cpp \
+    traininggenwidget.cpp
 
 HEADERS  += mainwindow.h \
         typer.h \
@@ -45,14 +47,17 @@ HEADERS  += mainwindow.h \
         inc/sqlite3ppext.h \
         inc/sqlite3.h \
         settingswidget.h \
-        typerdisplay.h
+        typerdisplay.h \
+        traininggenerator.h \
+    traininggenwidget.h
 
 FORMS    += mainwindow.ui \
         quizzer.ui \
         textmanager.ui \
         performancehistory.ui \
         statisticswidget.ui \
-        settingswidget.ui
+        settingswidget.ui \
+    traininggenwidget.ui
 
 linux {
         message("linux build")

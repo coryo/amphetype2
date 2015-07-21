@@ -65,6 +65,7 @@ void loadSettings()
                 s.setValue("target_wpm", 80);
                 s.setValue("target_acc", 97);
                 s.setValue("target_vis", 1);
+                s.setValue("perf_logging", true);
                 loadSettings();
         }        
 }

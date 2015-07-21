@@ -542,6 +542,19 @@ Text* DB::getNextText(int selectMethod)
         return new Text();
 }
 
+Text* DB::getNextText(Text* lastText)
+{
+        QString textid = QString(lastText->getId());
+        QString sql = QString(
+                "select t.id, t.source, t.text, s.name, t.rowid "
+                "from text as t "
+                "inner join source as s "
+                "on (t.source = s.rowid) "
+                "where t.rowid = (select rowid+1 from text where id = \"%1\")").arg(textid);
+        std::cout << "last id " << textid.toStdString() << std::endl;
+        return DB::getTextWithQuery(sql);
+}
+
 void DB::updateText(int rowid, const QString& newText)
 {
         QByteArray txt_id = QCryptographicHash::hash(newText.toUtf8(),

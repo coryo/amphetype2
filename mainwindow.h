@@ -27,6 +27,8 @@ private:
 
 private slots:
         void gotoTab(int);
+        void gotoTyperTab();
+        void gotoSourcesTab();
 };
 
 #endif // MAINWINDOW_H

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>814</width>
-    <height>232</height>
+    <height>351</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -196,6 +196,11 @@
           <item>
            <property name="text">
             <string>In Order</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Repeat</string>
            </property>
           </item>
          </widget>

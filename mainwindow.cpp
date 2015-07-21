@@ -29,6 +29,17 @@ MainWindow::MainWindow(QWidget* parent)
 
         connect(ui->settingsWidget, SIGNAL(settingsChanged()),
                 ui->quizzer,        SLOT  (setTyperFont()));
+        connect(ui->settingsWidget, SIGNAL(settingsChanged()), 
+                ui->quizzer,        SLOT(updatePlotTargetLine()));
+        connect(ui->settingsWidget, SIGNAL(settingsChanged()), 
+                ui->performanceHistory, SLOT(refreshCurrentPlot()));
+
+
+
+        connect(ui->trainingGenWidget, SIGNAL(generatedLessons()),
+                ui->textManager,       SLOT(refreshSources()));
+        connect(ui->trainingGenWidget, SIGNAL(generatedLessons()),
+                this,                  SLOT(gotoSourcesTab()));
 
         ui->quizzer->wantText(0);
 }
@@ -36,3 +47,5 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow() { delete ui; }
 
 void MainWindow::gotoTab(int i) { ui->tabWidget->setCurrentIndex(i); }
+void MainWindow::gotoTyperTab()   { ui->tabWidget->setCurrentIndex(0); }
+void MainWindow::gotoSourcesTab() { ui->tabWidget->setCurrentIndex(1); }

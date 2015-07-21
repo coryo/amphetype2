@@ -40,6 +40,7 @@ public:
         static QList<QStringList> getStatisticsData(const QString&, int, int, int, int);
         // create a text object 
         static Text* getNextText(int);          // get next text based on given select method
+        static Text* getNextText(Text*);
         static Text* getText(int);              // get a text with a given rowid
         static Text* getText(const QString&);   // get a text with a given hashid
 

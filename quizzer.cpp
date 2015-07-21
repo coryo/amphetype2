@@ -199,102 +199,108 @@ void Quizzer::done()
                 sum += x;
         double viscosity = sum/test->text.size();
 
-        // Generate statistics, the key is character/word/trigram
-        // stats are the time values, visc viscosity, mistakeCount values are
-        // positions in the text where a mistake occurred. mistakeCount.count(key)
-        // yields the amount of mistakes for a given key
-        QMultiHash<QStringRef, double> stats;
-        QMultiHash<QStringRef, double> visc;
-        QMultiHash<QStringRef, int> mistakeCount;
-        // characters
-        for (int i = 1; i < text->getText().length(); ++i) {
-                // the character as a qstringref
-                QStringRef c(&(text->getText()), i, 1);
 
-                // add a time value and visc value for the key
-                stats.insert(c, test->timeBetween.at(i).total_microseconds()*1.0e-6);
-                visc.insert(c, pow((((test->timeBetween.at(i).total_microseconds()*1.0e-6)-spc)/spc), 2));
+        if (s.value("perf_logging").toBool()) {
+                // Generate statistics, the key is character/word/trigram
+                // stats are the time values, visc viscosity, mistakeCount values are
+                // positions in the text where a mistake occurred. mistakeCount.count(key)
+                // yields the amount of mistakes for a given key
+                QMultiHash<QStringRef, double> stats;
+                QMultiHash<QStringRef, double> visc;
+                QMultiHash<QStringRef, int> mistakeCount;
+                // characters
+                for (int i = 1; i < text->getText().length(); ++i) {
+                        // the character as a qstringref
+                        QStringRef c(&(text->getText()), i, 1);
 
-                // add the mistake to the key
-                if (test->mistakes.contains(i))
-                        mistakeCount.insert(c, i);
-        }
-        //trigrams
-        for (int i = 1; i <test->length - 2; ++i) {
-                // the trigram as a qstringref
-                QStringRef tri(&(text->getText()), i, 3);
-                int start = i;
-                int end   = i + 3;
-                
-                double perch = 0;
-                double visco = 0;
-                // for each character in the tri
-                for (int j = start; j < end; ++j) {
-                        // add a mistake to the trigram, if it had one
-                        if (test->mistakes.contains(j))
-                                mistakeCount.insert(tri, j);
-                        // sum the times for the chracters in the tri
-                        perch += test->timeBetween.at(j).total_microseconds();
+                        // add a time value and visc value for the key
+                        stats.insert(c, test->timeBetween.at(i).total_microseconds()*1.0e-6);
+                        visc.insert(c, pow((((test->timeBetween.at(i).total_microseconds()*1.0e-6)-spc)/spc), 2));
+
+                        // add the mistake to the key
+                        if (test->mistakes.contains(i))
+                                mistakeCount.insert(c, i);
                 }
-                // average time per key
-                perch = perch / (double)(end-start);
-                // seconds per character
-                double tspc = perch * 1.0e-6;
-                // get the average viscosity
-                for (int j = start; j < end; ++j)
-                        visco += pow(((test->timeBetween.at(j).total_microseconds() * 1.0e-6 - tspc) / tspc), 2);
-                visco = visco/(end-start);
+                //trigrams
+                for (int i = 1; i <test->length - 2; ++i) {
+                        // the trigram as a qstringref
+                        QStringRef tri(&(text->getText()), i, 3);
+                        int start = i;
+                        int end   = i + 3;
+                        
+                        double perch = 0;
+                        double visco = 0;
+                        // for each character in the tri
+                        for (int j = start; j < end; ++j) {
+                                // add a mistake to the trigram, if it had one
+                                if (test->mistakes.contains(j))
+                                        mistakeCount.insert(tri, j);
+                                // sum the times for the chracters in the tri
+                                perch += test->timeBetween.at(j).total_microseconds();
+                        }
+                        // average time per key
+                        perch = perch / (double)(end-start);
+                        // seconds per character
+                        double tspc = perch * 1.0e-6;
+                        // get the average viscosity
+                        for (int j = start; j < end; ++j)
+                                visco += pow(((test->timeBetween.at(j).total_microseconds() * 1.0e-6 - tspc) / tspc), 2);
+                        visco = visco/(end-start);
 
-                stats.insert(tri, tspc);
-                visc.insert(tri, visco);
-        }
-        // words
-        QRegularExpression re("(\\w|'(?![A-Z]))+(-\\w(\\w|')*)*");
-        QRegularExpressionMatchIterator i = re.globalMatch(text->getText());
-        while (i.hasNext()) {
-                QRegularExpressionMatch match = i.next();
-
-                // ignore matches of 3characters of less
-                int length = match.capturedLength();
-                if (length <= 3)
-                        continue;
-                
-                // start and end pos of the word in the original text
-                int start  = match.capturedStart();
-                int end    = match.capturedEnd();
-
-                // the word as a qstringref
-                QStringRef word = QStringRef(&(text->getText()), start, length);
-
-                double perch = 0;
-                double visco = 0;
-                // for each character in the word
-                for (int j = start; j < end; ++j) {
-                        if (test->mistakes.contains(j))
-                                mistakeCount.insert(word, j);
-                        perch += test->timeBetween.at(j).total_microseconds();
+                        stats.insert(tri, tspc);
+                        visc.insert(tri, visco);
                 }
-                perch = perch / (double)(end-start);
+                // words
+                QRegularExpression re("(\\w|'(?![A-Z]))+(-\\w(\\w|')*)*");
+                QRegularExpressionMatchIterator i = re.globalMatch(text->getText());
+                while (i.hasNext()) {
+                        QRegularExpressionMatch match = i.next();
 
-                double tspc = perch * 1.0e-6;
-                for (int j = start; j < end; ++j)
-                        visco += pow(((test->timeBetween.at(j).total_microseconds() * 1.0e-6 - tspc) / tspc), 2);
-                visco = visco/(end-start);
+                        // ignore matches of 3characters of less
+                        int length = match.capturedLength();
+                        if (length <= 3)
+                                continue;
+                        
+                        // start and end pos of the word in the original text
+                        int start  = match.capturedStart();
+                        int end    = match.capturedEnd();
 
-                stats.insert(word, tspc);
-                visc.insert(word, visco);
+                        // the word as a qstringref
+                        QStringRef word = QStringRef(&(text->getText()), start, length);
+
+                        double perch = 0;
+                        double visco = 0;
+                        // for each character in the word
+                        for (int j = start; j < end; ++j) {
+                                if (test->mistakes.contains(j))
+                                        mistakeCount.insert(word, j);
+                                perch += test->timeBetween.at(j).total_microseconds();
+                        }
+                        perch = perch / (double)(end-start);
+
+                        double tspc = perch * 1.0e-6;
+                        for (int j = start; j < end; ++j)
+                                visco += pow(((test->timeBetween.at(j).total_microseconds() * 1.0e-6 - tspc) / tspc), 2);
+                        visco = visco/(end-start);
+
+                        stats.insert(word, tspc);
+                        visc.insert(word, visco);
+                }
+
+                // add stuff to the database
+                DB::addResult    (now, text->getId(), text->getSource(), test->wpm.back(), accuracy, viscosity);
+                DB::addStatistics(now, stats, visc, mistakeCount);
+                DB::addMistakes  (now, test->getMistakes());
         }
-
-        // add stuff to the database
-        DB::addResult    (now, text->getId(), text->getSource(), test->wpm.back(), accuracy, viscosity);
-        DB::addStatistics(now, stats, visc, mistakeCount);
-        DB::addMistakes  (now, test->getMistakes());
 
         // set the previous results label text
         setPreviousResultText(test->wpm.back(), accuracy);
 
-        // get the next text.
-        emit wantText(text); 
+        // repeat if targets not met, otherwise get next text
+        if (accuracy < s.value("target_acc").toInt()/100.0 || test->wpm.back() < s.value("target_wpm").toInt() || viscosity > s.value("target_vis").toInt())
+                setText(text);
+        else
+                emit wantText(text); 
 }
 
 void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)

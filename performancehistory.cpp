@@ -28,9 +28,6 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
                 ui->dampenCheckBox->setCheckState(Qt::Checked);        
         // set default values
         ui->smaWindowSpinBox->      setValue(s.value("dampen_average").toInt());
-        ui->targetWpmSpinBox->      setValue(s.value("target_wpm").toInt());
-        ui->targetAccDoubleSpinBox->setValue(s.value("target_acc").toDouble());
-        ui->targetVisDoubleSpinBox->setValue(s.value("target_vis").toDouble());
         ui->limitNumberSpinBox->    setValue(s.value("perf_items").toInt());
         ui->groupByComboBox->       setCurrentIndex(s.value("perf_group_by").toInt());
         ui->groupByComboBox->       setItemText(2, QString("%1 Results").arg(s.value("def_group_by").toInt()));
@@ -55,22 +52,16 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(refreshPerformance()));
         connect(ui->plotSelector,    SIGNAL(currentIndexChanged(int)), this, SLOT(showPlot(int)));
         // plot settings. 
-        connect(ui->timeScaleCheckBox,      SIGNAL(stateChanged(int)),    this, SLOT(writeSettings()));
-        connect(ui->timeScaleCheckBox,      SIGNAL(stateChanged(int)),    this, SLOT(refreshPerformance()));
-        connect(ui->fullRangeYCheckBox,     SIGNAL(stateChanged(int)),    this, SLOT(writeSettings()));
-        connect(ui->fullRangeYCheckBox,     SIGNAL(stateChanged(int)),    this, SLOT(refreshCurrentPlot()));
-        connect(ui->dampenCheckBox,         SIGNAL(stateChanged(int)),    this, SLOT(writeSettings()));
-        connect(ui->dampenCheckBox,         SIGNAL(stateChanged(int)),    this, SLOT(refreshCurrentPlot()));
-        connect(ui->smaWindowSpinBox,       SIGNAL(valueChanged(int)),    this, SLOT(writeSettings()));
-        connect(ui->smaWindowSpinBox,       SIGNAL(valueChanged(int)),    this, SLOT(refreshCurrentPlot()));
-        connect(ui->plotCheckBox,           SIGNAL(stateChanged(int)),    this, SLOT(writeSettings()));
-        connect(ui->plotCheckBox,           SIGNAL(stateChanged(int)),    this, SLOT(refreshCurrentPlot()));
-        connect(ui->targetWpmSpinBox,       SIGNAL(valueChanged(int)),    this, SLOT(writeSettings()));
-        connect(ui->targetWpmSpinBox,       SIGNAL(valueChanged(int)),    this, SLOT(refreshCurrentPlot()));
-        connect(ui->targetAccDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(writeSettings()));
-        connect(ui->targetAccDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshCurrentPlot()));
-        connect(ui->targetVisDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(writeSettings()));
-        connect(ui->targetVisDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshCurrentPlot()));
+        connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(refreshPerformance()));
+        connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
+        connect(ui->dampenCheckBox,     SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->dampenCheckBox,     SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
+        connect(ui->smaWindowSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->smaWindowSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(refreshCurrentPlot()));
+        connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
+        connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
 
         connect(this, SIGNAL(colorChanged()), this, SLOT(updateColors()));
 }
@@ -164,9 +155,9 @@ void PerformanceHistory::writeSettings()
         s.setValue("perf_items",     ui->limitNumberSpinBox->value());
         s.setValue("perf_group_by",  ui->groupByComboBox->currentIndex());
         s.setValue("dampen_average", ui->smaWindowSpinBox->value());
-        s.setValue("target_wpm",     ui->targetWpmSpinBox->value());
-        s.setValue("target_acc",     ui->targetAccDoubleSpinBox->value());
-        s.setValue("target_vis",     ui->targetVisDoubleSpinBox->value());
+        // s.setValue("target_wpm",     ui->targetWpmSpinBox->value());
+        // s.setValue("target_acc",     ui->targetAccDoubleSpinBox->value());
+        // s.setValue("target_vis",     ui->targetVisDoubleSpinBox->value());
         if (ui->timeScaleCheckBox->checkState() == Qt::Unchecked)
                 s.setValue("chrono_x", false);
         else
@@ -312,9 +303,9 @@ void PerformanceHistory::showPlot(int p)
                 smaGraph = sma;
                 if (sma != 0) {
                         sma->setPen(QPen(smaLineColor, 3));
-                        QColor _lighter = smaLineColor;
-                        _lighter.setAlpha(25);
-                        sma->setBrush(QBrush(_lighter));
+                        // QColor _lighter = smaLineColor;
+                        // _lighter.setAlpha(25);
+                        // sma->setBrush(QBrush(_lighter));
                         sma->setVisible(true);
                         ui->performancePlot->addPlottable(sma);
                 }
@@ -397,8 +388,8 @@ void PerformanceHistory::showPlot(int p)
         min->setLayer("lineLayer");
         ui->performancePlot->addPlottable(min);
         ui->performancePlot->graph(p)->setChannelFillGraph(min);
-        if(smaGraph)
-                smaGraph->setChannelFillGraph(min);
+        // if(smaGraph)
+        //         smaGraph->setChannelFillGraph(min);
 
         // draw it
         ui->performancePlot->replot();

@@ -45,7 +45,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
       <widget class="Quizzer" name="quizzer">
        <attribute name="title">
@@ -65,6 +65,11 @@
       <widget class="StatisticsWidget" name="statisticsWidget">
        <attribute name="title">
         <string>Analysis</string>
+       </attribute>
+      </widget>
+      <widget class="TrainingGenWidget" name="trainingGenWidget">
+       <attribute name="title">
+        <string>Training Generator</string>
        </attribute>
       </widget>
       <widget class="SettingsWidget" name="settingsWidget">
@@ -107,6 +112,12 @@
    <class>SettingsWidget</class>
    <extends>QWidget</extends>
    <header>settingswidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TrainingGenWidget</class>
+   <extends>QWidget</extends>
+   <header>traininggenwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

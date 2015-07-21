@@ -20,8 +20,23 @@ SettingsWidget::SettingsWidget(QWidget *parent) :
         ui->styleSheetComboBox->addItem("Basic Theme", "basic");
         ui->styleSheetComboBox->setCurrentIndex(ui->styleSheetComboBox->findData(s.value("stylesheet").toString()));
 
-        connect(ui->fontButton, SIGNAL(pressed()), this, SLOT(selectFont()));
+        bool perfLogging = s.value("perf_logging").toBool();
+        if (perfLogging)
+                ui->disablePerformanceLoggingCheckBox->setCheckState(Qt::Unchecked);
+        else
+                ui->disablePerformanceLoggingCheckBox->setCheckState(Qt::Checked);
+
+        ui->targetWPMSpinBox->setValue(s.value("target_wpm").toInt());
+        ui->targetAccSpinBox->setValue(s.value("target_acc").toDouble());
+        ui->targetVisSpinBox->setValue(s.value("target_vis").toDouble());
+
+        connect(ui->fontButton,         SIGNAL(pressed()), this, SLOT(selectFont()));
         connect(ui->styleSheetComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeStyleSheet(int)));
+        connect(ui->disablePerformanceLoggingCheckBox, SIGNAL(stateChanged(int)), this, SLOT(changePerfLogging(int)));
+
+        connect(ui->targetWPMSpinBox, SIGNAL(valueChanged(int)),    this, SLOT(writeTargets()));
+        connect(ui->targetAccSpinBox, SIGNAL(valueChanged(double)), this, SLOT(writeTargets()));
+        connect(ui->targetVisSpinBox, SIGNAL(valueChanged(double)), this, SLOT(writeTargets()));
 }
 
 SettingsWidget::~SettingsWidget()
@@ -29,6 +44,14 @@ SettingsWidget::~SettingsWidget()
         delete ui;
 }
 
+void SettingsWidget::writeTargets()
+{
+        QSettings s;
+        s.setValue("target_wpm", ui->targetWPMSpinBox->value());
+        s.setValue("target_acc", ui->targetAccSpinBox->value());
+        s.setValue("target_vis", ui->targetVisSpinBox->value());
+        emit settingsChanged();
+}
 void SettingsWidget::changeStyleSheet(int i)
 {
         QSettings s;
@@ -53,4 +76,14 @@ void SettingsWidget::selectFont()
                 ui->fontLabel->setFont(font);
                 emit settingsChanged();
         }
+}
+
+void SettingsWidget::changePerfLogging(int state)
+{
+        QSettings s;
+
+        if (!state)
+                s.setValue("perf_logging", true);
+        else
+                s.setValue("perf_logging", false); 
 }
