@@ -285,10 +285,13 @@ void Quizzer::done()
         setPreviousResultText(test->wpm.back(), accuracy);
 
         // repeat if targets not met, otherwise get next text
-        if (accuracy < s.value("target_acc").toInt()/100.0 || test->wpm.back() < s.value("target_wpm").toInt() || viscosity > s.value("target_vis").toInt())
+        if (accuracy < s.value("target_acc").toInt()/100.0 || test->wpm.back() < s.value("target_wpm").toInt() || viscosity > s.value("target_vis").toInt()) {
+                qDebug() << "REPEAT";
                 setText(text);
-        else
+        }
+        else {
                 emit wantText(text); 
+        }
 }
 
 void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)
