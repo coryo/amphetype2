@@ -60,6 +60,8 @@ TextManager::TextManager(QWidget *parent) :
                 this,                    SLOT  (doubleClicked(const QModelIndex&)));
         connect(ui->sourcesTable,        SIGNAL(pressed(const QModelIndex&)),
                 this,                    SLOT  (populateTexts(const QModelIndex&)));
+        connect(ui->sourcesTable,        SIGNAL(doubleClicked(const QModelIndex&)),
+                this,                    SLOT  (toggleTextsWidget()));
         connect(ui->selectionMethod,     SIGNAL(currentIndexChanged(int)),
                 this,                    SLOT  (changeSelectMethod(int)));
         connect(ui->enableSourceButton,  SIGNAL(pressed()),
@@ -371,11 +373,13 @@ void TextManager::nextText(Text* lastText)
 
         Text* nextText;
         if (lastText != 0) {
-                if (selectMethod == 1) {
-                        std::cout << "In order" << std::endl;
-                        nextText = DB::getNextText(lastText);
-                        emit setText(nextText);
-                        return;
+                if (!s.value("perf_logging").toBool()) {
+                        if (selectMethod == 1) {
+                                std::cout << "In order" << std::endl;
+                                nextText = DB::getNextText(lastText);
+                                emit setText(nextText);
+                                return;
+                        }
                 }
                 if (selectMethod == 2) {
                         std::cout << "Repeat" << std::endl;
@@ -385,7 +389,6 @@ void TextManager::nextText(Text* lastText)
                 delete lastText;
         }
 
-        std::cout << "Random" << std::endl;
         nextText = DB::getNextText(selectMethod);
 
         emit setText(nextText);

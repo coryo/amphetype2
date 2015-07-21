@@ -34,7 +34,7 @@ public:
         static void enableSource (const QList<int>&);
 
         // specific query functions
-        static int                      getSource(const QString&, int = -1);
+        static int                      getSource(const QString&, int lesson=-1, int type=0);
         static std::pair<double,double> getMedianStats(int);
         static QList<QStringList>       getSourcesData();
         static QList<QStringList>       getTextsData(int);
@@ -43,7 +43,7 @@ public:
         static QList<QStringList>       getStatisticsData(const QString&, int, int, int, int);
         // create a text object 
         static Text* getNextText(int);          // get next text based on given select method
-        static Text* getNextText(Text*);
+        static Text* getNextText(Text*);        // get the text that follows the given text
         static Text* getText(int);              // get a text with a given rowid
         static Text* getText(const QString&);   // get a text with a given hashid
 

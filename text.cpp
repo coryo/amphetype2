@@ -17,13 +17,13 @@ Text::Text() : id(QByteArray()), source(0), textNumber(-1)
                "\"Sources\" tab and try adding some texts from the "
                "\"txt\" directory.";
 }
-Text::Text(const QByteArray& id, int source, const QString& text)
-        : id(id), source(source), text(text), sourceName(""), textNumber(0)
+Text::Text(const QByteArray& id, int source, const QString& text, int type)
+        : id(id), source(source), text(text), sourceName(""), textNumber(0), type(type)
 {
 }
 
-Text::Text(const QByteArray& id, int source, const QString& text, const QString& sName, int tNum)
-        : id(id), source(source), text(text), sourceName(sName), textNumber(tNum)
+Text::Text(const QByteArray& id, int source, const QString& text, const QString& sName, int tNum, int type)
+        : id(id), source(source), text(text), sourceName(sName), textNumber(tNum), type(type)
 {
 }
 
@@ -32,3 +32,4 @@ int               Text::getSource()     const { return source; }
 const QString&    Text::getText()       const { return text; }
 const QString&    Text::getSourceName() const { return sourceName; }
 int               Text::getTextNumber() const { return textNumber; }
+int              Text::getType()     const { return type; }

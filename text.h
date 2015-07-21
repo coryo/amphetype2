@@ -7,14 +7,15 @@
 class Text {
 public:
         Text();
-        Text(const QByteArray&, int, const QString&);
-        Text(const QByteArray&, int, const QString&, const QString&, int);
+        Text(const QByteArray&, int, const QString&, int type=0);
+        Text(const QByteArray&, int, const QString&, const QString&, int, int type=0);
 
         const QByteArray& getId() const;
         int               getSource() const;
         const QString&    getText() const;
         const QString&    getSourceName() const;
         int               getTextNumber() const;
+        int               getType() const;
 
 private:
         QByteArray id;
@@ -22,6 +23,7 @@ private:
         QString text;
         QString sourceName;
         int textNumber;
+        int type;
 };
 
 #endif // TEXT_H

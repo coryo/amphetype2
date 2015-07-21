@@ -48,7 +48,7 @@ void DB::initDB()
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
                 db.execute("create table source (name text, disabled integer, "
-                    "discount integer)");
+                    "discount integer, type integer)");
                 db.execute("create table text (id text primary key, source integer, "
                     "text text, disabled integer)");
                 db.execute("create table result (w real, text_id text, source "
@@ -92,7 +92,7 @@ void DB::enableSource(const QList<int>& sources)
         xct.commit();
 }
 
-int DB::getSource(const QString& sourceName, int lesson)
+int DB::getSource(const QString& sourceName, int lesson, int type)
 {
         try {
                 QString sql = QString("select rowid from source where name = \"%1\" limit 1").arg(sourceName);
@@ -111,7 +111,9 @@ int DB::getSource(const QString& sourceName, int lesson)
                 else
                         data << lesson;
 
-                sql = "insert into source (name, discount) values (?, ?)";
+                data << type;
+
+                sql = "insert into source (name, discount, type) values (?, ?, ?)";
                 DB::insertItems(sql, data);
                 // try again now that it's in the db
                 return getSource(sourceName, lesson);
@@ -471,7 +473,7 @@ QList<QStringList> DB::getSourcesList()
 Text* DB::getText(const QString& textHash)
 {
         QString sql = QString(
-                "select t.id, t.source, t.text, s.name, t.rowid "
+                "select t.id, t.source, t.text, s.name, t.rowid, s.type "
                 "from text as t "
                 "inner join source as s "
                 "on (t.source = s.rowid) "
@@ -482,7 +484,7 @@ Text* DB::getText(const QString& textHash)
 Text* DB::getText(int rowid)
 {
         QString sql = QString(
-                "select t.id, t.source, t.text, s.name, t.rowid "
+                "select t.id, t.source, t.text, s.name, t.rowid, s.type "
                 "from text as t "
                 "inner join source as s "
                 "on (t.source = s.rowid) "
@@ -500,7 +502,7 @@ Text* DB::getNextText(int selectMethod)
         if (selectMethod != 1) {
                 // not in order
                 sql = QString(
-                        "SELECT t.id, t.source, t.text, s.name, t.rowid "
+                        "SELECT t.id, t.source, t.text, s.name, t.rowid, s.type "
                         "FROM ((select id,source,text,rowid from text "
                                 "where disabled is null order by random() "
                                 "limit %1) as t) "
@@ -532,7 +534,7 @@ Text* DB::getNextText(int selectMethod)
                         return new Text();
 
                 sql = QString(
-                        "select t.id,t.source,t.text, s.name, t.rowid "
+                        "select t.id,t.source,t.text, s.name, t.rowid, s.type "
                         "from text as t "
                         "left join source as s "
                         "on (t.source = s.rowid) "
@@ -547,7 +549,7 @@ Text* DB::getNextText(Text* lastText)
 {
         QString textid = QString(lastText->getId());
         QString sql = QString(
-                "select t.id, t.source, t.text, s.name, t.rowid "
+                "select t.id, t.source, t.text, s.name, t.rowid, s.type "
                 "from text as t "
                 "inner join source as s "
                 "on (t.source = s.rowid) "
@@ -709,6 +711,8 @@ Text* DB::getTextWithQuery(const QString& query)
                 data << row[1]; // source
                 data << row[2]; // text
                 data << row[3]; // name
+                
+                
 
                 int source = row[1].toInt();
                 sql = QString("select rowid from text where source = %1 limit 1")
@@ -721,7 +725,10 @@ Text* DB::getTextWithQuery(const QString& query)
                 int offset = row2[0].toInt() - 1;
                 data << QString::number(row[4].toInt() - offset);       // text number
 
-                return new Text(data[0].toUtf8(), data[1].toInt(), data[2], data[3], data[4].toInt());
+                data << row[5];
+                if (data[5].isEmpty())
+                        data[5] = "0";
+                return new Text(data[0].toUtf8(), data[1].toInt(), data[2], data[3], data[4].toInt(), data[5].toInt());
         }
         catch (const std::exception& e) {
                 std::cerr << e.what() << std::endl;

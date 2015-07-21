@@ -59,7 +59,7 @@ void TrainingGenWidget::generate()
         QDateTime now = QDateTime::currentDateTime();
         QString sourceName = layoutName+"::Generated Training " + now.toString("hh:mm:ss.zzz");
 
-        int sourceId = DB::getSource(sourceName, 1);
+        int sourceId = DB::getSource(sourceName, 1, 1);
         DB::addTexts(sourceId, bigList, 1);
         bigList.clear();
 
