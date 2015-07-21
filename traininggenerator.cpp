@@ -60,16 +60,9 @@ TrainingGenerator::TrainingGenerator(QString& u, QString& m, QString& l, Keyboar
 
 QList<QStringList>* TrainingGenerator::generate(int lessonsPerFingerGroup, int maxLength, KeyboardRow r)
 {
-        QString* row;
-        switch(r) {
-                case KeyboardRow::UPPER:  row = &rows.value(0); break;
-                case KeyboardRow::MIDDLE: row = &rows.value(1); break;
-                case KeyboardRow::LOWER:  row = &rows.value(2); break;
-                default: return 0; break;
-        }
+        QString& homeRow = rows[1];
         
-        QList<QStringList>* rowLessons = new QList<QStringList>;
-        int rowLength  = row->size();
+        int rowLength  = homeRow.size();
         int startIndex = 0;
 
         // ISO has an extra key on bottom row before the main typing area
@@ -79,8 +72,8 @@ QList<QStringList>* TrainingGenerator::generate(int lessonsPerFingerGroup, int m
         // innerindex, index, m, a, c
         QStringList keys_by_finger;
         for (int i = 4; i >= 0; --i) {
-                QString finger_keys((*row)[startIndex + i]);
-                finger_keys += (*row)[startIndex + (9-i)];
+                QString finger_keys(homeRow[startIndex + i]);
+                finger_keys += homeRow[startIndex + (9-i)];
                 keys_by_finger.append(finger_keys);
         }
 
@@ -97,7 +90,7 @@ QList<QStringList>* TrainingGenerator::generate(int lessonsPerFingerGroup, int m
         // extra keys on the right
         if (rowLength > 9) {
                 int extraKeys = rowLength - 9;
-                keys_by_finger.append(row->right(extraKeys));
+                keys_by_finger.append(homeRow.right(extraKeys));
                 stages.append(keys_by_finger.value(4) + keys_by_finger.value(5));   
         }
 
@@ -128,6 +121,7 @@ QList<QStringList>* TrainingGenerator::generate(int lessonsPerFingerGroup, int m
         stages.append(stages.value(stages.size()-1) + stages.value(stages.size()-2));
         //stages.append(charactersPerFinger(Finger::PINKY_EXTRA));
 
+        QList<QStringList>* rowLessons = new QList<QStringList>;
         for (QString stage : stages) {
                 // Make lessonsPerFinger lessons for this finger
                 QStringList lessons;
@@ -175,8 +169,8 @@ QString TrainingGenerator::charactersPerFinger(Finger f)
 
         QString keys;
         for (int i = 0; i < 3; ++i) {
-                keys += rows.at(i)[colLeft];
-                keys += rows.at(i)[colRight];
+                keys += rows[i][colLeft];
+                keys += rows[i][colRight];
         }
 
         return keys;
