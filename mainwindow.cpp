@@ -33,6 +33,8 @@ MainWindow::MainWindow(QWidget* parent)
         connect(ui->settingsWidget, SIGNAL(settingsChanged()), 
                 ui->quizzer,        SLOT(updatePlotTargetLine()));
         connect(ui->settingsWidget, SIGNAL(settingsChanged()), 
+                ui->quizzer,        SLOT(updateTyperDisplay()));
+        connect(ui->settingsWidget, SIGNAL(settingsChanged()), 
                 ui->performanceHistory, SLOT(refreshCurrentPlot()));
 
 

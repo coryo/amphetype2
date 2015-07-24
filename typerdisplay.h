@@ -25,9 +25,10 @@ private:
         int cursorPosition;
         int testPosition;
         std::pair<int,int> posToListPos(int);
-        void updateDisplay();
+        
 
-private slots:
+public slots:
+        void updateDisplay();
         void wordWrap(int);
         void moveCursor(int,int);
 };

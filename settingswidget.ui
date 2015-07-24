@@ -14,6 +14,20 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Target Accuracy (%):</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>Target Viscosity:</string>
+     </property>
+    </widget>
+   </item>
    <item row="3" column="1">
     <widget class="QSpinBox" name="targetWPMSpinBox">
      <property name="minimum">
@@ -37,20 +51,6 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="1">
-    <widget class="QPushButton" name="fontButton">
-     <property name="text">
-      <string>Change Typer Font</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Application Style:</string>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="2">
     <spacer name="horizontalSpacer">
      <property name="orientation">
@@ -64,7 +64,24 @@
      </property>
     </spacer>
    </item>
-   <item row="6" column="1">
+   <item row="1" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Application Style:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QPushButton" name="fontButton">
+     <property name="text">
+      <string>Change Typer Font</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="styleSheetComboBox"/>
+   </item>
+   <item row="7" column="1">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -77,27 +94,10 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="styleSheetComboBox"/>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="fontLabel">
-     <property name="text">
-      <string>This is the current Typer Font</string>
-     </property>
-    </widget>
-   </item>
    <item row="2" column="0">
     <widget class="QLabel" name="label_2">
      <property name="text">
       <string>Disable Performance Logging:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QCheckBox" name="disablePerformanceLoggingCheckBox">
-     <property name="text">
-      <string/>
      </property>
     </widget>
    </item>
@@ -118,17 +118,24 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_4">
+   <item row="2" column="1">
+    <widget class="QCheckBox" name="disablePerformanceLoggingCheckBox">
      <property name="text">
-      <string>Target Accuracy (%):</string>
+      <string/>
      </property>
     </widget>
    </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="label_5">
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_6">
      <property name="text">
-      <string>Target Viscosity:</string>
+      <string>Typer Font:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="3">
+    <widget class="QLabel" name="fontLabel">
+     <property name="text">
+      <string>This is the current Typer Font</string>
      </property>
     </widget>
    </item>

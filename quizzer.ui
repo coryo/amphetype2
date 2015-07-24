@@ -170,13 +170,6 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="0" colspan="5">
-      <widget class="QLabel" name="textInfoLabel">
-       <property name="text">
-        <string>TextLabel</string>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="4" colspan="2">
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -238,6 +231,20 @@ Press ESC to cancel and load a new text.</string>
        </property>
        <property name="wordWrap">
         <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0" colspan="4">
+      <widget class="QLabel" name="textInfoLabel">
+       <property name="text">
+        <string>TextLabel</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="4">
+      <widget class="QLabel" name="alertLabel">
+       <property name="text">
+        <string/>
        </property>
       </widget>
      </item>

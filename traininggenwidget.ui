@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>440</width>
+    <width>526</width>
     <height>299</height>
    </rect>
   </property>
@@ -39,10 +39,10 @@
         <number>10</number>
        </property>
        <property name="maximum">
-        <number>200</number>
+        <number>500</number>
        </property>
        <property name="singleStep">
-        <number>10</number>
+        <number>5</number>
        </property>
        <property name="value">
         <number>50</number>
@@ -67,6 +67,9 @@
       <widget class="QSpinBox" name="lessonsPerStageSpinBox">
        <property name="minimum">
         <number>1</number>
+       </property>
+       <property name="value">
+        <number>5</number>
        </property>
       </widget>
      </item>

@@ -492,57 +492,51 @@ Text* DB::getText(int rowid)
         return DB::getTextWithQuery(sql);
 }
 
-Text* DB::getNextText(int selectMethod)
+Text* DB::getRandomText()
 {
         QString sql;
         QSettings s;
 
         int num_rand = s.value("num_rand").toInt();
 
-        if (selectMethod != 1) {
-                // not in order
-                sql = QString(
-                        "SELECT t.id, t.source, t.text, s.name, t.rowid, s.type "
-                        "FROM ((select id,source,text,rowid from text "
-                                "where disabled is null order by random() "
-                                "limit %1) as t) "
-                        "INNER JOIN source as s "
-                        "ON (t.source = s.rowid)").arg(num_rand);
+        sql = QString(
+                "SELECT t.id, t.source, t.text, s.name, t.rowid, s.type "
+                "FROM ((select id,source,text,rowid from text "
+                        "where disabled is null order by random() "
+                        "limit %1) as t) "
+                "INNER JOIN source as s "
+                "ON (t.source = s.rowid)").arg(num_rand);
 
-                if (selectMethod == 2)
-                        std::cout << 2;
-                else if (selectMethod == 3)
-                        std::cout << 3;
-                else
-                        return DB::getTextWithQuery(sql);
-        } else {
-                // in order
-                sql = "select r.text_id from result as r "
-                        "left join source as s on (r.source = s.rowid) "
-                        "where (s.discount is null) or (s.discount = 1) "
-                        "order by r.w desc limit 1";
+        return DB::getTextWithQuery(sql);
+}
 
-                QStringList row = DB::getOneRow(sql);
+Text* DB::getNextText()
+{
+        // in order
+        QString sql = "select r.text_id from result as r "
+                "left join source as s on (r.source = s.rowid) "
+                "where (s.discount is null) or (s.discount = 1) "
+                "order by r.w desc limit 1";
 
-                if (row.isEmpty())
-                        return new Text();
+        QStringList row = DB::getOneRow(sql);
 
-                sql = QString("select rowid from text where id = \"%1\"").arg(row[0]);
-                QStringList row2 = DB::getOneRow(sql);
+        if (row.isEmpty())
+                return new Text();
 
-                if (row2.isEmpty())
-                        return new Text();
+        sql = QString("select rowid from text where id = \"%1\"").arg(row[0]);
+        QStringList row2 = DB::getOneRow(sql);
 
-                sql = QString(
-                        "select t.id,t.source,t.text, s.name, t.rowid, s.type "
-                        "from text as t "
-                        "left join source as s "
-                        "on (t.source = s.rowid) "
-                        "where t.rowid > %1 and t.disabled is null "
-                        "order by t.rowid asc limit 1").arg(row2[0]);
-                return DB::getTextWithQuery(sql);
-        }
-        return new Text();
+        if (row2.isEmpty())
+                return new Text();
+
+        sql = QString(
+                "select t.id,t.source,t.text, s.name, t.rowid, s.type "
+                "from text as t "
+                "left join source as s "
+                "on (t.source = s.rowid) "
+                "where t.rowid > %1 and t.disabled is null "
+                "order by t.rowid asc limit 1").arg(row2[0]);
+        return DB::getTextWithQuery(sql);
 }
 
 Text* DB::getNextText(Text* lastText)
@@ -711,8 +705,6 @@ Text* DB::getTextWithQuery(const QString& query)
                 data << row[1]; // source
                 data << row[2]; // text
                 data << row[3]; // name
-                
-                
 
                 int source = row[1].toInt();
                 sql = QString("select rowid from text where source = %1 limit 1")

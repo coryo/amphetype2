@@ -373,25 +373,32 @@ void TextManager::nextText(Text* lastText)
 
         Text* nextText;
         if (lastText != 0) {
-                if (!s.value("perf_logging").toBool()) {
-                        if (selectMethod == 1) {
+                if (selectMethod == 0) {
+                        nextText = DB::getRandomText();
+                        emit setText(nextText);
+                        return;
+                } else if (selectMethod == 1) {
+                        if (!s.value("perf_logging").toBool()) {
                                 std::cout << "In order" << std::endl;
                                 nextText = DB::getNextText(lastText);
+                                delete lastText;
+                                emit setText(nextText);
+                                return;
+                        } else {
+                                nextText = DB::getNextText();
                                 emit setText(nextText);
                                 return;
                         }
-                }
-                if (selectMethod == 2) {
+                } else if (selectMethod == 2) {
                         std::cout << "Repeat" << std::endl;
                         emit setText(lastText);
                         return;
                 }
-                delete lastText;
+        } else {
+                nextText = DB::getNextText();
+                emit setText(nextText);
         }
-
-        nextText = DB::getNextText(selectMethod);
-
-        emit setText(nextText);
+                
 
 }
 

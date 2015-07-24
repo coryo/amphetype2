@@ -70,6 +70,8 @@ private slots:
         void timerLabelReset();
         void timerLabelGo();
         void timerLabelStop();
+
+        void updateTyperDisplay();
         
 };
 

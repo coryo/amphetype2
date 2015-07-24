@@ -76,6 +76,11 @@ Quizzer::~Quizzer()
         delete text;
 }
 
+void Quizzer::updateTyperDisplay()
+{
+        ui->typerDisplay->updateDisplay();
+}
+
 void Quizzer::updatePlotTargetLine()
 {
         QSettings s;
@@ -285,11 +290,20 @@ void Quizzer::done()
         setPreviousResultText(test->wpm.back(), accuracy);
 
         // repeat if targets not met, otherwise get next text
-        if (accuracy < s.value("target_acc").toInt()/100.0 || test->wpm.back() < s.value("target_wpm").toInt() || viscosity > s.value("target_vis").toInt()) {
-                qDebug() << "REPEAT";
+        if (accuracy < s.value("target_acc").toInt()/100.0) { 
+                ui->alertLabel->setText("Failed Accuracy Target");
+                setText(text);
+        }
+        else if (test->wpm.back() < s.value("target_wpm").toInt()) {
+                ui->alertLabel->setText("Failed WPM Target");
+                setText(text);
+        } 
+        else if (viscosity > s.value("target_vis").toInt()) {
+                ui->alertLabel->setText("Failed Viscosity Target");
                 setText(text);
         }
         else {
+                ui->alertLabel->setText("");
                 emit wantText(text); 
         }
 }
