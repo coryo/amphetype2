@@ -5,9 +5,7 @@
 #include <QVector>
 #include <QSet>
 #include <QHash>
-
-#include <boost/date_time/posix_time/posix_time.hpp>
-namespace bpt = boost::posix_time;
+#include <QDateTime>
 
 class Test {
 public:
@@ -21,12 +19,14 @@ public:
 
         int currentPos;
 
-        QVector<bpt::ptime> when;
-        QVector<bpt::time_duration> timeBetween;
+        QDateTime start;
+        int totalMs;
+
+        QVector<int> msBetween;
 
         QSet<int> mistakes;
         QHash<int, QPair<QChar, QChar>> mistakeMap;
-        
+
         QVector<double> wpm;
         QVector<double> apm;
 

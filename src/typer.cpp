@@ -3,25 +3,23 @@
 
 #include <QKeyEvent>
 #include <QSettings>
+#include <QElapsedTimer>
+#include <QDateTime>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
-namespace bpt = boost::posix_time;
+#include <QsLog.h>
 
 Typer::Typer(QWidget* parent) : QTextEdit(parent), test(0)
 {
         this->hide();
-
         this->setAcceptDrops(false);
-        this->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showMenu(QPoint)));
-        connect(this, SIGNAL(textChanged()), this, SLOT(checkText()));      
+        connect(this, SIGNAL(textChanged()), this, SLOT(checkText()));
 }
 
 Typer::~Typer() {}
 
 void Typer::setTextTarget(const QString& t)
 {
-        if (test != 0) 
+        if (test != 0)
                 delete test;
 
         test = new Test(t);
@@ -34,7 +32,7 @@ void Typer::setTextTarget(const QString& t)
 }
 
 void Typer::checkText()
-{       
+{
         if (test->text.isEmpty() || test->editFlag)
                 return;
 
@@ -43,8 +41,10 @@ void Typer::checkText()
         // the text in this QTextEdit
         QString currentText = this->toPlainText();
 
-        if (test->when[0].is_not_a_date_time()) {
-                test->when[0] = bpt::microsec_clock::local_time();
+        if (test->start.isNull()) {
+                test->start = QDateTime::currentDateTime();
+                testTimer.start();
+                intervalTimer.start();
                 emit testStarted(test->length);
         }
 
@@ -60,10 +60,10 @@ void Typer::checkText()
         QStringRef lcd(&currentText, 0, pos);
 
         test->currentPos = pos;
-
-        if (test->when[pos].is_not_a_date_time() && pos == currentText.length()) {
+        if (pos == currentText.length()) {
                 // store when we are at this position
-                test->when[pos] = bpt::microsec_clock::local_time(); 
+                int elapsed = intervalTimer.elapsed();
+                intervalTimer.restart();
 
                 // dont calc between the first 2 positions if !req_space
                 // because the times will be the same
@@ -73,11 +73,9 @@ void Typer::checkText()
 
                 if (pos > check) {
                         // store time between keys
-                        test->timeBetween[pos-1] = test->when[pos] - test->when[pos-1]; 
-                        // time since the beginning
-                        bpt::time_duration timeSinceStart = test->when[pos] - test->when[0];
+                        test->msBetween[pos-1] = elapsed;
                         //store wpm
-                        test->wpm << 12.0 * (pos / (timeSinceStart.total_milliseconds() / 1000.0));
+                        test->wpm << 12.0 * (pos / (testTimer.elapsed() / 1000.0));
 
                         // check for new min/max wpm
                         if (test->wpm.last() > test->maxWPM)
@@ -88,10 +86,12 @@ void Typer::checkText()
                 }
                 if (pos > test->apmWindow) {
                         // time since 1 window ago
-                        bpt::time_duration t = test->when[pos] - test->when[pos-test->apmWindow];
-                        
-                        test->apm << 12.0 * (test->apmWindow / (t.total_milliseconds() / 1000.0));
-                        
+                        int t = 0;
+                        for (int i = pos - test->apmWindow; i <= pos; i++)
+                                t += test->msBetween[i];
+
+                        test->apm << 12.0 * (test->apmWindow / (t / 1000.0));
+
                         // check for new min/max apm
                         if (test->apm.last() > test->maxAPM)
                                 test->maxAPM = test->apm.last();
@@ -99,13 +99,15 @@ void Typer::checkText()
                                 test->minAPM = test->apm.last();
                         emit newPoint(1, pos-1, test->apm.last());
                 }
-                
+
                 int min = std::min(test->minWPM, test->minAPM);
                 int max = std::max(test->maxWPM, test->maxAPM);
                 emit characterAdded(max, min);
         }
 
         if (lcd == QStringRef(&test->text)) {
+                test->totalMs = testTimer.elapsed();
+                QLOG_DEBUG() << "totalms: " << test->totalMs;
                 emit done();
                 return;
         }
@@ -118,7 +120,7 @@ void Typer::checkText()
                 // (position, (targetChar, mistakenChar))
                 test->mistakeMap.insert(pos, qMakePair(test->text[pos], currentText[pos]));
                 emit mistake(pos);
-        }     
+        }
 }
 
 void Typer::keyPressEvent(QKeyEvent* e)
@@ -131,5 +133,3 @@ void Typer::keyPressEvent(QKeyEvent* e)
         else
                 return QTextEdit::keyPressEvent(e);
 }
-
-Test* Typer::getTest() { return test; }

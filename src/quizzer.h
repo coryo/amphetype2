@@ -73,7 +73,7 @@ private slots:
         void timerLabelStop();
 
         void updateTyperDisplay();
-        
+
 };
 
 #endif // QUIZZER_H
