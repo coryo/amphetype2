@@ -1,7 +1,7 @@
 #include "db.h"
 #include "text.h"
 
-#include "inc/sqlite3pp.h"
+#include <sqlite3pp.h>
 
 #include <QSettings>
 #include <QCryptographicHash>
@@ -638,7 +638,7 @@ void DB::insertItems(const QString& sql, const QVariantList& values)
                         if (items[i].isEmpty())
                                 cmd.bind(i + 1);
                         else
-                                cmd.bind(i + 1, items[i].data());
+                                cmd.bind(i + 1, items[i].data(), sqlite3pp::nocopy);
                 }
                 cmd.execute();
         } catch (const std::exception& e) {
@@ -659,7 +659,7 @@ void DB::insertItems(sqlite3pp::database* db, const QString& sql, const QVariant
                         if (items[i].isEmpty())
                                 cmd.bind(i + 1);
                         else
-                                cmd.bind(i + 1, items[i].data());
+                                cmd.bind(i + 1, items[i].data(), sqlite3pp::nocopy);
                 }
                 cmd.execute();
         } catch (const std::exception& e) {

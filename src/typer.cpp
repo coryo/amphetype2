@@ -4,7 +4,7 @@
 #include <QKeyEvent>
 #include <QSettings>
 
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/date_time/posix_time/posix_time.hpp>
 namespace bpt = boost::posix_time;
 
 Typer::Typer(QWidget* parent) : QTextEdit(parent), test(0)

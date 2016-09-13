@@ -256,7 +256,7 @@ Press ESC to cancel and load a new text.</string>
   <customwidget>
    <class>QCustomPlot</class>
    <extends>QWidget</extends>
-   <header>inc/qcustomplot.h</header>
+   <header>qcustomplot/qcustomplot.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

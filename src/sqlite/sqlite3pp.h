@@ -25,9 +25,14 @@
 #ifndef SQLITE3PP_H
 #define SQLITE3PP_H
 
+#define SQLITE3PP_VERSION "1.0.0"
+#define SQLITE3PP_VERSION_MAJOR 1
+#define SQLITE3PP_VERSION_MINOR 0
+#define SQLITE3PP_VERSION_PATCH 0
+
 #include <functional>
 #include <iterator>
-#include <inc/sqlite3.h>
+#include <sqlite3.h>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -46,13 +51,15 @@ namespace sqlite3pp
   };
 
   class null_type {};
-  extern null_type ignore;
 
   class noncopyable
   {
    protected:
     noncopyable() = default;
     ~noncopyable() = default;
+
+    noncopyable(noncopyable&&) = default;
+    noncopyable& operator=(noncopyable&&) = default;
 
     noncopyable(noncopyable const&) = delete;
     noncopyable& operator=(noncopyable const&) = delete;
@@ -71,8 +78,13 @@ namespace sqlite3pp
     using rollback_handler = std::function<void ()>;
     using update_handler = std::function<void (int, char const*, char const*, long long int)>;
     using authorize_handler = std::function<int (int, char const*, char const*, char const*, char const*)>;
+    using backup_handler = std::function<void (int, int, int)>;
 
     explicit database(char const* dbname = nullptr, int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, const char* vfs = nullptr);
+
+    database(database&& db);
+    database& operator=(database&& db);
+
     ~database();
 
     int connect(char const* dbname, int flags, const char* vfs = nullptr);
@@ -81,13 +93,19 @@ namespace sqlite3pp
     int attach(char const* dbname, char const* name);
     int detach(char const* name);
 
+    int backup(database& destdb, backup_handler h = {});
+    int backup(char const* dbname, database& destdb, char const* destdbname, backup_handler h, int step_page = 5);
+
     long long int last_insert_rowid() const;
 
     int enable_foreign_keys(bool enable = true);
     int enable_triggers(bool enable = true);
     int enable_extended_result_codes(bool enable = true);
 
+    int changes() const;
+
     int error_code() const;
+    int extended_error_code() const;
     char const* error_msg() const;
 
     int execute(char const* sql);
@@ -118,6 +136,8 @@ namespace sqlite3pp
     explicit database_error(database& db);
   };
 
+  enum copy_semantic { copy, nocopy };
+
   class statement : noncopyable
   {
    public:
@@ -127,16 +147,18 @@ namespace sqlite3pp
     int bind(int idx, int value);
     int bind(int idx, double value);
     int bind(int idx, long long int value);
-    int bind(int idx, char const* value, bool fstatic = true);
-    int bind(int idx, void const* value, int n, bool fstatic = true);
+    int bind(int idx, char const* value, copy_semantic fcopy);
+    int bind(int idx, void const* value, int n, copy_semantic fcopy);
+    int bind(int idx, std::string const& value, copy_semantic fcopy);
     int bind(int idx);
     int bind(int idx, null_type);
 
     int bind(char const* name, int value);
     int bind(char const* name, double value);
     int bind(char const* name, long long int value);
-    int bind(char const* name, char const* value, bool fstatic = true);
-    int bind(char const* name, void const* value, int n, bool fstatic = true);
+    int bind(char const* name, char const* value, copy_semantic fcopy);
+    int bind(char const* name, void const* value, int n, copy_semantic fcopy);
+    int bind(char const* name, std::string const& value, copy_semantic fcopy);
     int bind(char const* name);
     int bind(char const* name, null_type);
 
@@ -167,6 +189,22 @@ namespace sqlite3pp
       template <class T>
       bindstream& operator << (T value) {
         auto rc = cmd_.bind(idx_, value);
+        if (rc != SQLITE_OK) {
+          throw database_error(cmd_.db_);
+        }
+        ++idx_;
+        return *this;
+      }
+      bindstream& operator << (char const* value) {
+        auto rc = cmd_.bind(idx_, value, copy);
+        if (rc != SQLITE_OK) {
+          throw database_error(cmd_.db_);
+        }
+        ++idx_;
+        return *this;
+      }
+      bindstream& operator << (std::string const& value) {
+        auto rc = cmd_.bind(idx_, value, copy);
         if (rc != SQLITE_OK) {
           throw database_error(cmd_.db_);
         }
@@ -288,5 +326,7 @@ namespace sqlite3pp
   };
 
 } // namespace sqlite3pp
+
+#include "sqlite3pp.ipp"
 
 #endif

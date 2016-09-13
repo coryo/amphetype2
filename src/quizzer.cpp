@@ -8,7 +8,7 @@
 
 #include <QSettings>
 
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/date_time/posix_time/posix_time.hpp>
 namespace bpt = boost::posix_time;
 
 Quizzer::Quizzer(QWidget *parent) :
@@ -281,9 +281,11 @@ void Quizzer::done()
                 }
 
                 // add stuff to the database
-                DB::addResult    (now, text->getId(), text->getSource(), test->wpm.back(), accuracy, viscosity);
+                DB::addResult(now, text->getId(), text->getSource(), test->wpm.back(), accuracy, viscosity);
                 DB::addStatistics(now, stats, visc, mistakeCount);
-                DB::addMistakes  (now, test->getMistakes());
+                DB::addMistakes(now, test->getMistakes());
+
+                emit newResult();
         }
 
         // set the previous results label text

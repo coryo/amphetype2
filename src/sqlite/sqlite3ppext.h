@@ -94,8 +94,8 @@ namespace sqlite3pp
       void result(double value);
       void result(long long int value);
       void result(std::string const& value);
-      void result(char const* value, bool fstatic = true);
-      void result(void const* value, int n, bool fstatic = true);
+      void result(char const* value, bool fcopy);
+      void result(void const* value, int n, bool fcopy);
       void result();
       void result(null_type);
       void result_copy(int idx);
@@ -123,7 +123,7 @@ namespace sqlite3pp
         auto h = std::make_tuple(c.context::get<H>(index));
         return std::tuple_cat(h, to_tuple_impl(++index, c, std::tuple<Ts...>()));
       }
-      static inline std::tuple<> to_tuple_impl(int index, const context& c, std::tuple<>&&)
+      static inline std::tuple<> to_tuple_impl(int /*index*/, const context& /*c*/, std::tuple<>&&)
       {
         return std::tuple<>();
       }
@@ -189,7 +189,7 @@ namespace sqlite3pp
         context c(ctx, nargs, values);
         T* t = static_cast<T*>(c.aggregate_data(sizeof(T)));
         if (c.aggregate_count() == 1) new (t) T;
-        apply([](T* t, Ps... ps){t->step(ps...);},
+        apply([](T* tt, Ps... ps){tt->step(ps...);},
               std::tuple_cat(std::make_tuple(t), c.to_tuple<Ps...>()));
       }
 
@@ -227,5 +227,7 @@ namespace sqlite3pp
   } // namespace ext
 
 } // namespace sqlite3pp
+
+#include "sqlite3ppext.ipp"
 
 #endif

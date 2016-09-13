@@ -24,8 +24,6 @@
 
 #include <cstring>
 
-#include "sqlite3ppext.h"
-
 namespace sqlite3pp
 {
   namespace ext
@@ -60,133 +58,133 @@ namespace sqlite3pp
     } // namespace
 
 
-    context::context(sqlite3_context* ctx, int nargs, sqlite3_value** values)
+    inline context::context(sqlite3_context* ctx, int nargs, sqlite3_value** values)
       : ctx_(ctx), nargs_(nargs), values_(values)
     {
     }
 
-    int context::args_count() const
+    inline int context::args_count() const
     {
       return nargs_;
     }
 
-    int context::args_bytes(int idx) const
+    inline int context::args_bytes(int idx) const
     {
       return sqlite3_value_bytes(values_[idx]);
     }
 
-    int context::args_type(int idx) const
+    inline int context::args_type(int idx) const
     {
       return sqlite3_value_type(values_[idx]);
     }
 
-    int context::get(int idx, int) const
+    inline int context::get(int idx, int) const
     {
       return sqlite3_value_int(values_[idx]);
     }
 
-    double context::get(int idx, double) const
+    inline double context::get(int idx, double) const
     {
       return sqlite3_value_double(values_[idx]);
     }
 
-    long long int context::get(int idx, long long int) const
+    inline long long int context::get(int idx, long long int) const
     {
       return sqlite3_value_int64(values_[idx]);
     }
 
-    char const* context::get(int idx, char const*) const
+    inline char const* context::get(int idx, char const*) const
     {
       return reinterpret_cast<char const*>(sqlite3_value_text(values_[idx]));
     }
 
-    std::string context::get(int idx, std::string) const
+    inline std::string context::get(int idx, std::string) const
     {
       return get(idx, (char const*)0);
     }
 
-    void const* context::get(int idx, void const*) const
+    inline void const* context::get(int idx, void const*) const
     {
       return sqlite3_value_blob(values_[idx]);
     }
 
 
 
-    void context::result(int value)
+    inline void context::result(int value)
     {
       sqlite3_result_int(ctx_, value);
     }
 
-    void context::result(double value)
+    inline void context::result(double value)
     {
       sqlite3_result_double(ctx_, value);
     }
 
-    void context::result(long long int value)
+    inline void context::result(long long int value)
     {
       sqlite3_result_int64(ctx_, value);
     }
 
-    void context::result(std::string const& value)
+    inline void context::result(std::string const& value)
     {
       result(value.c_str(), false);
     }
 
-    void context::result(char const* value, bool fstatic)
+    inline void context::result(char const* value, bool fcopy)
     {
-      sqlite3_result_text(ctx_, value, std::strlen(value), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT);
+      sqlite3_result_text(ctx_, value, std::strlen(value), fcopy ? SQLITE_TRANSIENT : SQLITE_STATIC);
     }
 
-    void context::result(void const* value, int n, bool fstatic)
+    inline void context::result(void const* value, int n, bool fcopy)
     {
-      sqlite3_result_blob(ctx_, value, n, fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT);
+      sqlite3_result_blob(ctx_, value, n, fcopy ? SQLITE_TRANSIENT : SQLITE_STATIC );
     }
 
-    void context::result()
-    {
-      sqlite3_result_null(ctx_);
-    }
-
-    void context::result(null_type)
+    inline void context::result()
     {
       sqlite3_result_null(ctx_);
     }
 
-    void context::result_copy(int idx)
+    inline void context::result(null_type)
+    {
+      sqlite3_result_null(ctx_);
+    }
+
+    inline void context::result_copy(int idx)
     {
       sqlite3_result_value(ctx_, values_[idx]);
     }
 
-    void context::result_error(char const* msg)
+    inline void context::result_error(char const* msg)
     {
       sqlite3_result_error(ctx_, msg, std::strlen(msg));
     }
 
-    void* context::aggregate_data(int size)
+    inline void* context::aggregate_data(int size)
     {
       return sqlite3_aggregate_context(ctx_, size);
     }
 
-    int context::aggregate_count()
+    inline int context::aggregate_count()
     {
       return sqlite3_aggregate_count(ctx_);
     }
 
-    function::function(database& db) : db_(db.db_)
+    inline function::function(database& db) : db_(db.db_)
     {
     }
 
-    int function::create(char const* name, function_handler h, int nargs)
+    inline int function::create(char const* name, function_handler h, int nargs)
     {
       fh_[name] = pfunction_base(new function_handler(h));
       return sqlite3_create_function(db_, name, nargs, SQLITE_UTF8, fh_[name].get(), function_impl, 0, 0);
     }
 
-    aggregate::aggregate(database& db) : db_(db.db_)
+    inline aggregate::aggregate(database& db) : db_(db.db_)
     {
     }
 
-    int aggregate::create(char const* name, function_handler s, function_handler f, int nargs)
+    inline int aggregate::create(char const* name, function_handler s, function_handler f, int nargs)
     {
       ah_[name] = std::make_pair(pfunction_base(new function_handler(s)), pfunction_base(new function_handler(f)));
       return sqlite3_create_function(db_, name, nargs, SQLITE_UTF8, &ah_[name], 0, step_impl, finalize_impl);

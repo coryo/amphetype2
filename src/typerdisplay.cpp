@@ -117,28 +117,32 @@ void TyperDisplay::wordWrap(int w)
         wrappedText.clear();
 
         QSettings s;
+        int endPos, lineBreak, size;
         int maxWidth = w;
         s.setValue("typer_cols", maxWidth);
 
         QString original(originalText);
 
         while (!original.isEmpty()) {
-                int i = maxWidth;
-                if (original.length() <= i) {
-                        wrappedText << original;//.replace(" ", "␣");
-                        break;
-                }
-                while (original.at(i) != QChar::Space)
-                        --i;  
-
-                QString line = original.left(i + 1);
-                if (line.contains("\n")) {
-                        line = line.left(line.indexOf("\n") + 1);
-                        wrappedText << line.replace('\n', "↵");
+                endPos = maxWidth;
+                size = original.length();
+                if (size <= endPos) {
+                        endPos = size;
                 } else {
-                        wrappedText << line;//.replace(" ", "␣"); 
+                        endPos = original.lastIndexOf(QChar::Space, maxWidth - 1);
                 }
-                original = original.right(original.length() - line.length());  
+
+                QString line = original.left(endPos + 1);
+                
+                lineBreak = line.indexOf('\n');
+
+                if (lineBreak >= 0) { 
+                        line = line.left(lineBreak + 1);
+                        wrappedText << line.replace(lineBreak, 1, u8"\u21B5");//"↵");
+                } else {
+                        wrappedText << line; 
+                }
+                original = original.right(size - line.length());  
         }
 
         updateDisplay();
