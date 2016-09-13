@@ -7,8 +7,7 @@ Test::Test(const QString& t)
         currentPos = 0;
         editFlag = false;
 
-        when.resize(text.length() + 1);
-        timeBetween.resize(text.length());
+        msBetween.resize(text.length());
         wpm.resize(text.length());
         apm.resize(text.length());
 

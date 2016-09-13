@@ -2,6 +2,7 @@
 #define TYPER_H
 
 #include <QTextEdit>
+#include <QElapsedTimer>
 
 class Test;
 
@@ -12,11 +13,13 @@ public:
         Typer(QWidget* parent = 0);
         ~Typer();
         void setTextTarget(const QString&);
-        Test* getTest();
+        Test* getTest() { return test; };
 
 private:
         void keyPressEvent(QKeyEvent* e);
-        Test* test;     
+        Test* test;
+        QElapsedTimer testTimer;
+        QElapsedTimer intervalTimer;
 
 signals:
         void done();
@@ -29,7 +32,7 @@ signals:
 
 private slots:
         void checkText();
-        void showMenu(QPoint position) {};
+        // void showMenu(QPoint position) {};
 };
 
 #endif // TYPER_H

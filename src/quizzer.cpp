@@ -7,9 +7,9 @@
 #include "db.h"
 
 #include <QSettings>
+#include <QDateTime>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
-namespace bpt = boost::posix_time;
+#include <QsLog.h>
 
 Quizzer::Quizzer(QWidget *parent) :
         QWidget(parent),
@@ -38,18 +38,18 @@ Quizzer::Quizzer(QWidget *parent) :
         ui->plot->addLayer("topLayer",  ui->plot->layer("main"), QCustomPlot::limAbove);
         ui->plot->addLayer("lineLayer", ui->plot->layer("grid"), QCustomPlot::limAbove);
         ui->plot->addGraph();
-        ui->plot->addGraph();   
+        ui->plot->addGraph();
         ui->plot->graph(0)->setLayer("topLayer");
         ui->plot->xAxis->setVisible(false);
         ui->plot->yAxis->setTickLabels(false);
-        
+
         connect(ui->plotCheckBox,     SIGNAL(stateChanged(int)), this,             SLOT(setPlotVisible(int)));
         connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), ui->typerDisplay, SLOT(wordWrap(int)));
 
         connect(this, SIGNAL(colorChanged()), this, SLOT(updateColors()));
         connect(this, SIGNAL(colorChanged()), this, SLOT(updatePlotTargetLine()));
 
-        connect(&lessonTimer, SIGNAL(timeout()), this, SLOT(timerLabelUpdate()));      
+        connect(&lessonTimer, SIGNAL(timeout()), this, SLOT(timerLabelUpdate()));
         connect(&resizeTimer, SIGNAL(timeout()), this, SLOT(showGraphs()));
 
         connect(ui->typer, SIGNAL(newPoint(int,double,double)), this,             SLOT(addPlotPoint(int,double,double)));
@@ -99,7 +99,7 @@ void Quizzer::updateColors()
         ui->plot->graph(0)->setPen(QPen(wpmLineColor, 3));
         ui->plot->graph(1)->setPen(QPen(apmLineColor, 2));
         ui->plot->setBackground(QBrush(plotBackgroundColor));
-        
+
         ui->plot->yAxis->setBasePen   (QPen(plotForegroundColor, 1));
         ui->plot->yAxis->setTickPen   (QPen(plotForegroundColor, 1));
         ui->plot->yAxis->setSubTickPen(QPen(plotForegroundColor, 1));
@@ -171,8 +171,8 @@ void Quizzer::done()
 
         QSettings s;
 
-        QString now = QString::fromStdString(
-                bpt::to_iso_extended_string(bpt::microsec_clock::local_time()));
+        QDateTime now = QDateTime::currentDateTime();
+
         // tally mistakes
         int mistakes = test->mistakes.size();
 
@@ -180,12 +180,11 @@ void Quizzer::done()
         double accuracy = 1.0 - (double)mistakes / test->length;
 
         // viscocity
-        boost::posix_time::time_duration total_time = test->when.back() - test->when.front();
-        double spc = (total_time.total_milliseconds() / 1000.0) /
+        double spc = (test->totalMs / 1000.0) /
                      test->text.size(); // seconds per character
         QVector<double> v;
-        for (int i = 0; i < test->timeBetween.size(); ++i) {
-                v << pow((((test->timeBetween.at(i).total_milliseconds()/1000.0)-spc)/spc), 2);
+        for (int i = 0; i < test->msBetween.size(); ++i) {
+                v << pow((((test->msBetween.at(i)/1000.0)-spc)/spc), 2);
         }
         double sum = 0.0;
         for (double x : v)
@@ -207,20 +206,20 @@ void Quizzer::done()
                         QStringRef c(&(text->getText()), i, 1);
 
                         // add a time value and visc value for the key
-                        stats.insert(c, test->timeBetween.at(i).total_microseconds()*1.0e-6);
-                        visc.insert(c, pow((((test->timeBetween.at(i).total_microseconds()*1.0e-6)-spc)/spc), 2));
+                        stats.insert(c, test->msBetween.at(i) / 1000.0);
+                        visc.insert(c, pow((((test->msBetween.at(i) / 1000.0)-spc)/spc), 2));
 
                         // add the mistake to the key
                         if (test->mistakes.contains(i))
                                 mistakeCount.insert(c, i);
                 }
                 //trigrams
-                for (int i = 1; i <test->length - 2; ++i) {
+                for (int i = 1; i < test->length - 2; ++i) {
                         // the trigram as a qstringref
                         QStringRef tri(&(text->getText()), i, 3);
                         int start = i;
                         int end   = i + 3;
-                        
+
                         double perch = 0;
                         double visco = 0;
                         // for each character in the tri
@@ -229,15 +228,15 @@ void Quizzer::done()
                                 if (test->mistakes.contains(j))
                                         mistakeCount.insert(tri, j);
                                 // sum the times for the chracters in the tri
-                                perch += test->timeBetween.at(j).total_microseconds();
+                                perch += test->msBetween.at(j);
                         }
                         // average time per key
                         perch = perch / (double)(end-start);
                         // seconds per character
-                        double tspc = perch * 1.0e-6;
+                        double tspc = perch / 1000.0;
                         // get the average viscosity
                         for (int j = start; j < end; ++j)
-                                visco += pow(((test->timeBetween.at(j).total_microseconds() * 1.0e-6 - tspc) / tspc), 2);
+                                visco += pow(((test->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
                         visco = visco/(end-start);
 
                         stats.insert(tri, tspc);
@@ -253,10 +252,10 @@ void Quizzer::done()
                         int length = match.capturedLength();
                         if (length <= 3)
                                 continue;
-                        
+
                         // start and end pos of the word in the original text
-                        int start  = match.capturedStart();
-                        int end    = match.capturedEnd();
+                        int start = match.capturedStart();
+                        int end = match.capturedEnd();
 
                         // the word as a qstringref
                         QStringRef word = QStringRef(&(text->getText()), start, length);
@@ -267,13 +266,13 @@ void Quizzer::done()
                         for (int j = start; j < end; ++j) {
                                 if (test->mistakes.contains(j))
                                         mistakeCount.insert(word, j);
-                                perch += test->timeBetween.at(j).total_microseconds();
+                                perch += test->msBetween.at(j);
                         }
                         perch = perch / (double)(end-start);
 
-                        double tspc = perch * 1.0e-6;
+                        double tspc = perch / 1000.0;
                         for (int j = start; j < end; ++j)
-                                visco += pow(((test->timeBetween.at(j).total_microseconds() * 1.0e-6 - tspc) / tspc), 2);
+                                visco += pow(((test->msBetween.at(j)/ 1000.0 - tspc) / tspc), 2);
                         visco = visco/(end-start);
 
                         stats.insert(word, tspc);
@@ -281,9 +280,10 @@ void Quizzer::done()
                 }
 
                 // add stuff to the database
-                DB::addResult(now, text->getId(), text->getSource(), test->wpm.back(), accuracy, viscosity);
-                DB::addStatistics(now, stats, visc, mistakeCount);
-                DB::addMistakes(now, test->getMistakes());
+                QString now_str = now.toString(Qt::ISODate);
+                DB::addResult(now_str, text->getId(), text->getSource(), test->wpm.back(), accuracy, viscosity);
+                DB::addStatistics(now_str, stats, visc, mistakeCount);
+                DB::addMistakes(now_str, test->getMistakes());
 
                 emit newResult();
         }
@@ -292,21 +292,25 @@ void Quizzer::done()
         setPreviousResultText(test->wpm.back(), accuracy);
 
         // repeat if targets not met, otherwise get next text
-        if (accuracy < s.value("target_acc").toInt()/100.0) { 
+        QLOG_DEBUG() << "acc: " << accuracy << "wpm: " << test->wpm.back() << "visc: " << viscosity;
+        if (accuracy < s.value("target_acc").toInt()/100.0) {
                 ui->alertLabel->setText("Failed Accuracy Target");
+                ui->alertLabel->show();
                 setText(text);
         }
         else if (test->wpm.back() < s.value("target_wpm").toInt()) {
                 ui->alertLabel->setText("Failed WPM Target");
+                ui->alertLabel->show();
                 setText(text);
-        } 
-        else if (viscosity > s.value("target_vis").toInt()) {
+        }
+        else if (viscosity > s.value("target_vis").toDouble()) {
                 ui->alertLabel->setText("Failed Viscosity Target");
+                ui->alertLabel->show();
                 setText(text);
         }
         else {
-                ui->alertLabel->setText("");
-                emit wantText(text); 
+                ui->alertLabel->hide();
+                emit wantText(text);
         }
 }
 
@@ -315,14 +319,14 @@ void Quizzer::setPreviousResultText(double lastWpm, double lastAcc)
         QSettings s;
 
         int n = s.value("def_group_by").toInt();
-        std::pair<double,double> stats;
+        QPair<double, double> stats;
         stats = DB::getMedianStats(n);
 
         ui->result->setText(
                 "Last: " + QString::number(lastWpm, 'f', 1) +
                 "wpm ("  + QString::number(lastAcc * 100, 'f', 1) + "%)\n" +
                 "Last "  + QString::number(n) + ": " + QString::number(stats.first, 'f', 1) +
-                "wpm ("  + QString::number(stats.second, 'f', 1)+ "%)"); 
+                "wpm ("  + QString::number(stats.second, 'f', 1)+ "%)");
 }
 
 void Quizzer::setText(Text* t)

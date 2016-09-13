@@ -8,9 +8,8 @@
 
 #include <QStandardItemModel>
 #include <QSettings>
+#include <QDateTime>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
-namespace bpt = boost::posix_time;
 
 StatisticsWidget::StatisticsWidget(QWidget *parent) :
         QWidget(parent),
@@ -73,9 +72,9 @@ void StatisticsWidget::populateStatistics()
         int limit = ui->limitSpinBox->value();
         int count = ui->minCountSpinBox->value();
 
-        bpt::ptime history = bpt::microsec_clock::local_time();
-        history = history - bpt::seconds(s.value("history").toInt()*86400);   
-        QString historyString = QString::fromStdString(bpt::to_iso_extended_string(history));
+        QString historyString = QDateTime::currentDateTime()
+                .addDays(-s.value("history").toInt())
+                .toString(Qt::ISODate);
 
         QFont font("Monospace");
         font.setStyleHint(QFont::Monospace);
@@ -100,13 +99,13 @@ void StatisticsWidget::populateStatistics()
                 //mistakes
                 items << new QStandardItem(row[5]);
                 //impact
-                items << new QStandardItem(QString::number(row[6].toDouble(), 'f', 1));     
+                items << new QStandardItem(QString::number(row[6].toDouble(), 'f', 1));
 
                 for (QStandardItem* item : items)
                         item->setFlags(Qt::ItemIsEnabled);
-                model->appendRow(items);           
+                model->appendRow(items);
         }
 
         ui->tableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-        ui->tableView->resizeColumnsToContents();       
+        ui->tableView->resizeColumnsToContents();
 }
