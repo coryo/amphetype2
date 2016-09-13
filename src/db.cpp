@@ -6,10 +6,13 @@
 #include <QSettings>
 #include <QCryptographicHash>
 #include <QDebug>
+#include <QPair>
 
 #include <iostream>
 #include <vector>
 #include <algorithm>
+
+#include <QsLog.h>
 
 QString DB::db_path = QString();
 
@@ -60,7 +63,7 @@ void DB::initDB()
                             "count integer)");
                 db.execute("create view text_source as select "
                             "id,s.name,text,coalesce(t.disabled,s.disabled) from text "
-                            "as t left join source as s on (t.source = s.rowid)");           
+                            "as t left join source as s on (t.source = s.rowid)");
         } catch (const std::exception& e) {
                 std::cout << "cannot create database" <<std::endl;
                 std::cout << e.what() <<std::endl;
@@ -97,11 +100,11 @@ int DB::getSource(const QString& sourceName, int lesson, int type)
         try {
                 QString sql = QString("select rowid from source where name = \"%1\" limit 1").arg(sourceName);
                 QStringList row = DB::getOneRow(sql);
-                
+
                 // if the source exists return it
                 if(!row.isEmpty())
                         return row[0].toInt();
-                
+
                 // source didn't exist. add it
                 QVariantList data;
 
@@ -234,8 +237,8 @@ void DB::addResult(const QString& time, const QByteArray& id, int source, double
         }
 }
 
-void DB::addStatistics(const QString& time, const QMultiHash<QStringRef, double>& stats, 
-                       const QMultiHash<QStringRef, double>& visc, 
+void DB::addStatistics(const QString& time, const QMultiHash<QStringRef, double>& stats,
+                       const QMultiHash<QStringRef, double>& visc,
                        const QMultiHash<QStringRef, int>& mistakeCount)
 {
         try {
@@ -273,7 +276,7 @@ void DB::addStatistics(const QString& time, const QMultiHash<QStringRef, double>
                                         items << 0;     // char
                                 else if (k.length() == 3)
                                         items << 1;     // tri
-                                else 
+                                else
                                         items << 2;     // word
 
                                 items << k.toString();
@@ -314,14 +317,14 @@ void DB::addMistakes(const QString& time, const QHash<QPair<QChar, QChar>, int>&
         }
 }
 
- std::pair<double,double> DB::getMedianStats(int n)
+ QPair<double, double> DB::getMedianStats(int n)
  {
         QString query = QString(
                 "select agg_median(wpm), agg_median(acc) "
                 "from (select wpm,100.0*accuracy as acc from result "
                         "order by datetime(w) desc limit %1)").arg(n);
         QStringList cols = getOneRow(query, true);
-        return {cols[0].toDouble(), cols[1].toDouble()};
+        return QPair<double, double>(cols[0].toDouble(), cols[1].toDouble());
  }
 
 QList<QStringList> DB::getSourcesData()
@@ -420,7 +423,7 @@ QList<QStringList> DB::getPerformanceData(int w, int source, int limit)
 
         QList<QStringList> rows;
         rows = getRows(sql, true);
-        return rows;     
+        return rows;
 }
 
 QList<QStringList> DB::getStatisticsData(const QString& when, int type, int count, int ord, int limit)
@@ -437,7 +440,7 @@ QList<QStringList> DB::getStatisticsData(const QString& when, int type, int coun
                 case 6: order = "total desc"; break;
                 case 7: order = "damage desc"; break;
         }
-        
+
         QString sql = QString(
                 "select data, "
                   "12.0/time as wpm, "
@@ -456,6 +459,7 @@ QList<QStringList> DB::getStatisticsData(const QString& when, int type, int coun
                         "and type = %2 group by data) "
                 "where total >= %3 "
                 "order by %4 limit %5").arg(when).arg(type).arg(count).arg(order).arg(limit);
+        QLOG_DEBUG() << sql;
 
         QList<QStringList> rows;
         rows = getRows(sql, true);
@@ -570,7 +574,7 @@ QStringList DB::getOneRow(const QString& sql, bool extensions)
 {
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
-                
+
                 sqlite3pp::ext::function func(db);
                 sqlite3pp::ext::aggregate aggr(db);
                 if (extensions) {

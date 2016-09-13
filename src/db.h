@@ -34,13 +34,13 @@ public:
         static void enableSource (const QList<int>&);
 
         // specific query functions
-        static int                      getSource(const QString&, int lesson=-1, int type=0);
-        static std::pair<double,double> getMedianStats(int);
-        static QList<QStringList>       getSourcesData();
-        static QList<QStringList>       getTextsData(int);
-        static QList<QStringList>       getPerformanceData(int, int, int);
-        static QList<QStringList>       getSourcesList();
-        static QList<QStringList>       getStatisticsData(const QString&, int, int, int, int);
+        static int                   getSource(const QString&, int lesson=-1, int type=0);
+        static QPair<double, double> getMedianStats(int);
+        static QList<QStringList>    getSourcesData();
+        static QList<QStringList>    getTextsData(int);
+        static QList<QStringList>    getPerformanceData(int, int, int);
+        static QList<QStringList>    getSourcesList();
+        static QList<QStringList>    getStatisticsData(const QString&, int, int, int, int);
         // create a text object 
         static Text* getNextText();             // get the text that follows the last completed text
         static Text* getNextText(Text*);        // get the text that follows the given text

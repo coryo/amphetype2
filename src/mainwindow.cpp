@@ -15,8 +15,6 @@ MainWindow::MainWindow(QWidget* parent)
         connect(ui->quizzer,            SIGNAL(newResult()),   
                 ui->statisticsWidget,   SLOT  (populateStatistics()));
 
-                
-
         connect(ui->textManager, SIGNAL(setText(Text*)),
                 ui->quizzer,     SLOT  (setText(Text*)));
         connect(ui->textManager, SIGNAL(gotoTab(int)),
@@ -42,8 +40,6 @@ MainWindow::MainWindow(QWidget* parent)
                 ui->quizzer,        SLOT(updateTyperDisplay()));
         connect(ui->settingsWidget, SIGNAL(settingsChanged()), 
                 ui->performanceHistory, SLOT(refreshCurrentPlot()));
-
-
 
         connect(ui->trainingGenWidget, SIGNAL(generatedLessons()),
                 ui->textManager,       SLOT(refreshSources()));

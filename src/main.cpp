@@ -5,8 +5,44 @@
 #include <QFont>
 #include <QDir>
 #include <QString>
+#include <QFile>
+#include <QDateTime>
+#include <QTextStream>
+#include <QDebug>
+#include <QByteArray>
+
+#include <QsLog.h>
+#include <QsLogDest.h>
 
 #include "db.h"
+
+
+void logHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+        QByteArray localMsg = msg.toLocal8Bit();
+        QString prefix;
+        if (context.line)
+                prefix = QString("%1:%2:%3: ").arg(context.file).arg(context.line).arg(context.function);
+                QString text = prefix + msg;
+        switch (type)
+        {
+        case QtDebugMsg:
+                QLOG_DEBUG() << text;
+                break;
+        case QtInfoMsg:
+                QLOG_INFO() << text;
+                break;
+        case QtWarningMsg:
+                QLOG_WARN() << text;
+                break;
+        case QtCriticalMsg:
+                QLOG_ERROR() << text;
+                break;
+        case QtFatalMsg:
+                QLOG_FATAL() << text;
+                break;
+        }
+}
 
 void loadSettings()
 {
@@ -23,7 +59,7 @@ void loadSettings()
                 s.setValue("max_chars", 600);
                 s.setValue("lesson_stats", 0);
                 s.setValue("perf_group_by", 0);
-                s.setValue("perf_items", 100);
+                s.setValue("perf_items", -1);
                 s.setValue("text_regex", "");
                 s.setValue("db_name", "db.sqlite");
                 s.setValue("select_method", 0);
@@ -67,16 +103,27 @@ void loadSettings()
                 s.setValue("target_vis", 1);
                 s.setValue("perf_logging", true);
                 loadSettings();
-        }        
+        }
 }
 
 int main(int argc, char *argv[])
 {
+        auto dest = QsLogging::DestinationFactory::MakeFileDestination(
+                "amphetype2.log",
+                QsLogging::LogRotationOption::EnableLogRotationOnOpen,
+                QsLogging::MaxSizeBytes(1024 * 1024),
+                QsLogging::MaxOldLogCount(1));
+
+        QsLogging::Logger::instance().addDestination(dest);
+        QsLogging::Logger::instance().setLoggingLevel(QsLogging::Level::DebugLevel);
+        qInstallMessageHandler(logHandler);
+
+        QLOG_INFO() << "Starting.";
         QApplication a(argc, argv);
 
         QCoreApplication::setOrganizationName("coryo");
         QCoreApplication::setOrganizationDomain("coryo.com");
-        QCoreApplication::setApplicationName("Amphetype2");
+        QCoreApplication::setApplicationName("amphetype2");
         QSettings::setDefaultFormat(QSettings::IniFormat);
 
         loadSettings();
@@ -85,18 +132,20 @@ int main(int argc, char *argv[])
         QString dir = qApp->applicationDirPath()
                 + QDir::separator()
                 + s.value("db_name").toString();
-        DB::setDBPath(dir);    
+        DB::setDBPath(dir);
 
         DB::initDB();
 
         QFile file(":/stylesheets/"+s.value("stylesheet").toString() +".qss");
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                a.setStyleSheet(file.readAll());
-               file.close(); 
+               file.close();
         }
-        
+
         MainWindow w;
         w.show();
 
-        return a.exec();
+        auto res = a.exec();
+
+        return res;
 }
