@@ -52,6 +52,7 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(refreshPerformance()));
         connect(ui->plotSelector,    SIGNAL(currentIndexChanged(int)), this, SLOT(showPlot(int)));
         // plot settings. 
+        connect(ui->limitNumberSpinBox, SIGNAL(valueChanged(int)), this, SLOT(writeSettings()));
         connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
         connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(refreshPerformance()));
         connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
@@ -64,8 +65,6 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
 
         connect(this, SIGNAL(colorChanged()), this, SLOT(updateColors()));
-
-        this->refreshPerformance();
 }
 
 PerformanceHistory::~PerformanceHistory()
@@ -117,6 +116,8 @@ void PerformanceHistory::updateColors()
         ui->performancePlot->yAxis->grid()->setPen(QPen(plotForegroundColor, 1, Qt::DotLine));
         ui->performancePlot->yAxis->grid()->setSubGridPen(QPen(subGridColor, 1, Qt::DotLine));
         ui->performancePlot->yAxis->grid()->setSubGridVisible(true);
+
+        this->refreshPerformance();
 }
 
 // create a new graph that is the simple moving average of the given graph
