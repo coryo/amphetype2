@@ -1,8 +1,8 @@
 #ifndef DB_H
 #define DB_H
 
-#include "inc/sqlite3pp.h"
-#include "inc/sqlite3ppext.h"
+#include <sqlite3pp.h>
+#include <sqlite3ppext.h>
 
 #include <QVariantList>
 

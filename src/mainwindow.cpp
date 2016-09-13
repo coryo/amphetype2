@@ -8,8 +8,14 @@ MainWindow::MainWindow(QWidget* parent)
 {
         ui->setupUi(this);
 
-        connect(ui->quizzer,     SIGNAL(wantText(Text*)),
-                ui->textManager, SLOT  (nextText(Text*)));
+        connect(ui->quizzer,            SIGNAL(wantText(Text*)),
+                ui->textManager,        SLOT  (nextText(Text*)));
+        connect(ui->quizzer,            SIGNAL(newResult()),   
+                ui->performanceHistory, SLOT  (refreshPerformance()));
+        connect(ui->quizzer,            SIGNAL(newResult()),   
+                ui->statisticsWidget,   SLOT  (populateStatistics()));
+
+                
 
         connect(ui->textManager, SIGNAL(setText(Text*)),
                 ui->quizzer,     SLOT  (setText(Text*)));

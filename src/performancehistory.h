@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QColor>
 
-#include "inc/qcustomplot.h"
+#include <qcustomplot.h>
 
 class QModelIndex;
 class Text;

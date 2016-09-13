@@ -64,6 +64,8 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
 
         connect(this, SIGNAL(colorChanged()), this, SLOT(updateColors()));
+
+        this->refreshPerformance();
 }
 
 PerformanceHistory::~PerformanceHistory()

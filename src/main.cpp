@@ -61,7 +61,7 @@ void loadSettings()
                 s.setValue("str_extra", 10);
                 s.setValue("str_what", 'e');
                 s.setValue("typer_cols", 80);
-                s.setValue("stylesheet", "dark-1");
+                s.setValue("stylesheet", "basic");
                 s.setValue("target_wpm", 80);
                 s.setValue("target_acc", 97);
                 s.setValue("target_vis", 1);

@@ -47,6 +47,7 @@ private:
 signals:
         void wantText(Text*);
         void colorChanged();
+        void newResult();
 
 private slots:
         void done();
