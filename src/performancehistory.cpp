@@ -374,10 +374,8 @@ void PerformanceHistory::showPlot(int p)
 
         // set correct y axis label
         // and get the y 'target' value from settings
-        double yTarget;
-
         ui->performancePlot->yAxis->setLabel("Words per Minute (wpm)");
-        yTarget = s.value("target_wpm").toDouble();
+        double yTarget = s.value("target_wpm").toDouble();
         ui->performancePlot->yAxis->setRangeUpper(
                 std::max(s.value("target_wpm").toDouble(),
                          ui->performancePlot->yAxis->range().upper));
@@ -388,7 +386,6 @@ void PerformanceHistory::showPlot(int p)
         case 1:
                 ui->performancePlot->yAxis2->setVisible(true);
                 ui->performancePlot->yAxis2->setLabel("Accuracy (%)");
-                // yTarget = s.value("target_acc").toDouble();
                 ui->performancePlot->yAxis2->setRangeLower(
                         std::min(s.value("target_acc").toDouble(),
                                  ui->performancePlot->yAxis2->range().lower));
@@ -396,7 +393,6 @@ void PerformanceHistory::showPlot(int p)
         case 2:
                 ui->performancePlot->yAxis2->setVisible(true);
                 ui->performancePlot->yAxis2->setLabel("viscosity");
-                // yTarget = s.value("target_vis").toDouble();
                 ui->performancePlot->yAxis2->setRangeUpper(
                         std::max(s.value("target_vis").toDouble(),
                                  ui->performancePlot->yAxis2->range().upper));
@@ -435,7 +431,7 @@ void PerformanceHistory::showPlot(int p)
         }
 
         // the 'target' line that the graph will fill to
-        QCPGraph* fillGraph = ui->performancePlot->graph(p)->channelFillGraph();
+        QCPGraph* fillGraph = ui->performancePlot->graph(0)->channelFillGraph();
         if (fillGraph != 0)
                 ui->performancePlot->removeGraph(fillGraph);
         QCPGraph* min = new QCPGraph(ui->performancePlot->xAxis, ui->performancePlot->yAxis);
@@ -445,8 +441,8 @@ void PerformanceHistory::showPlot(int p)
                 min->addData(x, yTarget);
 
         min->setLayer("lineLayer");
-        // ui->performancePlot->addPlottable(min);
-        ui->performancePlot->graph(p)->setChannelFillGraph(min);
+        ui->performancePlot->addPlottable(min);
+        ui->performancePlot->graph(0)->setChannelFillGraph(min);
         min->setVisible(false);
 
         // draw it
