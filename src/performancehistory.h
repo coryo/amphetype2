@@ -19,6 +19,8 @@ class PerformanceHistory : public QWidget
 {
         Q_OBJECT
         Q_PROPERTY(QColor wpmLineColor        MEMBER wpmLineColor        NOTIFY colorChanged)
+        Q_PROPERTY(QColor accLineColor        MEMBER accLineColor        NOTIFY colorChanged)
+        Q_PROPERTY(QColor visLineColor        MEMBER visLineColor        NOTIFY colorChanged)
         Q_PROPERTY(QColor smaLineColor        MEMBER smaLineColor        NOTIFY colorChanged)
         Q_PROPERTY(QColor targetLineColor     MEMBER targetLineColor     NOTIFY colorChanged)
         Q_PROPERTY(QColor plotBackgroundColor MEMBER plotBackgroundColor NOTIFY colorChanged)
@@ -36,6 +38,8 @@ private:
         QStandardItemModel*     model;
         // colors
         QColor wpmLineColor;
+        QColor accLineColor;
+        QColor visLineColor;
         QColor smaLineColor;
         QColor targetLineColor;
         QColor plotBackgroundColor;

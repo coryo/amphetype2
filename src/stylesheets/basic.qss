@@ -20,6 +20,8 @@ LivePlot {
 
 PerformanceHistory {
         qproperty-wpmLineColor: rgb(153, 85, 85);/*rgba(121, 178, 33, 150);*/
+        qproperty-accLineColor: rgb(85, 153, 85);
+        qproperty-visLineColor: rgb(85, 85, 153);
         qproperty-smaLineColor: rgb(121, 178, 33);
         qproperty-targetLineColor: rgba(255, 0, 0, 200);
         qproperty-plotBackgroundColor: rgb(255,255,255);
