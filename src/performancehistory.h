@@ -29,6 +29,7 @@ public:
         ~PerformanceHistory();
 
 private:
+        void contextMenu(const QPoint &);
         QCPGraph* dampen(QCPGraph*, int n = 10);
 
         Ui::PerformanceHistory* ui;
@@ -46,9 +47,12 @@ signals:
         void colorChanged();
         void settingsChanged();
 
-private slots:
-        void refreshSources();
+public slots:
         void refreshPerformance();
+
+private slots:
+        void deleteResult(bool);
+        void refreshSources();
         void doubleClicked(const QModelIndex&);
         void showPlot(int=0);
         void refreshCurrentPlot();

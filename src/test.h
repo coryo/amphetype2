@@ -3,38 +3,77 @@
 
 #include <QString>
 #include <QVector>
+#include <QList>
 #include <QSet>
 #include <QHash>
 #include <QDateTime>
+#include <QElapsedTimer>
+#include <QObject>
 
-class Test {
+class Text;
+
+class Test : public QObject {
+        Q_OBJECT
 public:
-        Test(const QString&);
-        QHash<QPair<QChar, QChar>, int> getMistakes();
+        // Test(const QString&);
+        Test(Text*);
+        ~Test();
+        QHash<QPair<QChar, QChar>, int> getMistakes() const;
+        double getFinalWpm() { return this->finalWPM; };
+        double getFinalAccuracy() { return this->finalACC; };
+        double getFinalViscosity() { return this->finalVIS; };
 
-        QString text;
-        int length;
+        void start();
 
-        bool editFlag;
+        int mistakeCount() const;
+        int msElapsed() const;
+        double secondsElapsed() const;
 
+        void handleInput(const QString&, int);
+
+        Text* text;
+        // int length;
+        bool started;
+        bool finished;
         int currentPos;
-
-        QDateTime start;
+        QDateTime startTime;
         int totalMs;
-
         QVector<int> msBetween;
-
-        QSet<int> mistakes;
-        QHash<int, QPair<QChar, QChar>> mistakeMap;
-
         QVector<double> wpm;
-        QVector<double> apm;
-
+        // QVector<double> apm;
         double minWPM;
         double minAPM;
         double maxWPM;
         double maxAPM;
+        QSet<int> mistakes;
+
+private:
+        void saveResult(const QString&, double, double, double);
+        void finish();
+        void addMistake(int, const QChar&, const QChar&);
+
+        QList<QPair<QChar, QChar>> mistakeList;
+        QElapsedTimer timer;
+        QElapsedTimer intervalTimer;
         int apmWindow;
+
+        double finalWPM;
+        double finalACC;
+        double finalVIS;
+
+signals:
+        void testStarted(int);
+        void done(double, double, double);
+        void cancel(Test*);
+        void restart(Test*);
+
+        void newResult();
+        void newStatistics();
+
+        void mistake(int);
+        void newPoint(int, double, double);
+        void characterAdded(int = 0, int = 0);
+        void positionChanged(int, int);
 };
 
 #endif // TEST_H

@@ -24,8 +24,9 @@ private:
         QStringList wrappedText;
         int cursorPosition;
         int testPosition;
+        int cols;
         std::pair<int,int> posToListPos(int);
-        
+
 
 public slots:
         void updateDisplay();

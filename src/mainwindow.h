@@ -29,6 +29,7 @@ private slots:
         void gotoTab(int);
         void gotoTyperTab();
         void gotoSourcesTab();
+        void togglePlot(bool);
 };
 
 #endif // MAINWINDOW_H

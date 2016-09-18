@@ -181,7 +181,7 @@ QDoubleSpinBox::down-button:hover {
 QSpinBox::up-button,
 QDoubleSpinBox::up-button {
         subcontrol-origin: border;
-        subcontrol-position: top right;      
+        subcontrol-position: top right;
         width: 16px;
         border: 2px solid #222222;
         background: #333333;
@@ -218,7 +218,7 @@ QComboBox::drop-down {
         border-left-width: 1px;
         border-left-color: #222222;
         border-left-style: solid;
-        background: #333333;   
+        background: #333333;
 }
 
 QComboBox::down-arrow {
@@ -240,13 +240,17 @@ TyperDisplay {
 }
 
 Quizzer {
+        qproperty-goColor: #557D17;
+        qproperty-stopColor: #995555;
+}
+
+LivePlot {
         qproperty-wpmLineColor: rgb(121, 178, 33);
         qproperty-apmLineColor: rgb(153, 85, 85);/*rgba(214, 187, 187, 80);*/
         qproperty-targetLineColor: rgba(255, 0, 0, 255);
         qproperty-plotBackgroundColor: rgb(51, 51, 51);
         qproperty-plotForegroundColor: rgb(255, 255, 255);
-        qproperty-goColor: #557D17;
-        qproperty-stopColor: #995555;
+
 }
 
 PerformanceHistory {

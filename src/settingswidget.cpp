@@ -6,6 +6,8 @@
 #include <QDir>
 #include <QSettings>
 
+#include <QsLog.h>
+
 SettingsWidget::SettingsWidget(QWidget *parent) :
         QWidget(parent),
         ui(new Ui::SettingsWidget)
@@ -30,6 +32,12 @@ SettingsWidget::SettingsWidget(QWidget *parent) :
         ui->targetAccSpinBox->setValue(s.value("target_acc").toDouble());
         ui->targetVisSpinBox->setValue(s.value("target_vis").toDouble());
 
+        bool debugLogging = s.value("debug_logging").toBool();
+        if (debugLogging)
+                ui->debugLoggingCheckBox->setCheckState(Qt::Checked);
+        else
+                ui->debugLoggingCheckBox->setCheckState(Qt::Unchecked);
+
         connect(ui->fontButton,         SIGNAL(pressed()), this, SLOT(selectFont()));
         connect(ui->styleSheetComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeStyleSheet(int)));
         connect(ui->disablePerformanceLoggingCheckBox, SIGNAL(stateChanged(int)), this, SLOT(changePerfLogging(int)));
@@ -37,6 +45,8 @@ SettingsWidget::SettingsWidget(QWidget *parent) :
         connect(ui->targetWPMSpinBox, SIGNAL(valueChanged(int)),    this, SLOT(writeTargets()));
         connect(ui->targetAccSpinBox, SIGNAL(valueChanged(double)), this, SLOT(writeTargets()));
         connect(ui->targetVisSpinBox, SIGNAL(valueChanged(double)), this, SLOT(writeTargets()));
+
+        connect(ui->debugLoggingCheckBox, SIGNAL(stateChanged(int)), this, SLOT(changeDebugLogging(int)));
 }
 
 SettingsWidget::~SettingsWidget()
@@ -85,5 +95,21 @@ void SettingsWidget::changePerfLogging(int state)
         if (!state)
                 s.setValue("perf_logging", true);
         else
-                s.setValue("perf_logging", false); 
+                s.setValue("perf_logging", false);
+}
+
+void SettingsWidget::changeDebugLogging(int state)
+{
+        QSettings s;
+
+        if (!state) {
+                s.setValue("debug_logging", false);
+                QsLogging::Logger::instance().setLoggingLevel(QsLogging::Level::InfoLevel);
+                QLOG_INFO() << "Debug logging disabled.";
+        }
+        else {
+                s.setValue("debug_logging", true);
+                QsLogging::Logger::instance().setLoggingLevel(QsLogging::Level::DebugLevel);
+                QLOG_INFO() << "Debug logging enabled.";
+        }
 }

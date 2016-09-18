@@ -10,6 +10,11 @@
 #include <QByteArray>
 #include <QStandardItemModel>
 #include <QDateTime>
+#include <QMenu>
+#include <QAction>
+#include <QCursor>
+
+#include <QsLog.h>
 
 PerformanceHistory::PerformanceHistory(QWidget* parent)
         : QWidget(parent), ui(new Ui::PerformanceHistory),
@@ -25,7 +30,7 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         if (s.value("show_xaxis").toBool())
                 ui->fullRangeYCheckBox->setCheckState(Qt::Checked);
         if (s.value("dampen_graph").toBool())
-                ui->dampenCheckBox->setCheckState(Qt::Checked);        
+                ui->dampenCheckBox->setCheckState(Qt::Checked);
         // set default values
         ui->smaWindowSpinBox->      setValue(s.value("dampen_average").toInt());
         ui->limitNumberSpinBox->    setValue(s.value("perf_items").toInt());
@@ -51,7 +56,7 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(writeSettings()));
         connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(refreshPerformance()));
         connect(ui->plotSelector,    SIGNAL(currentIndexChanged(int)), this, SLOT(showPlot(int)));
-        // plot settings. 
+        // plot settings.
         connect(ui->limitNumberSpinBox, SIGNAL(valueChanged(int)), this, SLOT(writeSettings()));
         connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
         connect(ui->timeScaleCheckBox,  SIGNAL(stateChanged(int)), this, SLOT(refreshPerformance()));
@@ -64,6 +69,8 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
         connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
 
+        connect(ui->tableView, &QWidget::customContextMenuRequested, this, &PerformanceHistory::contextMenu);
+
         connect(this, SIGNAL(colorChanged()), this, SLOT(updateColors()));
 }
 
@@ -71,6 +78,28 @@ PerformanceHistory::~PerformanceHistory()
 {
         delete ui;
         delete model;
+}
+
+void PerformanceHistory::contextMenu(const QPoint &pos)
+{
+        auto index = ui->tableView->indexAt(pos);
+        auto id = ui->tableView->model()->index(index.row(), 0).data();
+        QMenu menu(this);
+
+        QAction* deleteAction = menu.addAction("delete");
+        deleteAction->setData(id);
+        connect(deleteAction, &QAction::triggered, this, &PerformanceHistory::deleteResult);
+        menu.exec(QCursor::pos());
+}
+
+void PerformanceHistory::deleteResult(bool checked)
+{
+        auto sender = (QAction*)(this->sender());
+        auto data = sender->data().toString();
+
+        DB::deleteResult(data);
+
+        this->refreshPerformance();
 }
 
 void PerformanceHistory::updateColors()
@@ -124,7 +153,7 @@ void PerformanceHistory::updateColors()
 QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n)
 {
         QCPDataMap* data = graph->data();
-        
+
         if (n > data->size())
                 return 0;
 
@@ -189,7 +218,7 @@ void PerformanceHistory::refreshSources()
 }
 
 void PerformanceHistory::doubleClicked(const QModelIndex& idx)
-{       
+{
         int row = idx.row();
         const QModelIndex& f = model->index(row, 0);
 
@@ -203,9 +232,9 @@ void PerformanceHistory::refreshPerformance()
         QSettings s;
 
         ui->tableView->hide();
-        
+
         model->clear();
-        
+
         QStringList headers;
         headers << "id"
                 << "When"
@@ -219,7 +248,7 @@ void PerformanceHistory::refreshPerformance()
         ui->tableView->setColumnHidden(0, true);
         ui->tableView->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
         ui->tableView->verticalHeader()->setDefaultSectionSize(24);
-        
+
         // clear the data in the plots
         for (int i = 0; i <ui->performancePlot->graphCount(); ++i) {
                 if (i > 2)
@@ -235,6 +264,9 @@ void PerformanceHistory::refreshPerformance()
                                        ui->limitNumberSpinBox->value());
         double x = -1;
         // iterate through rows
+        double avgWPM = 0;
+        double avgACC = 0;
+        double avgVIS = 0;
         for (QStringList row : rows) {
                 QList<QStandardItem*> items;
                 // add hash from db
@@ -254,6 +286,9 @@ void PerformanceHistory::refreshPerformance()
                 ui->performancePlot->graph(0)->addData(x, wpm);
                 ui->performancePlot->graph(1)->addData(x, acc);
                 ui->performancePlot->graph(2)->addData(x, vis);
+                avgWPM += wpm;
+                avgACC += acc;
+                avgVIS += vis;
                 // add wpm,acc,vis, 1 sigificant digit
                 items << new QStandardItem(QString::number(wpm, 'f', 1));
                 items << new QStandardItem(QString::number(acc, 'f', 1));
@@ -265,6 +300,13 @@ void PerformanceHistory::refreshPerformance()
                 model->appendRow(items);
                 --x;
         }
+        avgWPM = avgWPM / rows.size();
+        avgACC = avgACC / rows.size();
+        avgVIS = avgVIS / rows.size();
+
+        ui->avgWPM->setText(QString::number(avgWPM, 'f', 1));
+        ui->avgACC->setText(QString::number(avgACC, 'f', 1));
+        ui->avgVIS->setText(QString::number(avgVIS, 'f', 1));
 
         ui->tableView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
         ui->tableView->resizeColumnsToContents();
@@ -286,7 +328,7 @@ void PerformanceHistory::showPlot(int p)
         QSettings s;
 
         // hide all the plots
-        for (int i = 0; i < ui->performancePlot->graphCount(); i++) 
+        for (int i = 0; i < ui->performancePlot->graphCount(); i++)
                 ui->performancePlot->graph(i)->setVisible(false);
 
         // show the plot we want
@@ -309,7 +351,7 @@ void PerformanceHistory::showPlot(int p)
                 }
         }
 
-        ui->performancePlot->rescaleAxes(true);        
+        ui->performancePlot->rescaleAxes(true);
 
         // set correct y axis label
         // and get the y 'target' value from settings
@@ -342,7 +384,7 @@ void PerformanceHistory::showPlot(int p)
                 if (p == 1) // accuracy plot
                         ui->performancePlot->yAxis->setRangeUpper(100);
                 else
-                        ui->performancePlot->yAxis->setRangeLower(0);     
+                        ui->performancePlot->yAxis->setRangeLower(0);
         }
         ui->performancePlot->yAxis->grid()->setZeroLinePen(Qt::NoPen);
 

@@ -1,120 +1,68 @@
 #include "typerdisplay.h"
-
 #include <QSettings>
 
-TyperDisplay::TyperDisplay(QWidget* parent) : QTextEdit(parent), testPosition(0), cursorPosition(0)
-{
-        errorColor = "#995555";
-        correctColor = "#79B221";
-        highlightedTextColor = "#000000";
-}
+TyperDisplay::TyperDisplay(QWidget* parent) :
+        QTextEdit(parent),
+        testPosition(0),
+        cursorPosition(0),
+        errorColor("#995555"),
+        correctColor("#79B221"),
+        highlightedTextColor("#000000") {}
 
 void TyperDisplay::setTextTarget(const QString& t)
 {
-        testPosition = 0;
-        cursorPosition = 0;
         QSettings s;
-        originalText = t;
-
-        wordWrap(s.value("typer_cols").toInt());
+        this->testPosition = 0;
+        this->cursorPosition = 0;
+        this->originalText = t;
+        this->cols = s.value("typer_cols").toInt();
+        this->wordWrap(this->cols);
 }
 
 void TyperDisplay::moveCursor(int testPosition, int cursorPosition)
 {
-        // testPosition: index in the text that has been reached successfully.
-        // cursorPosition: index of the 'cursor', which is = to test position when correct
-        //      but it will grow beyond for every wrong character added to the typer.
-        //
-        //       v-test position [2]
-        //     This is a test.
-        //             ^-cursor position [8]
-        //
-        //     The user typed 'Th' correctly, then entered 7 incorrect characters
-        //     Th[is is a] test     <-text in brackets needs to be highlighted as error
-
         this->testPosition   = testPosition;
         this->cursorPosition = cursorPosition;
 
-        const QString&     text         = originalText;
-        int                positionDiff = cursorPosition - testPosition;
-        QString            result;
-        std::pair<int,int> testPos, cursorPos;
+        QStringList wrapped = QStringList(wrappedText);
+        int errCount = cursorPosition - testPosition;
+        std::pair<int,int> pos, pos2;
+        int diff;
 
-        // get a (row,col) pair for each of the positions
-        // because the wrapped text is a list of strings
-        testPos = posToListPos(testPosition);
-        if (cursorPosition < text.length())
-                cursorPos = posToListPos(cursorPosition);
-        
-        // lines before current line
-        if (testPos.first > 0) {
-                for (int j = 0; j < testPos.first; j++)
-                        result.append(wrappedText[j] + "<br>");
-        }
-        // current line
-        if (positionDiff > 0) {
-                // errors
-                int lineLength = 0;
-                result.append(wrappedText[testPos.first].left(testPos.second));
-                lineLength += testPos.second;
-
-                result.append("<span style='color:"+highlightedTextColor+"; background-color:"+errorColor+"'>");
-                for (int i = 0; i < positionDiff; ++i) {
-                        if (testPosition + i >= text.length()) {
-                                result.append("&nbsp;");   
-                        } else {
-                                std::pair<int,int> errorPos;
-                                errorPos = posToListPos(testPosition+i);
-                                result.append(wrappedText[errorPos.first][errorPos.second]);
-                                lineLength += 1; 
-                                if (lineLength >= wrappedText[errorPos.first].length()) {
-                                        if (errorPos.first != wrappedText.size()-1)
-                                                result.append("<br>");
-                                        lineLength = 0;
-                                }
-                        }
+        if (errCount > 0) {
+                pos = this->posToListPos(testPosition);
+                if (cursorPosition >= originalText.length()) {
+                        diff = cursorPosition - (originalText.length() - 1);
+                        for (int i = 0; i < diff; i++)
+                                wrapped.last().append("&nbsp;");
+                        pos2 = {wrapped.size() - 1, wrapped.last().size() - 1};
+                } else {
+                        pos2 = this->posToListPos(cursorPosition);
                 }
-                if (cursorPosition < text.length())
-                        result.append(wrappedText[cursorPos.first][cursorPos.second]);
-
-                result.append("</span>");
-
-                if (cursorPosition < text.length()) {
-                        result.append(wrappedText[cursorPos.first].right(
-                                (wrappedText[cursorPos.first].length() - cursorPos.second - 1)));
-                }
-
-                if (cursorPos.first != wrappedText.size()-1)
-                        result.append("<br>");
+                wrapped[pos2.first].insert(pos2.second + 1, "</span>");
+                wrapped[pos.first].insert(
+                        pos.second,
+                        "<span style='color:" + highlightedTextColor +
+                        "; background-color:" + errorColor + "'>");
         } else {
-                // non errors
-                result.append(wrappedText[cursorPos.first].left(cursorPos.second));
-                result.append("<span style='color:"+highlightedTextColor+"; background-color:"+correctColor+"'>");
-                result.append(wrappedText[cursorPos.first][cursorPos.second]);
-                result.append("</span>");
-                result.append(wrappedText[cursorPos.first].right(
-                        (wrappedText[cursorPos.first].length() - cursorPos.second - 1)));
-                result.append("<br>");
+                pos = this->posToListPos(testPosition);
+                wrapped[pos.first].insert(pos.second + 1, "</span>");
+                wrapped[pos.first].insert(
+                        pos.second,
+                        "<span style='color:" + highlightedTextColor +
+                        "; background-color:" + correctColor + "'>");
         }
 
-        // lines after current line
-        if (cursorPosition < text.length()) {
-                for (int j = cursorPos.first+1; j < wrappedText.size(); ++j)
-                        result.append(wrappedText[j] + "<br>");            
-        }
-
-        this->setText(result);
-
-        this->setMinimumWidth (this->document()->size().width()  + 10);
+        this->setText(wrapped.join("<br>"));
+        this->setMinimumWidth(this->document()->size().width() + 10);
         this->setMinimumHeight(this->document()->size().height() + 30);
 }
 
-
-void TyperDisplay::wordWrap(int w) 
+void TyperDisplay::wordWrap(int w)
 {
-        if (originalText.isEmpty())
+        if (this->originalText.isEmpty())
                 return;
-        wrappedText.clear();
+        this->wrappedText.clear();
 
         QSettings s;
         int endPos, lineBreak, size;
@@ -133,19 +81,19 @@ void TyperDisplay::wordWrap(int w)
                 }
 
                 QString line = original.left(endPos + 1);
-                
+
                 lineBreak = line.indexOf('\n');
 
-                if (lineBreak >= 0) { 
+                if (lineBreak >= 0) {
                         line = line.left(lineBreak + 1);
-                        wrappedText << line.replace(lineBreak, 1, u8"\u21B5");//"↵");
+                        wrappedText << line.replace(lineBreak, 1, u8"\u21B5");
                 } else {
-                        wrappedText << line; 
+                        wrappedText << line;
                 }
-                original = original.right(size - line.length());  
+                original = original.right(size - line.length());
         }
 
-        updateDisplay();
+        this->updateDisplay();
 }
 
 std::pair<int,int> TyperDisplay::posToListPos(int pos)
@@ -159,11 +107,10 @@ std::pair<int,int> TyperDisplay::posToListPos(int pos)
                 row += 1;
         }
         col = pos - offset;
-
         return {row, col};
 }
 
 void TyperDisplay::updateDisplay()
 {
-        moveCursor(testPosition, cursorPosition);               
+        this->moveCursor(testPosition, cursorPosition);
 }

@@ -2,7 +2,11 @@
 {
     "files.exclude": {
         "build/": true,
+        "build_*/": true,
         "dist/": true,
         "**/*VC.DB*": true
-    }
+    },
+    "editor.tabSize": 8,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false
 }

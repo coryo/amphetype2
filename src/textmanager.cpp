@@ -20,6 +20,8 @@
 #include <QInputDialog>
 #include <QDebug>
 
+#include <QsLog.h>
+
 TextManager::TextManager(QWidget *parent) :
         QWidget(parent),
         ui(new Ui::TextManager),
@@ -213,7 +215,7 @@ void TextManager::deleteText()
                 const QModelIndex& f = textsModel->index(row, 0);
                 int rowid = f.data().toInt();
                 rowids << rowid;
-                
+
         }
         DB::deleteText(rowids);
 
@@ -236,7 +238,7 @@ void TextManager::deleteSource()
                 int source = f.data().toInt();
                 sources << source;
         }
-        DB::deleteSource(sources); 
+        DB::deleteSource(sources);
 
         refreshSources();
         ui->textsWidget->hide();
@@ -263,7 +265,7 @@ void TextManager::refreshSources()
         ui->sourcesTable->hide();
 
         sourcesModel->clear();
-     
+
         QStringList headers;
         headers << "id"
                 << "Source Name"
@@ -277,7 +279,7 @@ void TextManager::refreshSources()
         ui->sourcesTable->setColumnHidden(0, true);
         ui->sourcesTable->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
         ui->sourcesTable->verticalHeader()->setDefaultSectionSize(24);
-        
+
         refreshed = true;
 
         QList<QStringList> rows = DB::getSourcesData();
@@ -370,35 +372,36 @@ void TextManager::nextText(Text* lastText)
 {
         QSettings s;
         int selectMethod = s.value("select_method").toInt();
+        QLOG_DEBUG() << "TextManager::nextText" << "select_method =" << selectMethod;
 
         Text* nextText;
         if (lastText != 0) {
                 if (selectMethod == 0) {
+                        QLOG_DEBUG() << "nextText: Random";
                         nextText = DB::getRandomText();
                         emit setText(nextText);
-                        return;
+                        delete lastText;
                 } else if (selectMethod == 1) {
+                        QLOG_DEBUG() << "nextText: In Order";
                         if (!s.value("perf_logging").toBool()) {
-                                std::cout << "In order" << std::endl;
                                 nextText = DB::getNextText(lastText);
-                                delete lastText;
                                 emit setText(nextText);
-                                return;
+                                delete lastText;
                         } else {
                                 nextText = DB::getNextText();
                                 emit setText(nextText);
-                                return;
+                                delete lastText;
                         }
                 } else if (selectMethod == 2) {
-                        std::cout << "Repeat" << std::endl;
+                        QLOG_DEBUG() << "nextText: Repeat";
                         emit setText(lastText);
-                        return;
                 }
         } else {
                 nextText = DB::getNextText();
                 emit setText(nextText);
+                delete lastText;
         }
-                
+
 
 }
 

@@ -21,8 +21,10 @@ private:
         Ui::StatisticsWidget *ui;
         QStandardItemModel* model;
 
-private slots:
+public slots:
         void populateStatistics();
+
+private slots:
         void writeSettings();
 };
 
