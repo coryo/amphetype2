@@ -26,6 +26,7 @@ private slots:
         void changeStyleSheet(int);
         void changePerfLogging(int);
         void writeTargets();
+        void changeDebugLogging(int);
 };
 
 #endif // SETTINGSWIDGET_H

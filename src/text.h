@@ -7,8 +7,10 @@
 class Text {
 public:
         Text();
+        Text(Text*);
         Text(const QByteArray&, int, const QString&, int type=0);
         Text(const QByteArray&, int, const QString&, const QString&, int, int type=0);
+        ~Text();
 
         const QByteArray& getId() const;
         int               getSource() const;

@@ -34,8 +34,10 @@ signals:
         void progress(int);
         void gotoTab(int);
 
-private slots:
+public slots:
         void nextText(Text*);
+
+private slots:
         void addFiles();
         void refreshSources();
         void doubleClicked(const QModelIndex&);

@@ -6,13 +6,16 @@ TyperDisplay {
 }
 
 Quizzer {
+        qproperty-goColor: #00FF00;
+        qproperty-stopColor: #FF0000;
+}
+
+LivePlot {
         qproperty-wpmLineColor: rgb(121, 178, 33);
         qproperty-apmLineColor: rgba(214, 187, 187, 255);
         qproperty-targetLineColor: rgba(255, 0, 0, 255);
         qproperty-plotBackgroundColor: rgb(255,255,255);
         qproperty-plotForegroundColor: rgb(0,0,0);
-        qproperty-goColor: #00FF00;
-        qproperty-stopColor: #FF0000;
 }
 
 PerformanceHistory {

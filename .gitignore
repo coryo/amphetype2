@@ -27,7 +27,7 @@
 *.out
 *.app
 
-build/
+build*/
 *.VC.DB*
 
 CMakeCache.txt
@@ -39,3 +39,5 @@ install_manifest.txt
 CTestTestfile.cmake
 
 db.sqlite
+*.log
+*.log.*

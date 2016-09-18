@@ -5,11 +5,17 @@
 #include <sqlite3ppext.h>
 
 #include <QVariantList>
+#include <QThread>
+#include <QObject>
+#include <QMutex>
 
 class Text;
+class Test;
 
-class DB
+
+class DB : public QObject
 {
+        Q_OBJECT
 public:
         static void initDB();
 
@@ -18,18 +24,19 @@ public:
         // specific insertion functions
         static void addText      (int, const QString&,     int = -1, bool = true);
         static void addTexts     (int, const QStringList&, int = -1, bool = true);
-        static void addResult    (const QString&,
-                                  const QByteArray&,
-                                  int, double, double, double);
+        static void addResult    (const QString&, const Text*, double,
+                                  double, double);
         static void addStatistics(const QString&,
-                                  const QMultiHash<QStringRef, double>&, 
-                                  const QMultiHash<QStringRef, double>&, 
+                                  const QMultiHash<QStringRef, double>&,
+                                  const QMultiHash<QStringRef, double>&,
                                   const QMultiHash<QStringRef, int>&);
         static void addMistakes  (const QString&,
-                                  const QHash<QPair<QChar, QChar>, int>&);
+                                  const Test*);
+
         // removal/modification
         static void deleteSource (const QList<int>&);
         static void deleteText   (const QList<int>&);
+        static void deleteResult (const QString&);
         static void disableSource(const QList<int>&);
         static void enableSource (const QList<int>&);
 
@@ -41,7 +48,7 @@ public:
         static QList<QStringList>    getPerformanceData(int, int, int);
         static QList<QStringList>    getSourcesList();
         static QList<QStringList>    getStatisticsData(const QString&, int, int, int, int);
-        // create a text object 
+        // create a text object
         static Text* getNextText();             // get the text that follows the last completed text
         static Text* getNextText(Text*);        // get the text that follows the given text
         static Text* getRandomText();
@@ -51,8 +58,9 @@ public:
         static void updateText(int, const QString&);
 
 private:
+        static QMutex db_lock;
         static QString db_path;
-        // functions for sqlite extending 
+        // functions for sqlite extending
         static int counter();
         static int _count;
         // general functions for retrieving data with a given query
@@ -63,13 +71,13 @@ private:
         static void execCommand(sqlite3pp::database*,
                                 const QString&);
         static void insertItems(const QString&, const QVariantList&);
-        static void insertItems(sqlite3pp::database*, 
+        static void insertItems(sqlite3pp::database*,
                                 const QString&, const QVariantList&);
         // create a text object with a given query
         static Text* getTextWithQuery(const QString&);
 
 signals:
-        static void progress(int);
+        void progress(int);
 };
 
 #endif // DB_H

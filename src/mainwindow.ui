@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Amphetype2</string>
+   <string>amphetype2</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
@@ -81,6 +81,43 @@
     </item>
    </layout>
   </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>631</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionPlot"/>
+   </widget>
+   <addaction name="menuView"/>
+  </widget>
+  <widget class="QDockWidget" name="plotDock">
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetVerticalTitleBar</set>
+   </property>
+   <property name="windowTitle">
+    <string>plot</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="LivePlot" name="plot"/>
+  </widget>
+  <action name="actionPlot">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Plot</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -118,6 +155,12 @@
    <class>TrainingGenWidget</class>
    <extends>QWidget</extends>
    <header>traininggenwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LivePlot</class>
+   <extends>QWidget</extends>
+   <header>liveplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

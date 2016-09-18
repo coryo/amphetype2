@@ -1,12 +1,17 @@
 #include "db.h"
 #include "text.h"
+#include "test.h"
 
 #include <sqlite3pp.h>
+#include <sqlite3.h>
 
 #include <QSettings>
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QPair>
+#include <QMutex>
+#include <QMutexLocker>
+
 
 #include <iostream>
 #include <vector>
@@ -14,13 +19,16 @@
 
 #include <QsLog.h>
 
-QString DB::db_path = QString();
+///////////////////////////////////////////////////////////////////////////////
+QMutex DB::db_lock;
+QString DB::db_path;
 
 //////////////////////////////////////////////////////
 // Sqlite extension functions
 //////////////////////////////////////////////////////
 int DB::_count = -1;
 int DB::counter() { _count +=1; return _count; }
+
 struct agg_median
 {
         void step(double x) {
@@ -40,6 +48,8 @@ struct agg_median
         std::vector<double> l;
 };
 
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,30 +58,37 @@ void DB::setDBPath(const QString& path) { db_path = path; }
 
 void DB::initDB()
 {
+        QLOG_DEBUG() << "sqlite3_threadsafe() =" << sqlite3_threadsafe();
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
+                sqlite3pp::transaction xct(db);
+                {
                 db.execute("create table source (name text, disabled integer, "
-                    "discount integer, type integer)");
+                           "discount integer, type integer)");
                 db.execute("create table text (id text primary key, source integer, "
-                    "text text, disabled integer)");
+                           "text text, disabled integer)");
                 db.execute("create table result (w real, text_id text, source "
-                    "integer, wpm real, accuracy real, viscosity real)");
+                           "integer, wpm real, accuracy real, viscosity real)");
                 db.execute("create table statistic (w real, data text, type integer, "
-                    "time real, count integer, mistakes integer, viscosity "
-                    "real)");
+                           "time real, count integer, mistakes integer, viscosity "
+                           "real)");
                 db.execute("create table mistake (w real, target text, mistake text, "
                             "count integer)");
                 db.execute("create view text_source as select "
                             "id,s.name,text,coalesce(t.disabled,s.disabled) from text "
                             "as t left join source as s on (t.source = s.rowid)");
+                }
+                QMutexLocker locker(&db_lock);
+                xct.commit();
         } catch (const std::exception& e) {
-                std::cout << "cannot create database" <<std::endl;
-                std::cout << e.what() <<std::endl;
+                QLOG_DEBUG() << "cannot create database";
+                QLOG_DEBUG() << e.what();
         }
 }
 
 void DB::disableSource(const QList<int>& sources)
 {
+        QLOG_DEBUG() << "DB::disableSource";
         sqlite3pp::database db(DB::db_path.toStdString().c_str());
         sqlite3pp::transaction xct(db);
         {
@@ -80,10 +97,12 @@ void DB::disableSource(const QList<int>& sources)
                         DB::execCommand(&db, sql);
                 }
         }
+        QMutexLocker locker(&db_lock);
         xct.commit();
 }
 void DB::enableSource(const QList<int>& sources)
 {
+        QLOG_DEBUG() << "DB::enableSource";
         sqlite3pp::database db(DB::db_path.toStdString().c_str());
         sqlite3pp::transaction xct(db);
         {
@@ -92,11 +111,13 @@ void DB::enableSource(const QList<int>& sources)
                         DB::execCommand(&db, sql);
                 }
         }
+        QMutexLocker locker(&db_lock);
         xct.commit();
 }
 
 int DB::getSource(const QString& sourceName, int lesson, int type)
 {
+        QLOG_DEBUG() << "DB::getSource";
         try {
                 QString sql = QString("select rowid from source where name = \"%1\" limit 1").arg(sourceName);
                 QStringList row = DB::getOneRow(sql);
@@ -121,8 +142,8 @@ int DB::getSource(const QString& sourceName, int lesson, int type)
                 // try again now that it's in the db
                 return getSource(sourceName, lesson);
         } catch (const std::exception& e) {
-                std::cout << "error getting source" << std::endl;
-                std::cout << e.what() << std::endl;
+                QLOG_DEBUG() << "error getting source";
+                QLOG_DEBUG() << e.what();
                 return -1;
         }
 }
@@ -141,6 +162,7 @@ void DB::deleteSource(const QList<int>& sources)
                         DB::execCommand(&db, sql);
                 }
         }
+        QMutexLocker locker(&db_lock);
         xct.commit();
 }
 
@@ -154,6 +176,19 @@ void DB::deleteText(const QList<int>& rowids)
                         DB::execCommand(&db, sql);
                 }
         }
+        QMutexLocker locker(&db_lock);
+        xct.commit();
+}
+
+void DB::deleteResult(const QString& id)
+{
+        sqlite3pp::database db(DB::db_path.toStdString().c_str());
+        sqlite3pp::transaction xct(db);
+        {
+                QString sql = QString("DELETE FROM result WHERE text_id = '%1'").arg(id);
+                DB::execCommand(&db, sql);
+        }
+        QMutexLocker locker(&db_lock);
         xct.commit();
 }
 
@@ -179,10 +214,11 @@ void DB::addText(int source, const QString& text, int lesson, bool update)
                                 items << dis;
                         DB::insertItems(&db, sql, items);
                 }
+                QMutexLocker locker(&db_lock);
                 xct.commit();
         } catch (const std::exception& e) {
-                std::cout << "error adding text" << std::endl;
-                std::cout << e.what() << std::endl;
+                QLOG_DEBUG() << "error adding text";
+                QLOG_DEBUG() << e.what();
         }
 }
 
@@ -210,30 +246,34 @@ void DB::addTexts(int source, const QStringList& lessons, int lesson, bool updat
                                 DB::insertItems(&db, sql, items);
                         }
                 }
+                QMutexLocker locker(&db_lock);
                 xct.commit();
         } catch (const std::exception& e) {
-                std::cout << "error adding text" << std::endl;
-                std::cout << e.what() << std::endl;
+                QLOG_DEBUG() << "error adding text";
+                QLOG_DEBUG() << e.what();
         }
 }
 
-void DB::addResult(const QString& time, const QByteArray& id, int source, double wpm, double acc,
+void DB::addResult(const QString& time, const Text* text, double wpm, double acc,
         double vis)
 {
         try {
                 QString sql = "insert into result (w,text_id,source,wpm,accuracy,viscosity)"
                                                 " values (?, ?, ?, ?, ?, ?)";
+                QLOG_DEBUG() << sql;
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
                 sqlite3pp::transaction resultTransaction(db);
                 {
                         QVariantList items;
-                        items << time << id << source << wpm << acc << vis;
+                        items << time << text->getId() << text->getSource() << wpm << acc << vis;
                         DB::insertItems(&db, sql, items);
+                        QLOG_DEBUG() << items;
                 }
+                QMutexLocker locker(&db_lock);
                 resultTransaction.commit();
         } catch (const std::exception& e) {
-                std::cout << "error adding result" << std::endl;
-                std::cout << e.what() << std::endl;
+                QLOG_DEBUG() << "error adding result";
+                QLOG_DEBUG() << e.what();
         }
 }
 
@@ -284,21 +324,23 @@ void DB::addStatistics(const QString& time, const QMultiHash<QStringRef, double>
                                 DB::insertItems(&db, sql, items);
                         }
                 }
+                QMutexLocker locker(&db_lock);
                 statisticsTransaction.commit();
         } catch (const std::exception& e) {
-                std::cout << "error adding statistics" << std::endl;
-                std::cout << e.what() << std::endl;
+                QLOG_DEBUG() << "error adding statistics";
+                QLOG_DEBUG() << e.what();
         }
 }
 
-void DB::addMistakes(const QString& time, const QHash<QPair<QChar, QChar>, int>& m)
+void DB::addMistakes(const QString& time, const Test* test)
 {
         try {
                 QString sql = "insert into mistake (w,target,mistake,count) values (?, ?, ?, ?)";
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
                 sqlite3pp::transaction mistakesTransaction(db);
                 {
-                        QHashIterator<QPair<QChar,QChar>, int> it(m);
+                        auto mistakes = test->getMistakes();
+                        QHashIterator<QPair<QChar,QChar>, int> it(mistakes);
                         while (it.hasNext()) {
                                 it.next();
                                 QVariantList items;
@@ -310,10 +352,11 @@ void DB::addMistakes(const QString& time, const QHash<QPair<QChar, QChar>, int>&
                                 DB::insertItems(&db, sql, items);
                         }
                 }
+                QMutexLocker locker(&db_lock);
                 mistakesTransaction.commit();
         } catch (const std::exception& e) {
-                std::cout << "error adding mistakes" << std::endl;
-                std::cout << e.what() << std::endl;
+                QLOG_DEBUG() << "error adding mistakes";
+                QLOG_DEBUG() << e.what();
         }
 }
 
@@ -328,7 +371,7 @@ void DB::addMistakes(const QString& time, const QHash<QPair<QChar, QChar>, int>&
  }
 
 QList<QStringList> DB::getSourcesData()
- {
+{
         QString sql =
                 "select s.rowid, s.name, t.count, r.count, r.wpm, "
                         "nullif(t.dis,t.count) "
@@ -459,7 +502,6 @@ QList<QStringList> DB::getStatisticsData(const QString& when, int type, int coun
                         "and type = %2 group by data) "
                 "where total >= %3 "
                 "order by %4 limit %5").arg(when).arg(type).arg(count).arg(order).arg(limit);
-        QLOG_DEBUG() << sql;
 
         QList<QStringList> rows;
         rows = getRows(sql, true);
@@ -572,6 +614,7 @@ void DB::updateText(int rowid, const QString& newText)
 
 QStringList DB::getOneRow(const QString& sql, bool extensions)
 {
+        QMutexLocker locker(&db_lock);
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
 
@@ -592,14 +635,15 @@ QStringList DB::getOneRow(const QString& sql, bool extensions)
                 }
                 return row;
         } catch (const std::exception& e) {
-                std::cout << "error running query: " << sql.toStdString() << std::endl;
-                std::cout << e.what() << std::endl;
+                QLOG_DEBUG() << "error running query: " << sql;
+                QLOG_DEBUG() << e.what();
                 return QStringList();
         }
 }
 
 QList<QStringList> DB::getRows(const QString& sql, bool extensions)
 {
+        QMutexLocker locker(&db_lock);
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
 
@@ -623,8 +667,8 @@ QList<QStringList> DB::getRows(const QString& sql, bool extensions)
                 }
                 return rows;
         } catch (const std::exception& e) {
-                std::cout << "error running query: " << sql.toStdString() << std::endl;
-                std::cout << e.what() << std::endl;
+                QLOG_DEBUG() << "error running query: " << sql;
+                QLOG_DEBUG() << e.what();
                 return QList<QStringList>();
         }
 }
@@ -633,6 +677,8 @@ void DB::insertItems(const QString& sql, const QVariantList& values)
 {
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
+                sqlite3pp::transaction xct(db);
+                {
                 sqlite3pp::command cmd(db, sql.toUtf8().data());
 
                 QList<QByteArray> items;
@@ -645,9 +691,12 @@ void DB::insertItems(const QString& sql, const QVariantList& values)
                                 cmd.bind(i + 1, items[i].data(), sqlite3pp::nocopy);
                 }
                 cmd.execute();
+                }
+                QMutexLocker locker(&db_lock);
+                xct.commit();
         } catch (const std::exception& e) {
-                std::cout << "error inserting data: " << sql.toStdString() << std::endl;
-                std::cout << e.what() << std::endl;
+                QLOG_ERROR() << "error inserting data: " << sql;
+                QLOG_ERROR() << e.what();
         }
 }
 
@@ -667,8 +716,8 @@ void DB::insertItems(sqlite3pp::database* db, const QString& sql, const QVariant
                 }
                 cmd.execute();
         } catch (const std::exception& e) {
-                std::cout << "error inserting data: " << sql.toStdString() << std::endl;
-                std::cout << e.what() << std::endl;
+                QLOG_ERROR() << "error inserting data: " << sql;
+                QLOG_ERROR() << e.what();
         }
 }
 
@@ -679,18 +728,23 @@ void DB::execCommand(sqlite3pp::database* db, const QString& sql)
                 cmd.execute();
         }
         catch (const std::exception& e) {
-                std::cerr << e.what() << '\n';
+                QLOG_ERROR() << e.what();
         }
 }
 void DB::execCommand(const QString& sql)
 {
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
-                sqlite3pp::command cmd(db, sql.toUtf8().data());
-                cmd.execute();
+                sqlite3pp::transaction xct(db);
+                {
+                        sqlite3pp::command cmd(db, sql.toUtf8().data());
+                        cmd.execute();
+                }
+                QMutexLocker locker(&db_lock);
+                xct.commit();
         }
         catch (const std::exception& e) {
-                std::cerr << e.what() << '\n';
+                QLOG_ERROR() << e.what();
         }
 }
 
@@ -727,7 +781,7 @@ Text* DB::getTextWithQuery(const QString& query)
                 return new Text(data[0].toUtf8(), data[1].toInt(), data[2], data[3], data[4].toInt(), data[5].toInt());
         }
         catch (const std::exception& e) {
-                std::cerr << e.what() << std::endl;
+                QLOG_ERROR() << e.what();
                 return new Text();
         }
 }
