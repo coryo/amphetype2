@@ -1,0 +1,262 @@
+* {
+        background-color: #333333;
+        color: #FFFFFF;
+}
+
+QTabWidget::pane {
+        border-top: 2px solid #222222;
+}
+
+QTabWidget::tab-bar {
+        left: 5px;
+}
+
+QTabBar::tab {
+        min-width: 15ex;
+        border: 2px solid #444444;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        padding: 3px;
+        background: #555555;
+}
+
+QTabBar::tab:selected {
+        background: #995555;
+}
+
+QTabBar::tab:!selected {
+        margin-top: 4px;
+}
+
+QScrollBar:horizontal {
+        border: 2px solid #222222;
+        background: #333333;
+        height: 15px;
+        margin: 0px 15px 0px 15px;
+}
+
+QScrollBar::handle:horizontal {
+        background: #995555;
+        min-width: 20px;
+}
+
+QScrollBar::add-line:horizontal {
+        border: 2px solid #222222;
+        background: #333333;
+        width: 15px;
+        subcontrol-position: right;
+        subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:horizontal {
+        border: 2px solid #222222;
+        background: #333333;
+        width: 15px;
+        subcontrol-position: left;
+        subcontrol-origin: margin;
+}
+
+QScrollBar:left-arrow:horizontal,
+QScrollBar::right-arrow:horizontal {
+        width: 3px;
+        height: 3px;
+        background: #FFFFFF;
+}
+
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {
+        background: none;
+}
+
+QScrollBar:vertical {
+        border: 2px solid #222222;
+        background: #333333;
+        width: 15px;
+        margin: 15px 0px 15px 0px;
+}
+
+QScrollBar::handle:vertical {
+        background: #995555;
+        min-height: 20px;
+}
+
+QScrollBar::add-line:vertical {
+        border: 2px solid #222222;
+        background: #333333;
+        height: 15px;
+        subcontrol-position: bottom;
+        subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:vertical {
+        border: 2px solid #222222;
+        background: #333333;
+        height: 15px;
+        subcontrol-position: top;
+        subcontrol-origin: margin;
+}
+
+QScrollBar:up-arrow:vertical,
+QScrollBar::down-arrow:vertical {
+        width: 3px;
+        height: 3px;
+        background: #FFFFFF;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+        background: none;
+}
+
+QTableView {
+        border: 2px solid #222222;
+        background-color: #444444;
+        alternate-background-color: #555555;
+        selection-background-color: #995555;
+}
+
+QTableView QTableCornerButton::section {
+        background: #995555;
+}
+
+QHeaderView::section {
+        background: #995555;
+        border: 0px;
+}
+
+QTextEdit,
+QLineEdit,
+QComboBox,
+QSpinBox, QDoubleSpinBox {
+        padding: 2px;
+        border: 2px solid #222222;
+        background: #444444;
+        selection-background-color: #444444;
+}
+
+QTextEdit {
+        border: 0px;
+}
+
+QProgressBar {
+    border: 2px solid grey;
+    border-radius: 5px;
+    text-align: center;
+}
+QProgressBar::chunk {
+    background-color: #995555;
+    width: 20px;
+}
+
+QPushButton {
+        padding: 4px;
+        border: 2px solid #222222;
+        background-color: #333333;
+}
+QPushButton:hover {
+        background: #995555;
+}
+
+QCheckBox::indicator {
+        border: 2px solid #222222;
+        width: 10px;
+        height: 10px;
+}
+
+QCheckBox::indicator:unchecked {
+        background: #555555;
+}
+
+QCheckBox::indicator:checked {
+        background: #995555;
+}
+
+QSpinBox::up-button:hover,
+QSpinBox::down-button:hover,
+QDoubleSpinBox::up-button:hover,
+QDoubleSpinBox::down-button:hover {
+        background: #995555;
+}
+
+QSpinBox::up-button,
+QDoubleSpinBox::up-button {
+        subcontrol-origin: border;
+        subcontrol-position: top right;
+        width: 16px;
+        border: 2px solid #222222;
+        background: #333333;
+}
+
+QSpinBox::down-button,
+QDoubleSpinBox::down-button {
+        subcontrol-origin: border;
+        subcontrol-position: bottom right;
+        width: 16px;
+        border: 2px solid #222222;
+        border-top-width: 0;
+        background: #333333;
+}
+
+QSpinBox::up-arrow,
+QDoubleSpinBox::up-arrow {
+        background: #FFFFFF;
+        width: 3px;
+        height: 3px;
+}
+
+QSpinBox::down-arrow,
+QDoubleSpinBox::down-arrow {
+        background: #FFFFFF;
+        width: 3px;
+        height: 3px;
+}
+
+QComboBox::drop-down {
+        subcontrol-origin: padding;
+        subcontrol-position: top right;
+        width: 15px;
+        border-left-width: 1px;
+        border-left-color: #222222;
+        border-left-style: solid;
+        background: #333333;
+}
+
+QComboBox::down-arrow {
+        background: #FFFFFF;
+        width: 3px;
+        height: 3px;
+}
+
+QComboBox::drop-down:hover {
+        background: #995555;
+}
+
+TyperDisplay {
+        color: #FFFFFF;
+        qproperty-correctColor: #557D17;/*#79B221;*/
+        qproperty-errorColor: #995555;
+        qproperty-highlightedTextColor: #FFFFFF;
+        border: 2px solid #222222;
+}
+
+Quizzer {
+        qproperty-goColor: #557D17;
+        qproperty-stopColor: #995555;
+}
+
+LivePlot {
+        qproperty-wpmLineColor: rgb(121, 178, 33);
+        qproperty-apmLineColor: rgb(153, 85, 85);/*rgba(214, 187, 187, 80);*/
+        qproperty-targetLineColor: rgba(255, 0, 0, 255);
+        qproperty-plotBackgroundColor: rgb(51, 51, 51);
+        qproperty-plotForegroundColor: rgb(255, 255, 255);
+
+}
+
+PerformanceHistory {
+        qproperty-wpmLineColor: rgb(153, 85, 85);/*rgba(214, 187, 187, 80);rgba(121, 178, 33, 150);*/
+        qproperty-smaLineColor: rgb(121, 178, 33);
+        qproperty-targetLineColor: rgba(255, 0, 0, 200);
+        qproperty-plotBackgroundColor: rgb(51, 51, 51);
+        qproperty-plotForegroundColor: rgb(255, 255, 255);
+}
