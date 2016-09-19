@@ -4,11 +4,10 @@
 #include <QWidget>
 #include <QColor>
 
-#include <qcustomplot.h>
-
 class QModelIndex;
 class Text;
 class QStandardItemModel;
+class QCPGraph;
 
 namespace Ui
 {
@@ -53,13 +52,13 @@ signals:
 
 public slots:
         void refreshPerformance();
+        void refreshCurrentPlot();
 
 private slots:
         void deleteResult(bool);
         void refreshSources();
         void doubleClicked(const QModelIndex&);
         void showPlot(int=0);
-        void refreshCurrentPlot();
         void writeSettings();
         void updateColors();
 };

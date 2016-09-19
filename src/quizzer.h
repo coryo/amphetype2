@@ -47,25 +47,25 @@ signals:
         void characterAdded(int = 0, int = 0);
         void testStarted(int);
 
+public slots:
+        void setText(Text *);
+        void tabActive(int);
+        void setTyperFont();
+        void updateTyperDisplay();
+
 private slots:
         void beginTest(int);
         void done(double, double, double);
-        void setText(Text *);
-        void setTyperFont();
-        void tabActive(int);
+
+
         void setPreviousResultText(double, double);
         void cancelled(Test*);
         void restart(Test*);
-
-        // void updateColors();
 
         void timerLabelUpdate();
         void timerLabelReset();
         void timerLabelGo();
         void timerLabelStop();
-
-        void updateTyperDisplay();
-
 };
 
 #endif // QUIZZER_H

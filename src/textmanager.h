@@ -36,12 +36,12 @@ signals:
 
 public slots:
         void nextText(Text*);
+        void tabActive(int);
+        void refreshSources();
 
 private slots:
         void addFiles();
-        void refreshSources();
         void doubleClicked(const QModelIndex&);
-        void tabActive(int);
         void processNextFile();
         void changeSelectMethod(int);
         void populateTexts(const QModelIndex&);

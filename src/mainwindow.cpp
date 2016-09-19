@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget* parent)
         connect(ui->quizzer,            &Quizzer::newStatistics,
                 ui->statisticsWidget,   &StatisticsWidget::populateStatistics);
 
-        connect(ui->actionPlot, &QAction::triggered, this, &MainWindow::togglePlot);//ui->plotDock, &QWidget::show);
+        connect(ui->actionPlot, &QAction::triggered, this, &MainWindow::togglePlot);
         ui->actionPlot->setChecked(s.value("liveplot_visible").toBool());
         // plot
         connect(ui->quizzer, &Quizzer::newPoint,       ui->plot, &LivePlot::addPlotPoint);
@@ -33,36 +33,34 @@ MainWindow::MainWindow(QWidget* parent)
         }
 
 
-        connect(ui->textManager, SIGNAL(setText(Text*)),
-                ui->quizzer,     SLOT  (setText(Text*)));
-        connect(ui->textManager, SIGNAL(gotoTab(int)),
-                this,            SLOT  (gotoTab(int)));
+        connect(ui->textManager, &TextManager::setText, ui->quizzer, &Quizzer::setText);
+        connect(ui->textManager, &TextManager::gotoTab, this,        &MainWindow::gotoTab);
 
-        connect(ui->performanceHistory, SIGNAL(setText(Text*)),
-                ui->quizzer,            SLOT  (setText(Text*)));
-        connect(ui->performanceHistory, SIGNAL(gotoTab(int)),
-                this,                   SLOT  (gotoTab(int)));
-        connect(ui->performanceHistory, SIGNAL(settingsChanged()),
-                ui->plot,               SLOT  (updatePlotTargetLine()));
+        connect(ui->performanceHistory, &PerformanceHistory::setText,
+                ui->quizzer,            &Quizzer::setText);
+        connect(ui->performanceHistory, &PerformanceHistory::gotoTab,
+                this,                   &MainWindow::gotoTab);
+        connect(ui->performanceHistory, &PerformanceHistory::settingsChanged,
+                ui->plot,               &LivePlot::updatePlotTargetLine);
 
-        connect(ui->tabWidget,   SIGNAL(currentChanged(int)),
-                ui->textManager, SLOT  (tabActive(int)));
-        connect(ui->tabWidget,   SIGNAL(currentChanged(int)),
-                ui->quizzer,     SLOT  (tabActive(int)));
+        connect(ui->tabWidget,   &QTabWidget::currentChanged,
+                ui->textManager, &TextManager::tabActive);
+        connect(ui->tabWidget,   &QTabWidget::currentChanged,
+                ui->quizzer,     &Quizzer::tabActive);
 
-        connect(ui->settingsWidget, SIGNAL(settingsChanged()),
-                ui->quizzer,        SLOT  (setTyperFont()));
-        connect(ui->settingsWidget, SIGNAL(settingsChanged()),
-                ui->plot,        SLOT(updatePlotTargetLine()));
-        connect(ui->settingsWidget, SIGNAL(settingsChanged()),
-                ui->quizzer,        SLOT(updateTyperDisplay()));
-        connect(ui->settingsWidget, SIGNAL(settingsChanged()),
-                ui->performanceHistory, SLOT(refreshCurrentPlot()));
+        connect(ui->settingsWidget, &SettingsWidget::settingsChanged,
+                ui->quizzer,        &Quizzer::setTyperFont);
+        connect(ui->settingsWidget, &SettingsWidget::settingsChanged,
+                ui->plot,           &LivePlot::updatePlotTargetLine);
+        connect(ui->settingsWidget, &SettingsWidget::settingsChanged,
+                ui->quizzer,        &Quizzer::updateTyperDisplay);
+        connect(ui->settingsWidget,     &SettingsWidget::settingsChanged,
+                ui->performanceHistory, &PerformanceHistory::refreshCurrentPlot);
 
-        connect(ui->trainingGenWidget, SIGNAL(generatedLessons()),
-                ui->textManager,       SLOT(refreshSources()));
-        connect(ui->trainingGenWidget, SIGNAL(generatedLessons()),
-                this,                  SLOT(gotoSourcesTab()));
+        connect(ui->trainingGenWidget, &TrainingGenWidget::generatedLessons,
+                ui->textManager,       &TextManager::refreshSources);
+        connect(ui->trainingGenWidget, &TrainingGenWidget::generatedLessons,
+                this,                  &MainWindow::gotoSourcesTab);
 
         ui->quizzer->wantText(0);
 }
@@ -77,5 +75,5 @@ void MainWindow::togglePlot(bool checked)
 MainWindow::~MainWindow() { delete ui; }
 
 void MainWindow::gotoTab(int i) { ui->tabWidget->setCurrentIndex(i); }
-void MainWindow::gotoTyperTab()   { ui->tabWidget->setCurrentIndex(0); }
+void MainWindow::gotoTyperTab() { ui->tabWidget->setCurrentIndex(0); }
 void MainWindow::gotoSourcesTab() { ui->tabWidget->setCurrentIndex(1); }
