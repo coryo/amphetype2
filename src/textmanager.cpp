@@ -375,34 +375,31 @@ void TextManager::nextText(Text* lastText)
         QLOG_DEBUG() << "TextManager::nextText" << "select_method =" << selectMethod;
 
         Text* nextText;
-        if (lastText != 0) {
-                if (selectMethod == 0) {
-                        QLOG_DEBUG() << "nextText: Random";
-                        nextText = DB::getRandomText();
-                        emit setText(nextText);
-                        delete lastText;
-                } else if (selectMethod == 1) {
-                        QLOG_DEBUG() << "nextText: In Order";
-                        if (!s.value("perf_logging").toBool()) {
-                                nextText = DB::getNextText(lastText);
-                                emit setText(nextText);
-                                delete lastText;
-                        } else {
-                                nextText = DB::getNextText();
-                                emit setText(nextText);
-                                delete lastText;
-                        }
-                } else if (selectMethod == 2) {
-                        QLOG_DEBUG() << "nextText: Repeat";
-                        emit setText(lastText);
-                }
-        } else {
-                nextText = DB::getNextText();
+
+        switch (selectMethod) {
+        case 0:
+                QLOG_DEBUG() << "nextText: Random";
+                nextText = DB::getRandomText();
                 emit setText(nextText);
-                delete lastText;
+                break;
+        case 1:
+                QLOG_DEBUG() << "nextText: In Order";
+                if (!s.value("perf_logging").toBool() && lastText) {
+                        nextText = DB::getNextText(lastText);
+                        emit setText(nextText);
+                } else {
+                        nextText = DB::getNextText();
+                        emit setText(nextText);
+                }
+                break;
+        case 2:
+                QLOG_DEBUG() << "nextText: Repeat";
+                emit setText(lastText);
+                break;
         }
 
-
+        if (lastText)
+                delete lastText;
 }
 
 void TextManager::addFiles()
