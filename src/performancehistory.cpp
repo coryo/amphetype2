@@ -394,7 +394,7 @@ void PerformanceHistory::showPlot(int p)
                         yAxis2->setLabel("Accuracy (%)");
                         yAxis2->setRangeUpper(100);
                         auto range = ui->performancePlot->graph(1)->valueAxis()->range();
-                        yAxis2->setRangeLower(std::max(0.0, range.lower - 3));
+                        yAxis2->setRangeLower(std::max(0.0, range.lower - 2));
                 }
                         break;
                 case 2:
@@ -402,7 +402,7 @@ void PerformanceHistory::showPlot(int p)
                         yAxis2->setVisible(true);
                         yAxis2->setLabel("viscosity");
                         auto range = ui->performancePlot->graph(2)->valueAxis()->range();
-                        yAxis2->setRangeUpper(range.upper + 3);
+                        yAxis2->setRangeUpper(range.upper + 1);
                         yAxis2->setRangeLower(0);
                         break;
                 }

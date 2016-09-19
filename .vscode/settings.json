@@ -4,7 +4,9 @@
         "build/": true,
         "build_*/": true,
         "dist/": true,
-        "**/*VC.DB*": true
+        "**/*VC.DB*": true,
+        "*.log*": true,
+        "*.sqlite": true
     },
     "editor.tabSize": 8,
     "editor.insertSpaces": true,
