@@ -61,6 +61,7 @@ private slots:
         void showPlot(int=0);
         void writeSettings();
         void updateColors();
+        void togglePlotLine(int);
 };
 
 #endif // PERFORMANCEHISTORY_H

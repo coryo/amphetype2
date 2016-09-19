@@ -272,13 +272,6 @@
       </property>
       <item>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="2">
-         <widget class="QCheckBox" name="plotCheckBox">
-          <property name="text">
-           <string>Hide Plot</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="1">
          <widget class="QComboBox" name="plotSelector">
           <item>
@@ -305,13 +298,6 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="4">
-         <widget class="QCheckBox" name="fullRangeYCheckBox">
-          <property name="text">
-           <string>Full Y</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="5">
          <widget class="QCheckBox" name="dampenCheckBox">
           <property name="sizePolicy">
@@ -322,6 +308,20 @@
           </property>
           <property name="text">
            <string>SMA n:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QCheckBox" name="plotCheckBox">
+          <property name="text">
+           <string>Hide Plot</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="4">
+         <widget class="QCheckBox" name="fullRangeYCheckBox">
+          <property name="text">
+           <string>Full Y</string>
           </property>
          </widget>
         </item>
@@ -347,7 +347,23 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="7">
+        <item row="1" column="0" colspan="9">
+         <widget class="QCustomPlot" name="performancePlot" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="8">
          <spacer name="horizontalSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -367,19 +383,10 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0" colspan="8">
-         <widget class="QCustomPlot" name="performancePlot" native="true">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>0</height>
-           </size>
+        <item row="0" column="7">
+         <widget class="QCheckBox" name="lineCheckBox">
+          <property name="text">
+           <string>Hide Line</string>
           </property>
          </widget>
         </item>

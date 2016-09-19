@@ -36,6 +36,7 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         ui->groupByComboBox->setCurrentIndex(s.value("perf_group_by").toInt());
         ui->groupByComboBox->setItemText(2,
                 QString("%1 Results").arg(s.value("def_group_by").toInt()));
+
         // populate sources combobox
         this->refreshSources();
 
@@ -70,6 +71,9 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
         connect(ui->smaWindowSpinBox,   SIGNAL(valueChanged(int)), this, SLOT(refreshCurrentPlot()));
         connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(writeSettings()));
         connect(ui->plotCheckBox,       SIGNAL(stateChanged(int)), this, SLOT(refreshCurrentPlot()));
+        connect(ui->lineCheckBox,       &QCheckBox::stateChanged, this, &PerformanceHistory::togglePlotLine);
+
+        ui->lineCheckBox->setCheckState(s.value("plot_hide_line", false).toBool() ? Qt::Checked : Qt::Unchecked);
 
         connect(ui->tableView, &QWidget::customContextMenuRequested, this, &PerformanceHistory::contextMenu);
 
@@ -126,12 +130,12 @@ void PerformanceHistory::updateColors()
         ui->performancePlot->graph(1)->setScatterStyle(
                 QCPScatterStyle(QCPScatterStyle::ssTriangle,
                                 QPen(Qt::black, 1),
-                                QBrush(accLineColor), 6));
+                                QBrush(accLineColor), 8));
         ui->performancePlot->graph(2)->setPen(QPen(visLineColor, 2));
         ui->performancePlot->graph(2)->setScatterStyle(
                 QCPScatterStyle(QCPScatterStyle::ssTriangleInverted,
                                 QPen(Qt::black, 1),
-                                QBrush(visLineColor), 6));
+                                QBrush(visLineColor), 8));
         // axes
         QColor subGridColor = plotForegroundColor;
         subGridColor.setAlpha(30);
@@ -164,6 +168,17 @@ void PerformanceHistory::updateColors()
         ui->performancePlot->yAxis2->grid()->setSubGridVisible(true);
 
         this->refreshPerformance();
+}
+
+void PerformanceHistory::togglePlotLine(int state)
+{
+        QSettings s;
+        auto style = state ? QCPGraph::LineStyle::lsNone : QCPGraph::LineStyle::lsLine;
+        ui->performancePlot->graph(0)->setLineStyle(style);
+        ui->performancePlot->graph(1)->setLineStyle(style);
+        ui->performancePlot->graph(2)->setLineStyle(style);
+        s.setValue("plot_hide_line", (state == Qt::Checked) ? true : false);
+        this->refreshCurrentPlot();
 }
 
 // create a new graph that is the simple moving average of the given graph
@@ -348,6 +363,8 @@ void PerformanceHistory::showPlot(int p)
                                 continue;
                         QCPGraph* sma = dampen(ui->performancePlot->graph(i),
                                                s.value("dampen_average").toInt());
+                        if (!sma)
+                                continue;
                         QColor smaColor;
                         switch (i) {
                                 case 0: smaColor = wpmLineColor; break;
@@ -368,21 +385,27 @@ void PerformanceHistory::showPlot(int p)
         double yTarget = s.value("target_wpm").toDouble();
         yAxis->setRangeUpper(std::max(s.value("target_wpm").toDouble(), yAxis->range().upper));
         switch (p) {
-        case 0:
-                yAxis2->setVisible(false);
-                break;
-        case 1:
-                yAxis2->setVisible(true);
-                yAxis2->setLabel("Accuracy (%)");
-                yAxis2->setRangeLower(std::min(s.value("target_acc").toDouble(),
-                                      yAxis2->range().lower));
-                break;
-        case 2:
-                yAxis2->setVisible(true);
-                yAxis2->setLabel("viscosity");
-                yAxis2->setRangeUpper(std::max(s.value("target_vis").toDouble(),
-                                      yAxis2->range().upper));
-                break;
+                case 0:
+                        yAxis2->setVisible(false);
+                        break;
+                case 1:
+                {
+                        yAxis2->setVisible(true);
+                        yAxis2->setLabel("Accuracy (%)");
+                        yAxis2->setRangeUpper(100);
+                        auto range = ui->performancePlot->graph(1)->valueAxis()->range();
+                        yAxis2->setRangeLower(std::max(0.0, range.lower - 3));
+                }
+                        break;
+                case 2:
+                {
+                        yAxis2->setVisible(true);
+                        yAxis2->setLabel("viscosity");
+                        auto range = ui->performancePlot->graph(2)->valueAxis()->range();
+                        yAxis2->setRangeUpper(range.upper + 3);
+                        yAxis2->setRangeLower(0);
+                        break;
+                }
         }
 
         // set the min or max of the y axis if needed
