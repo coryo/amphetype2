@@ -5,13 +5,16 @@
 #include <QsLog.h>
 #include <QSettings>
 #include <QRegularExpression>
+#include <QtMath>
+#include <limits>
 
 Test::Test(Text* t) :
         text(new Text(t)),
         started(false), finished(false),
         currentPos(0),
         maxWPM(0), maxAPM(0),
-        minWPM(DBL_MAX), minAPM(DBL_MAX),
+        minWPM(std::numeric_limits<double>::max()),
+        minAPM(std::numeric_limits<double>::max()),
         apmWindow(5),
         finalWPM(-1),
         finalACC(-1),
@@ -19,7 +22,6 @@ Test::Test(Text* t) :
 {
         msBetween.resize(t->getText().length());
         wpm.resize(t->getText().length());
-        // apm.resize(t->getText().length());
 }
 
 Test::~Test() {
@@ -58,7 +60,7 @@ void Test::finish()
                      this->text->getText().length(); // seconds per character
         QVector<double> v;
         for (int i = 0; i < this->msBetween.size(); ++i) {
-                v << pow((((this->msBetween.at(i)/1000.0)-spc)/spc), 2);
+                v << qPow((((this->msBetween.at(i)/1000.0)-spc)/spc), 2);
         }
         double sum = 0.0;
         for (double x : v)
@@ -237,7 +239,7 @@ void Test::saveResult(const QString& now_str, double wpm, double accuracy, doubl
 
                 // add a time value and visc value for the key
                 stats.insert(c, this->msBetween.at(i) / 1000.0);
-                visc.insert(c, pow((((this->msBetween.at(i) / 1000.0)-spc) / spc), 2));
+                visc.insert(c, qPow((((this->msBetween.at(i) / 1000.0)-spc) / spc), 2));
 
                 // add the mistake to the key
                 if (this->mistakes.contains(i))
@@ -267,7 +269,7 @@ void Test::saveResult(const QString& now_str, double wpm, double accuracy, doubl
                 tspc = perch / 1000.0;
                 // get the average viscosity
                 for (int j = start; j < end; ++j)
-                        visco += pow(((this->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
+                        visco += qPow(((this->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
                 visco = visco/(end-start);
 
                 stats.insert(tri, tspc);
@@ -304,7 +306,7 @@ void Test::saveResult(const QString& now_str, double wpm, double accuracy, doubl
 
                 tspc = perch / 1000.0;
                 for (int j = start; j < end; ++j)
-                        visco += pow(((this->msBetween.at(j)/ 1000.0 - tspc) / tspc), 2);
+                        visco += qPow(((this->msBetween.at(j)/ 1000.0 - tspc) / tspc), 2);
                 visco = visco/(end-start);
 
                 stats.insert(word, tspc);
