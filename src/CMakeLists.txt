@@ -37,13 +37,23 @@ set(${PROJECT_NAME}_SOURCES
 	lessonminercontroller.h
 )
 
+set(MACOSX_BUNDLE_ICON_FILE icon.icns)
+set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${VERSION_STRING})
+set(MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME})
+set(MACOSX_BUNDLE_BUNDLE_VERSION ${VERSION_STRING})
+set(MACOSX_BUNDLE_GUI_IDENTIFIER com.amphetype2.typer)
+
+if(APPLE)
+        set(ICON_FILE ${CMAKE_SOURCE_DIR}/bundle/osx/${MACOSX_BUNDLE_ICON_FILE})
+        list(APPEND RESOURCE_FILES ${ICON_FILE})
+endif()
+
 if(WIN32)
         list(APPEND RESOURCE_FILES ${CMAKE_SOURCE_DIR}/bundle/win/icon.rc)
 endif()
 
-
 # Executable
-add_executable(amphetype2 WIN32
+add_executable(amphetype2 WIN32 MACOSX_BUNDLE
 	${${PROJECT_NAME}_SOURCES}
 	resources.qrc
         ${RESOURCE_FILES}
@@ -55,4 +65,7 @@ target_link_libraries(amphetype2
 	sqlite3
 	qcustomplot
 	qslog
+)
+set_target_properties(amphetype2 PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/bundle/osx/MacOSXBundleInfo.plist.in
 )

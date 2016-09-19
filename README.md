@@ -9,3 +9,16 @@ using:
 *   SQLite 3.8.10.2
 *   sqlite3pp
 *   CMake 3.6.2
+
+
+## Building
+
+### OSX Build
+
+```bash
+git clone https://github.com/coryo/amphetype2.git
+cd amphetype2
+mkdir build && cd "$_"
+cmake .. -DQTROOT=/Users/Me/Qt/5.7/clang_64
+make
+```
