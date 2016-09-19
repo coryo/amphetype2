@@ -100,7 +100,7 @@ void loadSettings()
                 s.setValue("target_wpm",         80);
                 s.setValue("target_acc",         97);
                 s.setValue("target_vis",         1);
-                s.setValue("perf_logging",       true);
+                s.setValue("perf_logging",       false);
                 s.setValue("liveplot_visible",   true);
                 s.setValue("debug_logging",      false);
                 loadSettings();
@@ -109,8 +109,6 @@ void loadSettings()
 
 int main(int argc, char *argv[])
 {
-
-
         auto dest = QsLogging::DestinationFactory::MakeFileDestination(
                 "amphetype2.log",
                 QsLogging::LogRotationOption::EnableLogRotationOnOpen,
@@ -120,12 +118,12 @@ int main(int argc, char *argv[])
 
         QsLogging::Logger::instance().addDestination(dest);
 
-
         QLOG_INFO() << "Starting." << QString("v%1.%2.%3 build %4")
                 .arg(amphetype2_VERSION_MAJOR)
                 .arg(amphetype2_VERSION_MINOR)
                 .arg(amphetype2_VERSION_MICRO)
                 .arg(amphetype2_VERSION_BUILD);
+
         QApplication a(argc, argv);
 
         QCoreApplication::setOrganizationName("coryo");
@@ -148,15 +146,9 @@ int main(int argc, char *argv[])
         }
         qInstallMessageHandler(logHandler);
 
-        QString dir = qApp->applicationDirPath()
-                + QDir::separator()
-                + s.value("db_name").toString();
+        QString dir = qApp->applicationDirPath() + QDir::separator() + s.value("db_name").toString();
         DB::setDBPath(dir);
         DB::initDB();
-
-        // auto db = DBManager::Instance();
-        // db->setDBPath(dir);
-        // db->initDB();
 
         QFile file(":/stylesheets/"+s.value("stylesheet").toString() +".qss");
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {

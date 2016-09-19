@@ -23,22 +23,16 @@ SettingsWidget::SettingsWidget(QWidget *parent) :
         ui->styleSheetComboBox->setCurrentIndex(ui->styleSheetComboBox->findData(s.value("stylesheet").toString()));
 
         bool perfLogging = s.value("perf_logging").toBool();
-        if (perfLogging)
-                ui->disablePerformanceLoggingCheckBox->setCheckState(Qt::Unchecked);
-        else
-                ui->disablePerformanceLoggingCheckBox->setCheckState(Qt::Checked);
+        ui->disablePerformanceLoggingCheckBox->setCheckState(perfLogging ? Qt::Checked : Qt::Unchecked);
 
         ui->targetWPMSpinBox->setValue(s.value("target_wpm").toInt());
         ui->targetAccSpinBox->setValue(s.value("target_acc").toDouble());
         ui->targetVisSpinBox->setValue(s.value("target_vis").toDouble());
 
         bool debugLogging = s.value("debug_logging").toBool();
-        if (debugLogging)
-                ui->debugLoggingCheckBox->setCheckState(Qt::Checked);
-        else
-                ui->debugLoggingCheckBox->setCheckState(Qt::Unchecked);
+        ui->debugLoggingCheckBox->setCheckState(debugLogging ? Qt::Checked : Qt::Unchecked);
 
-        connect(ui->fontButton,         SIGNAL(pressed()), this, SLOT(selectFont()));
+        connect(ui->fontButton, SIGNAL(pressed()), this, SLOT(selectFont()));
         connect(ui->styleSheetComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeStyleSheet(int)));
         connect(ui->disablePerformanceLoggingCheckBox, SIGNAL(stateChanged(int)), this, SLOT(changePerfLogging(int)));
 
@@ -91,24 +85,18 @@ void SettingsWidget::selectFont()
 void SettingsWidget::changePerfLogging(int state)
 {
         QSettings s;
-
-        if (!state)
-                s.setValue("perf_logging", true);
-        else
-                s.setValue("perf_logging", false);
+        s.setValue("perf_logging", state);
 }
 
 void SettingsWidget::changeDebugLogging(int state)
 {
         QSettings s;
-
+        s.setValue("debug_logging", state);
         if (!state) {
-                s.setValue("debug_logging", false);
                 QsLogging::Logger::instance().setLoggingLevel(QsLogging::Level::InfoLevel);
                 QLOG_INFO() << "Debug logging disabled.";
         }
         else {
-                s.setValue("debug_logging", true);
                 QsLogging::Logger::instance().setLoggingLevel(QsLogging::Level::DebugLevel);
                 QLOG_INFO() << "Debug logging enabled.";
         }
