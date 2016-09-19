@@ -11,6 +11,7 @@
 #include <QObject>
 
 class Text;
+class QKeyEvent;
 
 class Test : public QObject {
         Q_OBJECT
@@ -29,7 +30,7 @@ public:
         int msElapsed() const;
         double secondsElapsed() const;
 
-        void handleInput(const QString&, int);
+        void handleInput(const QString&, QKeyEvent*);
 
         Text* text;
         // int length;

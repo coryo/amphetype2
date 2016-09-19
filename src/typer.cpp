@@ -37,6 +37,6 @@ void Typer::keyPressEvent(QKeyEvent* e)
 
                 QString currentText = this->toPlainText();
 
-                test->handleInput(currentText, e->key());
+                test->handleInput(currentText, e);
         }
 }

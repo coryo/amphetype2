@@ -6,6 +6,8 @@
 #include <QSettings>
 #include <QRegularExpression>
 #include <QtMath>
+#include <QKeyEvent>
+
 #include <limits>
 
 Test::Test(Text* t) :
@@ -87,15 +89,17 @@ void Test::finish()
         this->deleteLater();
 }
 
-void Test::handleInput(const QString& currentText, int key)
+void Test::handleInput(const QString& currentText, QKeyEvent* event)
 {
+        int key = event->key();
+
         if (this->text->getText().isEmpty())
                 return;
 
         if (key == Qt::Key_Escape) {
                 emit restart(this);
                 return;
-        } else if (key == Qt::Key_F1) {
+        } else if (key == Qt::Key_F1 || ((key == Qt::Key_1 || key == Qt::Key_Space) && event->modifiers() == Qt::ControlModifier)) {
                 emit cancel(this);
                 return;
         }
