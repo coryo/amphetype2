@@ -46,6 +46,7 @@ set(MACOSX_BUNDLE_GUI_IDENTIFIER com.amphetype2.typer)
 if(APPLE)
         set(ICON_FILE ${CMAKE_SOURCE_DIR}/bundle/osx/${MACOSX_BUNDLE_ICON_FILE})
         list(APPEND RESOURCE_FILES ${ICON_FILE})
+        set_source_files_properties(${ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 endif()
 
 if(WIN32)
