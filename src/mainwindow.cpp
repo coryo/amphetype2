@@ -24,7 +24,9 @@ MainWindow::MainWindow(QWidget* parent)
         connect(ui->actionPlot, &QAction::triggered, this, &MainWindow::togglePlot);
         ui->actionPlot->setChecked(s.value("liveplot_visible").toBool());
         // plot
-        connect(ui->quizzer, &Quizzer::newPoint,       ui->plot, &LivePlot::addPlotPoint);
+        connect(ui->quizzer, &Quizzer::newWpm, ui->plot, &LivePlot::addWpm);
+        connect(ui->quizzer, &Quizzer::newApm, ui->plot, &LivePlot::addApm);
+
         connect(ui->quizzer, &Quizzer::characterAdded, ui->plot, &LivePlot::newKeyPress);
         connect(ui->quizzer, &Quizzer::testStarted,    ui->plot, &LivePlot::beginTest);
 
