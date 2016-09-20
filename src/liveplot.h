@@ -3,6 +3,9 @@
 
 #include <qcustomplot.h>
 
+#define APM_PLOT 0
+#define WPM_PLOT 1
+
 
 class LivePlot;
 
@@ -31,7 +34,8 @@ public slots:
         void newKeyPress(int, int);
         void updatePlotRangeY(int = 0, int = 0);
         void updatePlotRangeX(int = 0, int = 0);
-        void addPlotPoint(int, double, double);
+        void addWpm(double, double);
+        void addApm(double, double);
         void clearPlotData();
         void showGraphs();
         void setPlotVisible(int);

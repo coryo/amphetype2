@@ -43,7 +43,8 @@ signals:
         void newResult();
         void newStatistics();
 
-        void newPoint(int, double, double);
+        void newWpm(double, double);
+        void newApm(double, double);
         void characterAdded(int = 0, int = 0);
         void testStarted(int);
 
@@ -56,7 +57,6 @@ public slots:
 private slots:
         void beginTest(int);
         void done(double, double, double);
-
 
         void setPreviousResultText(double, double);
         void cancelled(Test*);

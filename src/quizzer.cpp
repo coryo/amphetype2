@@ -159,7 +159,8 @@ void Quizzer::setText(Text* t)
         test->moveToThread(&(this->testThread));
         ui->typer->setTextTarget(test);
 
-        connect(test, &Test::newPoint,       this, &Quizzer::newPoint);
+        connect(test, &Test::newWpm,         this, &Quizzer::newWpm);
+        connect(test, &Test::newApm,         this, &Quizzer::newApm);
         connect(test, &Test::characterAdded, this, &Quizzer::characterAdded);
         connect(test, &Test::testStarted,    this, &Quizzer::testStarted);
         connect(test, &Test::testStarted,    this, &Quizzer::beginTest);

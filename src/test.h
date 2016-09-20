@@ -40,6 +40,7 @@ public:
         QDateTime startTime;
         int totalMs;
         QVector<int> msBetween;
+        QVector<int> timeAt;
         QVector<double> wpm;
         // QVector<double> apm;
         double minWPM;
@@ -72,7 +73,8 @@ signals:
         void newStatistics();
 
         void mistake(int);
-        void newPoint(int, double, double);
+        void newWpm(double, double);
+        void newApm(double, double);
         void characterAdded(int = 0, int = 0);
         void positionChanged(int, int);
 };

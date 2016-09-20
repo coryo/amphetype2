@@ -23,6 +23,7 @@ Test::Test(Text* t) :
         finalVIS(-1)
 {
         msBetween.resize(t->getText().length());
+        timeAt.resize(t->getText().length());
         wpm.resize(t->getText().length());
 }
 
@@ -132,35 +133,30 @@ void Test::handleInput(const QString& currentText, QKeyEvent* event)
         if (this->currentPos == currentText.length()) {
                 int t, min, max;
                 double apm;
-                int check = 0;
+                int check = 1;
 
                 // store when we are at this position
-                int elapsed = this->intervalTimer.elapsed();
-                this->intervalTimer.restart();
+                this->timeAt[currentPos] = this->msElapsed();
 
-                // dont calc between the first 2 positions if !req_space
-                // because the times will be the same
-                if (!s.value("req_space").toBool())
-                        check = 1;
-
-                if (this->currentPos > check) {
+                if (this->currentPos > 1) {
                         // store time between keys
-                        this->msBetween[this->currentPos-1] = elapsed;
+                        this->msBetween[this->currentPos - 1] = this->timeAt[currentPos] - this->timeAt[currentPos - 1];
                         //store wpm
-                        this->wpm << 12.0 * (this->currentPos / this->secondsElapsed());
+                        this->wpm << 12.0 * ((this->currentPos) / this->secondsElapsed());
+                        QLOG_DEBUG() << "pos:" << this->currentPos - 1 << currentPos
+                                     << "ms between:" << this->msBetween[this->currentPos - 1]
+                                     << "wpm:" <<this->wpm.last();
 
                         // check for new min/max wpm
                         if (this->wpm.last() > this->maxWPM)
                                 this->maxWPM = this->wpm.last();
                         if (this->wpm.last() < this->minWPM)
                                 this->minWPM = this->wpm.last();
-                        emit newPoint(0, this->currentPos - 1, this->wpm.last());
+                        emit newWpm(this->currentPos - 1, this->wpm.last());
                 }
                 if (this->currentPos > this->apmWindow) {
                         // time since 1 window ago
-                        t = 0;
-                        for (int i = this->currentPos - this->apmWindow; i <= this->currentPos; i++)
-                                t += this->msBetween[i];
+                        t = this->timeAt[currentPos] - this->timeAt[currentPos - this->apmWindow];
 
                         apm = 12.0 * (this->apmWindow / (t / 1000.0));
 
@@ -169,7 +165,7 @@ void Test::handleInput(const QString& currentText, QKeyEvent* event)
                                 this->maxAPM = apm;
                         if (apm < this->minAPM)
                                 this->minAPM = apm;
-                        emit newPoint(1, this->currentPos - 1, apm);
+                        emit newApm(this->currentPos - 1, apm);
                 }
 
                 min = std::min(this->minWPM, this->minAPM);
@@ -197,7 +193,7 @@ void Test::handleInput(const QString& currentText, QKeyEvent* event)
                 }
                 QLOG_DEBUG() << "Mistake" << currentText[this->currentPos] << "for" << this->text->getText()[this->currentPos] << "at" << this->currentPos;
                 this->addMistake(this->currentPos, this->text->getText()[this->currentPos], currentText[this->currentPos]);
-                emit this->mistake(this->currentPos);
+                emit mistake(this->currentPos);
         }
 }
 
@@ -237,21 +233,22 @@ void Test::saveResult(const QString& now_str, double wpm, double accuracy, doubl
         spc = (this->totalMs / 1000.0) / this->text->getText().length();
 
         // characters
-        for (int i = 1; i < this->text->getText().length(); ++i) {
+        for (int i = 0; i < this->text->getText().length(); ++i) {
                 // the character as a qstringref
                 QStringRef c(&(this->text->getText()), i, 1);
 
-                // add a time value and visc value for the key
-                stats.insert(c, this->msBetween.at(i) / 1000.0);
-                visc.insert(c, qPow((((this->msBetween.at(i) / 1000.0)-spc) / spc), 2));
-
+                // add a time value and visc value for the key, time isn't valid for char 0
+                if (i > 0) {
+                        stats.insert(c, this->msBetween.at(i) / 1000.0);
+                        visc.insert(c, qPow((((this->msBetween.at(i) / 1000.0)-spc) / spc), 2));
+                }
                 // add the mistake to the key
                 if (this->mistakes.contains(i))
                         mistakeCount.insert(c, i);
         }
         //trigrams
 
-        for (int i = 1; i < this->text->getText().length() - 2; ++i) {
+        for (int i = 0; i < this->text->getText().length() - 2; ++i) {
                 // the trigram as a qstringref
                 QStringRef tri(&(this->text->getText()), i, 3);
                 start = i;
@@ -267,17 +264,19 @@ void Test::saveResult(const QString& now_str, double wpm, double accuracy, doubl
                         // sum the times for the chracters in the tri
                         perch += this->msBetween.at(j);
                 }
-                // average time per key
-                perch = perch / (double)(end-start);
-                // seconds per character
-                tspc = perch / 1000.0;
-                // get the average viscosity
-                for (int j = start; j < end; ++j)
-                        visco += qPow(((this->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
-                visco = visco/(end-start);
+                if (i > 0) {
+                        // average time per key
+                        perch = perch / (double)(end-start);
+                        // seconds per character
+                        tspc = perch / 1000.0;
+                        // get the average viscosity
+                        for (int j = start; j < end; ++j)
+                                visco += qPow(((this->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
+                        visco = visco/(end-start);
 
-                stats.insert(tri, tspc);
-                visc.insert(tri, visco);
+                        stats.insert(tri, tspc);
+                        visc.insert(tri, visco);
+                }
         }
         // words
         QRegularExpression re("(\\w|'(?![A-Z]))+(-\\w(\\w|')*)*");

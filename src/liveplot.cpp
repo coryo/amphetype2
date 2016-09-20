@@ -16,7 +16,7 @@ LivePlot::LivePlot(QWidget *parent) : QCustomPlot(parent),
         this->addLayer("lineLayer", this->layer("grid"), QCustomPlot::limAbove);
         this->addGraph();
         this->addGraph();
-        this->graph(0)->setLayer("topLayer");
+        this->graph(WPM_PLOT)->setLayer("topLayer");
         this->xAxis->setVisible(false);
         this->yAxis->setTickLabels(false);
 }
@@ -47,19 +47,24 @@ void LivePlot::updatePlotRangeX(int max, int min)
 
 void LivePlot::clearPlotData()
 {
-        this->graph(0)->clearData();
-        this->graph(1)->clearData();
+        this->graph(WPM_PLOT)->clearData();
+        this->graph(APM_PLOT)->clearData();
 }
 
-void LivePlot::addPlotPoint(int i, double x, double y)
+void LivePlot::addWpm(double x, double y)
 {
-        this->graph(i)->addData(x, y);
+        this->graph(WPM_PLOT)->addData(x, y);
+}
+
+void LivePlot::addApm(double x, double y)
+{
+        this->graph(APM_PLOT)->addData(x, y);
 }
 
 void LivePlot::showGraphs()
 {
-        this->graph(0)->setVisible(true);
-        this->graph(1)->setVisible(true);
+        this->graph(WPM_PLOT)->setVisible(true);
+        this->graph(APM_PLOT)->setVisible(true);
         this->replot();
 }
 
@@ -70,8 +75,8 @@ void LivePlot::setPlotVisible(int s)
 
 void LivePlot::updateColors()
 {
-        this->graph(0)->setPen(QPen(wpmLineColor, 3));
-        this->graph(1)->setPen(QPen(apmLineColor, 2));
+        this->graph(WPM_PLOT)->setPen(QPen(wpmLineColor, 3));
+        this->graph(APM_PLOT)->setPen(QPen(apmLineColor, 2));
         this->setBackground(QBrush(plotBackgroundColor));
 
         this->yAxis->setBasePen   (QPen(plotForegroundColor, 1));
