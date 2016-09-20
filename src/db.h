@@ -56,6 +56,7 @@ public:
         static Text* getText(const QString&);   // get a text with a given hashid
 
         static void updateText(int, const QString&);
+        static void compress();
 
 private:
         static QMutex db_lock;
@@ -64,8 +65,9 @@ private:
         static int counter();
         static int _count;
         // general functions for retrieving data with a given query
-        static QStringList        getOneRow(const QString&, bool = false);
-        static QList<QStringList> getRows  (const QString&, bool = false);
+        static QStringList getOneRow(const QString&, bool = false);
+        static QStringList getOneRow(sqlite3pp::database*, const QString&, bool=false);
+        static QList<QStringList> getRows(const QString&, bool = false);
         // general functions for executing commands
         static void execCommand(const QString&);
         static void execCommand(sqlite3pp::database*,
@@ -75,6 +77,7 @@ private:
                                 const QString&, const QVariantList&);
         // create a text object with a given query
         static Text* getTextWithQuery(const QString&);
+        static void createFunctions(sqlite3pp::database*, sqlite3pp::ext::function*, sqlite3pp::ext::aggregate*);
 
 signals:
         void progress(int);

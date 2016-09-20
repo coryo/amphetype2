@@ -11,6 +11,7 @@
 #include <QPair>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QDateTime>
 
 
 #include <iostream>
@@ -48,6 +49,24 @@ struct agg_median
         std::vector<double> l;
 };
 
+template <class T>
+struct agg_mean
+{
+        agg_mean() {
+                sum_ = 0.0;
+                c_ = 0;
+        }
+        void step(T value, int count) {
+                sum_ += value * count;
+                c_ += count;
+        }
+        double finish() {
+                return sum_ / (double) c_;
+        }
+        double sum_;
+        int c_;
+};
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -63,20 +82,20 @@ void DB::initDB()
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
                 sqlite3pp::transaction xct(db);
                 {
-                db.execute("create table source (name text, disabled integer, "
-                           "discount integer, type integer)");
-                db.execute("create table text (id text primary key, source integer, "
-                           "text text, disabled integer)");
-                db.execute("create table result (w real, text_id text, source "
-                           "integer, wpm real, accuracy real, viscosity real)");
-                db.execute("create table statistic (w real, data text, type integer, "
-                           "time real, count integer, mistakes integer, viscosity "
-                           "real)");
-                db.execute("create table mistake (w real, target text, mistake text, "
-                            "count integer)");
-                db.execute("create view text_source as select "
-                            "id,s.name,text,coalesce(t.disabled,s.disabled) from text "
-                            "as t left join source as s on (t.source = s.rowid)");
+                        db.execute("CREATE TABLE source (name text, disabled integer, "
+                                   "discount integer, type integer)");
+                        db.execute("CREATE TABLE text (id text primary key, source integer, "
+                                   "text text, disabled integer)");
+                        db.execute("CREATE TABLE result (w DATETIME, text_id text, "
+                                   "source integer, wpm real, accuracy real, viscosity real)");
+                        db.execute("CREATE TABLE statistic (w DATETIME, data text, type integer, "
+                                   "time real, count integer, mistakes integer, "
+                                   "viscosity real)");
+                        db.execute("CREATE TABLE mistake (w DATETIME, target text, mistake text, "
+                                   "count integer)");
+                        db.execute("CREATE VIEW text_source as "
+                                   "SELECT id, s.name, text, coalesce(t.disabled, s.disabled) "
+                                   "FROM text AS t LEFT JOIN source AS s ON (t.source = s.rowid)");
                 }
                 QMutexLocker locker(&db_lock);
                 xct.commit();
@@ -416,7 +435,7 @@ QList<QStringList> DB::getPerformanceData(int w, int source, int limit)
                 break;
         case 1:
                 query << "r.text_id = (select text_id from result order by "
-                         "w desc limit 1)";
+                         "datetime(w) desc limit 1)";
                 break;
         case 2:
                 query << "s.discount is null";
@@ -453,14 +472,14 @@ QList<QStringList> DB::getPerformanceData(int w, int source, int limit)
         } else {
                 sql = QString(
                         "select count(text_id),"
-                               "strftime('%Y-%m-%dT%H:%M:%f', datetime(avg(strftime('%s', r.w)), 'unixepoch')) as w,"
-                               "count(r.rowid) || ' result(s)',"
-                               "agg_median(r.wpm),"
-                               "100.0 * agg_median(r.accuracy),"
-                               "agg_median(r.viscosity) "
+                                "strftime('%Y-%m-%dT%H:%M:%S', datetime(avg(strftime('%s', r.w)), 'unixepoch')) as w,"
+                                "count(r.rowid) || ' result(s)',"
+                                "agg_median(r.wpm),"
+                                "100.0 * agg_median(r.accuracy),"
+                                "agg_median(r.viscosity) "
                         "from result as r "
                         "left join source as s on(r.source = s.rowid) "
-                        "%1 %2 order by w DESC limit %3")
+                        "%1 %2 order by datetime(w) DESC limit %3")
                       .arg(where).arg(group).arg(limit);
         }
 
@@ -485,23 +504,23 @@ QList<QStringList> DB::getStatisticsData(const QString& when, int type, int coun
         }
 
         QString sql = QString(
-                "select data, "
-                  "12.0/time as wpm, "
-                  "100.0-100.0*misses/cast(total as real) as accuracy, "
+                "SELECT data, "
+                  "12.0 / time as wpm, "
+                  "max(100.0 - 100.0 * misses / cast(total as real), 0) as accuracy, "
                   "viscosity, "
                   "total, "
                   "misses, "
-                  "total*time*time*(1.0+misses/total) as damage "
-                "from (select data, "
+                  "total * time * time * (1.0 + misses / total) as damage "
+                "FROM (SELECT data, "
                        "agg_median(time) as time, "
                        "agg_median(viscosity) as viscosity, "
                        "sum(count) as total, "
                        "sum(mistakes) as misses "
-                       "from statistic "
-                       "where datetime(w) >= datetime(\"%1\") "
+                       "FROM statistic "
+                       "WHERE datetime(w) >= datetime('%1') "
                         "and type = %2 group by data) "
-                "where total >= %3 "
-                "order by %4 limit %5").arg(when).arg(type).arg(count).arg(order).arg(limit);
+                "WHERE total >= %3 "
+                "ORDER BY %4 LIMIT %5").arg(when).arg(type).arg(count).arg(order).arg(limit);
 
         QList<QStringList> rows;
         rows = getRows(sql, true);
@@ -608,23 +627,117 @@ void DB::updateText(int rowid, const QString& newText)
         DB::execCommand(sql);
 }
 
+void DB::compress()
+{
+        QLOG_DEBUG() << "DB::compress" << "initial count:"
+                     << DB::getOneRow("SELECT count(), sum(count) from statistic");
+        QDateTime now = QDateTime::currentDateTime();
+        QList<QPair<QString, int>> groupings;
+        int dayInSecs = 86400;
+        groupings << qMakePair(now.addDays(-365).toString(Qt::ISODate),  dayInSecs * 365)
+                  << qMakePair(now.addDays(-30).toString(Qt::ISODate),   dayInSecs * 30)
+                  << qMakePair(now.addDays(-7).toString(Qt::ISODate),    dayInSecs * 7)
+                  << qMakePair(now.addDays(-1).toString(Qt::ISODate),    dayInSecs * 1)
+                  << qMakePair(now.addSecs(-3600).toString(Qt::ISODate), dayInSecs / 24);
+
+        QString sql = QString(
+                "SELECT strftime('%Y-%m-%dT%H:%M:%S', avg(julianday(w))), data, type, "
+                "agg_mean(time, count), sum(count), sum(mistakes), agg_median(viscosity) "
+                "FROM statistic "
+                "WHERE datetime(w) <= datetime('%1') "
+                "GROUP BY data, type, cast(strftime('%s', w) / %2 as int)");
+        QString sqlInsert = QString(
+                "INSERT INTO statistic (w, data, type, time, count, mistakes, viscosity) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+        int groupCount = 0;
+        for (auto g : groupings) {
+                auto from = g.first;
+                auto seconds = g.second;
+                QLOG_DEBUG() << "\t" << "grouping stats older than:"
+                             << from << "by" << seconds / (double) dayInSecs << "days";
+
+                auto rows = DB::getRows(sql.arg(from).arg(seconds), true);
+                if (rows.isEmpty())
+                        continue;
+
+                groupCount++;
+
+                sqlite3pp::database db(DB::db_path.toUtf8().data());
+                sqlite3pp::transaction xct(db);
+                {
+                        QLOG_DEBUG() << "\t" << "a"
+                                     << DB::getOneRow(&db, "SELECT count(), sum(count) from statistic");
+                        DB::execCommand(&db, QString("DELETE FROM statistic WHERE datetime(w) <= datetime('%1')").arg(from));
+                        for (auto row : rows) {
+                                QList<QVariant> l;
+                                for (auto item : row)
+                                        l << item;
+                                DB::insertItems(&db, sqlInsert, l);
+                        }
+                        QLOG_DEBUG() << "\t" << "b"
+                                     << DB::getOneRow(&db, "SELECT count(), sum(count) from statistic");
+                }
+                db_lock.lock();
+                xct.commit();
+                db_lock.unlock();
+        }
+        QLOG_DEBUG() << "DB::compress"
+                     << "final count:" << DB::getOneRow("SELECT count(), sum(count) from statistic");
+
+        if (groupCount >= 3) {
+                db_lock.lock();
+                QLOG_DEBUG() << "DB::compress" << "vacuuming";
+                sqlite3pp::database db(DB::db_path.toUtf8().data());
+                sqlite3pp::command cmd(db, "vacuum");
+                cmd.execute();
+                db_lock.unlock();
+        }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // PRIVATE FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+void DB::createFunctions(sqlite3pp::database* db, sqlite3pp::ext::function* func, sqlite3pp::ext::aggregate* aggr)
+{
+        DB::_count = -1;
+        func->create<int ()>("counter", &counter);
+        aggr->create<agg_median, double>("agg_median");
+        aggr->create<agg_mean<double>, double, int>("agg_mean");
+}
+
+QStringList DB::getOneRow(sqlite3pp::database* db, const QString& sql, bool extensions)
+{
+        try {
+                sqlite3pp::ext::function func(*db);
+                sqlite3pp::ext::aggregate aggr(*db);
+                if (extensions) {
+                        DB::createFunctions(db, &func, &aggr);
+                }
+
+                sqlite3pp::query qry(*db, sql.toUtf8().data());
+                QStringList row;
+                for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
+                        for (int j = 0; j < qry.column_count(); ++j)
+                                row << (*i).get<char const*>(j);
+                }
+                return row;
+        } catch (const std::exception& e) {
+                QLOG_DEBUG() << "error running query: " << sql;
+                QLOG_DEBUG() << e.what();
+                return QStringList();
+        }
+}
 
 QStringList DB::getOneRow(const QString& sql, bool extensions)
 {
         QMutexLocker locker(&db_lock);
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
-
                 sqlite3pp::ext::function func(db);
                 sqlite3pp::ext::aggregate aggr(db);
                 if (extensions) {
-                        // add functions
-                        DB::_count = -1;
-                        func.create<int ()>("counter", &counter);
-                        aggr.create<agg_median, double>("agg_median");
+                        DB::createFunctions(&db, &func, &aggr);
                 }
 
                 sqlite3pp::query qry(db, sql.toUtf8().data());
@@ -646,14 +759,10 @@ QList<QStringList> DB::getRows(const QString& sql, bool extensions)
         QMutexLocker locker(&db_lock);
         try {
                 sqlite3pp::database db(DB::db_path.toUtf8().data());
-
                 sqlite3pp::ext::function func(db);
                 sqlite3pp::ext::aggregate aggr(db);
                 if (extensions) {
-                        // add functions
-                        DB::_count = -1;
-                        func.create<int ()>("counter", &counter);
-                        aggr.create<agg_median, double>("agg_median");
+                        DB::createFunctions(&db, &func, &aggr);
                 }
 
                 sqlite3pp::query qry(db, sql.toUtf8().data());
