@@ -152,8 +152,8 @@ void Test::handleInput(const QString& currentText, QKeyEvent* event)
                                 this->maxWPM = this->wpm.last();
                         if (this->wpm.last() < this->minWPM)
                                 this->minWPM = this->wpm.last();
-                        emit newWpm(this->currentPos - 1, this->wpm.last());
                 }
+
                 if (this->currentPos > this->apmWindow) {
                         // time since 1 window ago
                         t = this->timeAt[currentPos] - this->timeAt[currentPos - this->apmWindow];
@@ -165,6 +165,8 @@ void Test::handleInput(const QString& currentText, QKeyEvent* event)
                                 this->maxAPM = apm;
                         if (apm < this->minAPM)
                                 this->minAPM = apm;
+
+                        emit newWpm(this->currentPos - 1, this->wpm.last());
                         emit newApm(this->currentPos - 1, apm);
                 }
 
