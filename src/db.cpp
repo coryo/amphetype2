@@ -6,7 +6,6 @@
 #include <sqlite3.h>
 
 #include <QSettings>
-#include <QCryptographicHash>
 #include <QDebug>
 #include <QPair>
 #include <QMutex>
@@ -84,10 +83,11 @@ void DB::initDB()
                 {
                         db.execute("CREATE TABLE source (name text, disabled integer, "
                                    "discount integer, type integer)");
-                        db.execute("CREATE TABLE text (id text primary key, source integer, "
+                        db.execute("CREATE TABLE text (id INTEGER PRIMARY KEY AUTOINCREMENT, source integer, "
                                    "text text, disabled integer)");
-                        db.execute("CREATE TABLE result (w DATETIME, text_id text, "
-                                   "source integer, wpm real, accuracy real, viscosity real)");
+                        db.execute("CREATE TABLE result (w DATETIME, text_id int, "
+                                   "source integer, wpm real, accuracy real, viscosity real, "
+                                   "PRIMARY KEY (w, text_id, source))");
                         db.execute("CREATE TABLE statistic (w DATETIME, data text, type integer, "
                                    "time real, count integer, mistakes integer, "
                                    "viscosity real)");
@@ -199,12 +199,13 @@ void DB::deleteText(const QList<int>& rowids)
         xct.commit();
 }
 
-void DB::deleteResult(const QString& id)
+void DB::deleteResult(const QString& id, const QString& datetime)
 {
         sqlite3pp::database db(DB::db_path.toStdString().c_str());
         sqlite3pp::transaction xct(db);
         {
-                QString sql = QString("DELETE FROM result WHERE text_id = '%1'").arg(id);
+                QString sql = QString("DELETE FROM result WHERE text_id = '%1' and datetime(w) = datetime('%2')").arg(id).arg(datetime);
+                QLOG_DEBUG() << sql;
                 DB::execCommand(&db, sql);
         }
         QMutexLocker locker(&db_lock);
@@ -214,17 +215,13 @@ void DB::deleteResult(const QString& id)
 void DB::addText(int source, const QString& text, int lesson, bool update)
 {
         try {
-                QString sql = "insert into text (id,text,source,disabled) values (?, ?, ?, ?)";
+                QString sql = "insert into text (text,source,disabled) values (?, ?, ?)";
                 sqlite3pp::database db(DB::db_path.toStdString().c_str());
                 sqlite3pp::transaction xct(db);
                 {
-                        QByteArray txt_id = QCryptographicHash::hash(text.toUtf8(),
-                                QCryptographicHash::Sha1);
-                        txt_id = txt_id.toHex();
                         int dis = ((lesson == 2) ? 1 : 0);
 
                         QVariantList items;
-                        items << txt_id;
                         items << text;
                         items << source;
                         if (dis == 0)
@@ -244,18 +241,14 @@ void DB::addText(int source, const QString& text, int lesson, bool update)
 void DB::addTexts(int source, const QStringList& lessons, int lesson, bool update)
 {
         try {
-                QString sql = "insert into text (id,text,source,disabled) values (?, ?, ?, ?)";
+                QString sql = "insert into text (text,source,disabled) values (?, ?, ?)";
                 sqlite3pp::database db(DB::db_path.toStdString().c_str());
                 sqlite3pp::transaction xct(db);
                 {
                         for (QString text : lessons) {
-                                QByteArray txt_id = QCryptographicHash::hash(text.toUtf8(),
-                                        QCryptographicHash::Sha1);
-                                txt_id = txt_id.toHex();
                                 int dis = ((lesson == 2) ? 1 : 0);
 
                                 QVariantList items;
-                                items << txt_id;
                                 items << text;
                                 items << source;
                                 if (dis == 0)
@@ -464,7 +457,7 @@ QList<QStringList> DB::getPerformanceData(int w, int source, int limit)
         QString sql;
         if (!grouping) {
                 sql = QString(
-                        "select text_id,w,s.name,wpm,100.0*accuracy,viscosity "
+                        "select text_id, w, s.name, wpm, 100.0*accuracy, viscosity "
                         "from result as r "
                         "left join source as s on(r.source = s.rowid) "
                         "%1 %2 order by datetime(w) DESC limit %3")
@@ -619,11 +612,7 @@ Text* DB::getNextText(Text* lastText)
 
 void DB::updateText(int rowid, const QString& newText)
 {
-        QByteArray txt_id = QCryptographicHash::hash(newText.toUtf8(),
-                                QCryptographicHash::Sha1);
-        txt_id = txt_id.toHex();
-        QString sql = QString("UPDATE text SET id=\"%1\", text=\"%2\" WHERE rowid=%3").arg(QString(txt_id)).arg(newText).arg(rowid);
-
+        QString sql = QString("UPDATE text SET text='%1' WHERE rowid=%2").arg(newText).arg(rowid);
         DB::execCommand(sql);
 }
 

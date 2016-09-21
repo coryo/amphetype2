@@ -36,7 +36,7 @@ public:
         // removal/modification
         static void deleteSource (const QList<int>&);
         static void deleteText   (const QList<int>&);
-        static void deleteResult (const QString&);
+        static void deleteResult (const QString&, const QString&);
         static void disableSource(const QList<int>&);
         static void enableSource (const QList<int>&);
 
