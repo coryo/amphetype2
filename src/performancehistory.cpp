@@ -88,22 +88,26 @@ PerformanceHistory::~PerformanceHistory()
 
 void PerformanceHistory::contextMenu(const QPoint &pos)
 {
+        if (ui->groupByComboBox->currentIndex() > 0)
+                return;
+
         auto index = ui->tableView->indexAt(pos);
-        auto id = ui->tableView->model()->index(index.row(), 0).data();
+        QList<QVariant> data;
+        data << ui->tableView->model()->index(index.row(), 0).data()
+             << ui->tableView->model()->index(index.row(), 1).data(Qt::UserRole + 1);
         QMenu menu(this);
 
         QAction* deleteAction = menu.addAction("delete");
-        deleteAction->setData(id);
+        deleteAction->setData(data);
         connect(deleteAction, &QAction::triggered, this, &PerformanceHistory::deleteResult);
         menu.exec(QCursor::pos());
 }
 
 void PerformanceHistory::deleteResult(bool checked)
 {
-        auto sender = (QAction*)(this->sender());
-        auto data = sender->data().toString();
-
-        DB::deleteResult(data);
+        auto sender = (QAction*) this->sender();
+        auto list = sender->data().toList();
+        DB::deleteResult(list[0].toString(), list[1].toDateTime().toString(Qt::ISODate));
 
         this->refreshPerformance();
 }
@@ -289,7 +293,9 @@ void PerformanceHistory::refreshPerformance()
                 items << new QStandardItem(row[0]);
                 // add time. convert it to nicer display first
                 t = QDateTime::fromString(row[1].toUtf8().data(), Qt::ISODate);
-                items << new QStandardItem(t.toString(Qt::SystemLocaleShortDate));
+                auto timeItem = new QStandardItem(t.toString(Qt::SystemLocaleShortDate));
+                timeItem->setData(t);
+                items << timeItem;
                 // add source
                 items << new QStandardItem(row[2]);
                 // add points to each of the plots
