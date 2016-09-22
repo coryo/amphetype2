@@ -19,22 +19,32 @@ configure_file(
 
 set(${PROJECT_NAME}_SOURCES
 	main.cpp
-	mainwindow.cpp
-	db.cpp
-	lessonminer.cpp
-        performancehistory.cpp
-	quizzer.cpp
-	settingswidget.cpp
-	statisticswidget.cpp
-	test.cpp
-        text.cpp
-	textmanager.cpp
-	traininggenerator.cpp
-	traininggenwidget.cpp
-	typer.cpp
-	typerdisplay.cpp
-        liveplot.cpp
-	lessonminercontroller.h
+
+	mainwindow/mainwindow.cpp
+
+	database/db.cpp
+
+    performance/performancehistory.cpp
+
+	settings/settingswidget.cpp
+
+    analysis/statisticswidget.cpp
+
+	quizzer/quizzer.cpp
+	quizzer/test.cpp
+	quizzer/typer.cpp
+	quizzer/typerdisplay.cpp
+
+    texts/text.cpp
+	texts/textmanager.cpp
+    texts/lessonminer.cpp
+    texts/lessonminercontroller.h
+
+	generators/traininggenerator.cpp
+	generators/traininggenwidget.cpp
+    generators/lessongenwidget.cpp
+
+    liveplot/liveplot.cpp
 )
 
 set(MACOSX_BUNDLE_ICON_FILE icon.icns)
@@ -56,7 +66,7 @@ endif()
 # Executable
 add_executable(amphetype2 WIN32 MACOSX_BUNDLE
 	${${PROJECT_NAME}_SOURCES}
-	resources.qrc
+	${CMAKE_SOURCE_DIR}/resources/resources.qrc
         ${RESOURCE_FILES}
 )
 

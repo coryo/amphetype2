@@ -8,8 +8,8 @@
         "*.log*": true,
         "*.sqlite": true
     },
-    "editor.tabSize": 8,
+    "editor.tabSize": 4,
     "editor.insertSpaces": true,
     "editor.detectIndentation": false,
-    "editor.rulers": [100],
+    "editor.rulers": [80],
 }
