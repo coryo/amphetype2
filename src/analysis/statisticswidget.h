@@ -10,25 +10,25 @@ class StatisticsWidget;
 }
 
 class StatisticsWidget : public QWidget {
-    Q_OBJECT
+  Q_OBJECT
 
  public:
-    explicit StatisticsWidget(QWidget *parent = 0);
-    ~StatisticsWidget();
+  explicit StatisticsWidget(QWidget *parent = 0);
+  ~StatisticsWidget();
 
  private:
-    Ui::StatisticsWidget *ui;
-    QStandardItemModel* model;
+  Ui::StatisticsWidget *ui;
+  QStandardItemModel* model;
 
  signals:
-    void newItems(QStringList&);
+  void newItems(QStringList&);
 
  public slots:
-    void populateStatistics();
+  void populateStatistics();
 
  private slots:
-    void writeSettings();
-    void generateList();
+  void writeSettings();
+  void generateList();
 };
 
 #endif  // SRC_ANALYSIS_STATISTICSWIDGET_H_

@@ -7,38 +7,38 @@
 
 
 Typer::Typer(QWidget* parent) : QPlainTextEdit(parent), test(0) {
-        this->hide();
-        this->setAcceptDrops(false);
-        this->grabKeyboard();
+  this->hide();
+  this->setAcceptDrops(false);
+  this->grabKeyboard();
 }
 
 Typer::~Typer() {}
 
 void Typer::setTextTarget(Test* test) {
-        this->test = test;
-        qRegisterMetaType<Qt::KeyboardModifiers>("Qt::KeyboardModifiers");
-        // connect(this, &Typer::newInput,
-        //         test, &Test::handleInput, Qt::QueuedConnection);
+  this->test = test;
+  qRegisterMetaType<Qt::KeyboardModifiers>("Qt::KeyboardModifiers");
+  // connect(this, &Typer::newInput,
+  //         test, &Test::handleInput, Qt::QueuedConnection);
 
-        if (!this->toPlainText().isEmpty()) {
-                this->blockSignals(true);
-                this->clear();
-                this->blockSignals(false);
-        }
+  if (!this->toPlainText().isEmpty()) {
+    this->blockSignals(true);
+    this->clear();
+    this->blockSignals(false);
+  }
 }
 
 void Typer::keyPressEvent(QKeyEvent* e) {
-        // to disable copy and paste
-        if (e->matches(QKeySequence::Copy) ||
-            e->matches(QKeySequence::Cut) ||
-            e->matches(QKeySequence::Paste))
-                e->ignore();
-        else {
-                QPlainTextEdit::keyPressEvent(e);
+  // to disable copy and paste
+  if (e->matches(QKeySequence::Copy)
+      || e->matches(QKeySequence::Cut)
+      || e->matches(QKeySequence::Paste)) {
+    e->ignore();
+  } else {
+    QPlainTextEdit::keyPressEvent(e);
 
-                QString currentText = this->toPlainText();
+    QString currentText = this->toPlainText();
 
-                this->test->handleInput(
-                    this->toPlainText(), e->key(), e->modifiers());
-        }
+    this->test->handleInput(
+      this->toPlainText(), e->key(), e->modifiers());
+  }
 }

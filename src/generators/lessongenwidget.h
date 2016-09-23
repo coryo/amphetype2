@@ -9,21 +9,21 @@ class LessonGenWidget;
 }
 
 class LessonGenWidget : public QWidget {
-    Q_OBJECT
+  Q_OBJECT
 
  public:
-    explicit LessonGenWidget(QWidget *parent = 0);
-    ~LessonGenWidget();
+  explicit LessonGenWidget(QWidget *parent = 0);
+  ~LessonGenWidget();
 
  private:
-    Ui::LessonGenWidget *ui;
-    void generate();
+  Ui::LessonGenWidget *ui;
+  void generate();
 
  signals:
-    void newLesson();
+  void newLesson();
 
  public slots:
-    void addItems(QStringList&);
+  void addItems(QStringList&);
 };
 
 #endif  // SRC_GENERATORS_LESSONGENWIDGET_H_

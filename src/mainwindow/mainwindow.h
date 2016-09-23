@@ -12,23 +12,23 @@ class Typer;
 }
 
 class MainWindow : public QMainWindow {
-    Q_OBJECT
+  Q_OBJECT
 
  public:
-    explicit MainWindow(QWidget* parent = 0);
-    ~MainWindow();
+  explicit MainWindow(QWidget* parent = 0);
+  ~MainWindow();
 
  private:
-    Ui::MainWindow* ui;
-    QString settingsFile;
-    void writeDefaults();
+  Ui::MainWindow* ui;
+  QString settingsFile;
+  void writeDefaults();
 
  private slots:
-    void gotoTab(int);
-    void gotoTyperTab();
-    void gotoSourcesTab();
-    void gotoLessonGenTab();
-    void togglePlot(bool);
+  void gotoTab(int);
+  void gotoTyperTab();
+  void gotoSourcesTab();
+  void gotoLessonGenTab();
+  void togglePlot(bool);
 };
 
 #endif  // SRC_MAINWINDOW_MAINWINDOW_H_

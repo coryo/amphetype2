@@ -8,24 +8,24 @@ class SettingsWidget;
 }
 
 class SettingsWidget : public QWidget {
-    Q_OBJECT
+  Q_OBJECT
 
  public:
-    explicit SettingsWidget(QWidget *parent = 0);
-    ~SettingsWidget();
+  explicit SettingsWidget(QWidget *parent = 0);
+  ~SettingsWidget();
 
  private:
-    Ui::SettingsWidget *ui;
+  Ui::SettingsWidget *ui;
 
  signals:
-    void settingsChanged();
+  void settingsChanged();
 
  private slots:
-    void selectFont();
-    void changeStyleSheet(int);
-    void changePerfLogging(int);
-    void writeTargets();
-    void changeDebugLogging(int);
+  void selectFont();
+  void changeStyleSheet(int);
+  void changePerfLogging(int);
+  void writeTargets();
+  void changeDebugLogging(int);
 };
 
 #endif  // SRC_SETTINGS_SETTINGSWIDGET_H_

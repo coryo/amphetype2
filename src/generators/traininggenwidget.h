@@ -8,20 +8,20 @@ class TrainingGenWidget;
 }
 
 class TrainingGenWidget : public QWidget {
-    Q_OBJECT
+  Q_OBJECT
 
  public:
-    explicit TrainingGenWidget(QWidget *parent = 0);
-    ~TrainingGenWidget();
+  explicit TrainingGenWidget(QWidget *parent = 0);
+  ~TrainingGenWidget();
 
  private:
-    Ui::TrainingGenWidget *ui;
+  Ui::TrainingGenWidget *ui;
 
  signals:
-    void generatedLessons();
+  void generatedLessons();
 
  public slots:
-    void generate();
+  void generate();
 };
 
 #endif  // SRC_GENERATORS_TRAININGGENWIDGET_H_
