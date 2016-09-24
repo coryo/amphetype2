@@ -5,6 +5,8 @@
 #include <QStringList>
 #include <QStandardItemModel>
 
+#include "analysis/keyboardmap.h"
+
 namespace Ui {
 class StatisticsWidget;
 }
@@ -14,6 +16,7 @@ class StatisticsWidget : public QWidget {
 
  public:
   explicit StatisticsWidget(QWidget *parent = 0);
+  KeyboardMap* getKeyboardMap() const;
   ~StatisticsWidget();
 
  private:

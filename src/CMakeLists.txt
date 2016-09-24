@@ -29,6 +29,7 @@ set(${PROJECT_NAME}_SOURCES
 	settings/settingswidget.cpp
 
     analysis/statisticswidget.cpp
+    analysis/keyboardmap.cpp
 
 	quizzer/quizzer.cpp
 	quizzer/test.cpp

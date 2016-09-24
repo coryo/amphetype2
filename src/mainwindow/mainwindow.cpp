@@ -74,6 +74,10 @@ MainWindow::MainWindow(QWidget* parent)
   connect(ui->settingsWidget,     &SettingsWidget::settingsChanged,
           ui->performanceHistory, &PerformanceHistory::refreshCurrentPlot);
 
+  // auto map = ui->statisticsWidget->getKeyboardMap()
+  connect(ui->settingsWidget, &SettingsWidget::newKeyboard,
+          ui->statisticsWidget->getKeyboardMap(), &KeyboardMap::setKeyboard);
+
   connect(ui->trainingGenWidget, &TrainingGenWidget::generatedLessons,
           ui->textManager,       &TextManager::refreshSources);
   connect(ui->trainingGenWidget, &TrainingGenWidget::generatedLessons,

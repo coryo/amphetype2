@@ -32,6 +32,9 @@ SettingsWidget::SettingsWidget(QWidget *parent) :
   ui->targetAccSpinBox->setValue(s.value("target_acc").toDouble());
   ui->targetVisSpinBox->setValue(s.value("target_vis").toDouble());
 
+  ui->keyboardStandardComboBox->setCurrentIndex(s.value("keyboard_standard", 0).toInt());
+  ui->keyboardLayoutComboBox->setCurrentIndex(s.value("keyboard_layout", 0).toInt());
+
   bool debugLogging = s.value("debug_logging").toBool();
   ui->debugLoggingCheckBox->setCheckState(
     debugLogging ? Qt::Checked : Qt::Unchecked);
@@ -52,6 +55,11 @@ SettingsWidget::SettingsWidget(QWidget *parent) :
 
   connect(ui->debugLoggingCheckBox, SIGNAL(stateChanged(int)),
           this,                     SLOT(changeDebugLogging(int)));
+
+  connect(ui->keyboardLayoutComboBox, SIGNAL(currentIndexChanged(int)),
+          this, SLOT(changeKeyboardLayout(int)));
+  connect(ui->keyboardStandardComboBox, SIGNAL(currentIndexChanged(int)),
+          this, SLOT(changeKeyboardStandard(int)));
 }
 
 SettingsWidget::~SettingsWidget() {
@@ -105,4 +113,20 @@ void SettingsWidget::changeDebugLogging(int state) {
     QsLogging::Logger::instance().setLoggingLevel(QsLogging::Level::DebugLevel);
     QLOG_INFO() << "Debug logging enabled.";
   }
+}
+
+void SettingsWidget::changeKeyboardLayout(int index) {
+  QSettings s;
+  s.setValue("keyboard_layout", index);
+  emit newKeyboard(static_cast<KeyboardLayout>(index),
+                   static_cast<KeyboardStandard>(
+                     s.value("keyboard_standard", 0).toInt()));
+}
+
+void SettingsWidget::changeKeyboardStandard(int index) {
+  QSettings s;
+  s.setValue("keyboard_standard", index);
+  emit newKeyboard(static_cast<KeyboardLayout>(
+                     s.value("keyboard_layout", 0).toInt()),
+                   static_cast<KeyboardStandard>(index));
 }

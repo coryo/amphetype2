@@ -33,12 +33,20 @@ StatisticsWidget::StatisticsWidget(QWidget *parent) :
           this,              SLOT(writeSettings()));
   connect(ui->generatorButton, &QPushButton::pressed,
           this,                &StatisticsWidget::generateList);
+
+  ui->keyboardMap->addKeys();
+  connect(ui->updateButton,  &QPushButton::pressed,
+          ui->keyboardMap,   &KeyboardMap::addKeys);
+  connect(ui->mapComboBox,   &QComboBox::currentTextChanged,
+          ui->keyboardMap,   &KeyboardMap::setData);
 }
 
 StatisticsWidget::~StatisticsWidget() {
   delete ui;
   delete model;
 }
+
+KeyboardMap* StatisticsWidget::getKeyboardMap() const { return this->ui->keyboardMap; }
 
 void StatisticsWidget::writeSettings() {
   QSettings s;

@@ -496,7 +496,7 @@ QList<QStringList> DB::getStatisticsData(const QString& when, int type,
   QString sql = QString(
     "SELECT data, "
       "12.0 / time as wpm, "
-      "max(100.0 - 100.0 * misses / cast(total as real), 0) as accuracy, "
+      "100 * (1.0 - misses / cast(total as real)) as accuracy, "
       "viscosity, "
       "total, "
       "misses, "
@@ -624,7 +624,7 @@ void DB::compress() {
 
   int groupCount = 0;
   DBConnection conn(db_path);
-  for (auto g : groupings) {
+  for (auto const & g : groupings) {
     QVariantList args;
     args << g.first << g.second;
     QLOG_DEBUG() << "\t" << "grouping stats older than:"
@@ -647,9 +647,9 @@ void DB::compress() {
       QLOG_DEBUG() << "\t" << "a"
         << getOneRow(conn.getDB(), "SELECT count(), sum(count) from statistic");
       bindAndRun(&deleteCmd, g.first);
-      for (auto row : rows) {
+      for (auto const & row : rows) {
         QVariantList args;
-        for (auto item : row)
+        for (auto const & item : row)
           args << item;
         bindAndRun(&insertCmd, args);
       }
@@ -671,6 +671,27 @@ void DB::compress() {
     cmd.execute();
     db_lock.unlock();
   }
+}
+
+QHash<QChar, QHash<QString, QVariant>> DB::getKeyFrequency() {
+  QHash<QChar, QHash<QString, QVariant>> data;
+  auto rows = DB::getRows(
+    "select data, "
+    "agg_median(time) as speed, "
+    "sum(count) as total, "
+    "100.0 * (1.0 - (sum(mistakes) / cast(sum(count) as real))) as accuracy, "
+    "sum(mistakes) as mistakes, agg_median(viscosity) as viscosity from statistic "
+    "where length(data) is 1 group by data");
+
+  for (auto const & row : rows) {
+    data[row[0].at(0)]["speed"] = row[1].toDouble();
+    data[row[0].at(0)]["frequency"] = row[2].toInt();
+    data[row[0].at(0)]["accuracy"] = row[3].toDouble();
+    data[row[0].at(0)]["mistakes"] = row[4].toInt();
+    data[row[0].at(0)]["viscosity"] = row[5].toDouble();
+  }
+
+  return data;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+#include "defs.h"
+
 namespace Ui {
 class SettingsWidget;
 }
@@ -19,6 +21,7 @@ class SettingsWidget : public QWidget {
 
  signals:
   void settingsChanged();
+  void newKeyboard(KeyboardLayout, KeyboardStandard);
 
  private slots:
   void selectFont();
@@ -26,6 +29,8 @@ class SettingsWidget : public QWidget {
   void changePerfLogging(int);
   void writeTargets();
   void changeDebugLogging(int);
+  void changeKeyboardLayout(int);
+  void changeKeyboardStandard(int);
 };
 
 #endif  // SRC_SETTINGS_SETTINGSWIDGET_H_

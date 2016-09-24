@@ -5,6 +5,7 @@
 #include <QThread>
 #include <QObject>
 #include <QMutex>
+#include <QHash>
 
 #include <sqlite3pp.h>
 #include <sqlite3ppext.h>
@@ -59,6 +60,7 @@ class DB : public QObject {
   static QList<QStringList> getSourcesList();
   static QList<QStringList> getStatisticsData(const QString&, int, int, int,
                                               int);
+  static QHash<QChar, QHash<QString, QVariant>> getKeyFrequency();
   // create a text object
   static Text* getNextText();  // get the text that follows the last completed text
   static Text* getNextText(Text*);  // get the text that follows the given text
