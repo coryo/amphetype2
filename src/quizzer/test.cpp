@@ -216,7 +216,7 @@ void Test::addMistake(int pos, const QChar& target, const QChar& mistake) {
 QHash<QPair<QChar, QChar>, int> Test::getMistakes() const {
   QHash<QPair<QChar, QChar>, int> mis;
 
-  for (auto pair : this->mistakeList) {
+  for (auto const & pair : this->mistakeList) {
     if (mis.contains(pair))
       mis.insert(pair, mis.value(pair) + 1);
     else

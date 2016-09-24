@@ -44,7 +44,7 @@ void LessonGenWidget::generate() {
     QString lesson;
     while (lesson.length() < targetLength) {
       std::shuffle(list.begin(), list.end(), g);
-      for (auto str : list) {
+      for (auto const & str : list) {
         if (lesson.length() >= targetLength)
           break;
         QString corrected = QString(str)

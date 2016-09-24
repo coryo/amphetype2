@@ -7,15 +7,8 @@
 #include <QString>
 #include <QStringList>
 
-enum class KeyboardLayout {
-  QWERTY, QWERTZ, AZERTY, WORKMAN, COLEMAK, DVORAK, CUSTOM };
-Q_DECLARE_METATYPE(KeyboardLayout);
-enum class KeyboardRow { UPPER, MIDDLE, LOWER };
-Q_DECLARE_METATYPE(KeyboardRow);
-enum class KeyboardStandard { NONE, ANSI, ISO };
-Q_DECLARE_METATYPE(KeyboardStandard);
-enum class Finger { INDEX_INNER, INDEX, MIDDLE, RING, PINKY, PINKY_EXTRA};
-Q_DECLARE_METATYPE(Finger);
+#include "defs.h"
+
 
 class TrainingGenerator : public QObject {
   Q_OBJECT
