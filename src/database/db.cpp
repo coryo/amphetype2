@@ -680,7 +680,8 @@ QHash<QChar, QHash<QString, QVariant>> DB::getKeyFrequency() {
     "agg_median(time) as speed, "
     "sum(count) as total, "
     "100.0 * (1.0 - (sum(mistakes) / cast(sum(count) as real))) as accuracy, "
-    "sum(mistakes) as mistakes, agg_median(viscosity) as viscosity from statistic "
+    "sum(mistakes) as mistakes, "
+    "agg_median(viscosity) as viscosity from statistic "
     "where length(data) is 1 group by data");
 
   for (auto const & row : rows) {

@@ -3,6 +3,8 @@
 
 #include <QGraphicsView>
 #include <QGraphicsScene>
+#include <QList>
+#include <QStringList>
 
 #include "defs.h"
 
@@ -22,12 +24,23 @@ class KeyboardMap : public QGraphicsView {
   QGraphicsScene* keyboardScene;
   KeyboardLayout keyboardLayout;
   KeyboardStandard keyboardStandard;
+  QList<QStringList> keyboardKeys;
   int keySpacing;
   int keySize;
   QString dataToMap;
 
   qreal scaleToRange(qreal, qreal, qreal min = 0, qreal max = 1);
   qreal scaleToRange2(qreal, qreal, qreal min = 0, qreal max = 1, qreal factor = 10);
+
+  void drawKeyboard(
+    QHash<QChar, QHash<QString, QVariant>>&,
+    bool shift,
+    qreal min = 0.0,
+    qreal max = 100.0,
+    qreal x = 0,
+    qreal y = 0);
+
+  void loadLayout(KeyboardLayout);
 
  signals:
   void dataChanged();

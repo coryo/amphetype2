@@ -32,6 +32,8 @@ MainWindow::MainWindow(QWidget* parent)
           ui->plot,    &LivePlot::newKeyPress);
   connect(ui->quizzer, &Quizzer::testStarted,
           ui->plot,    &LivePlot::beginTest);
+  connect(ui->quizzer,                            &Quizzer::newStatistics,
+          ui->statisticsWidget->getKeyboardMap(), &KeyboardMap::addKeys);
 
   if (!s.value("liveplot_visible").toBool())
     ui->plotDock->close();
