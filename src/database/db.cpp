@@ -23,8 +23,8 @@ QString DB::db_path;
 //////////////////////////////////////////////////////
 // Sqlite extension functions
 //////////////////////////////////////////////////////
-static int _count = -1;
-static int counter() {
+int _count = -1;
+int counter() {
   _count += 1;
   return _count;
 }
@@ -72,6 +72,7 @@ DBConnection::DBConnection(const QString& path) {
   this->aggr = new sqlite3pp::ext::aggregate(*(this->db));
   _count = -1;
   this->func->create<int()>("counter", &counter);
+  this->func->create<double(double)>("square", [](double i){ return i * i; });
   this->aggr->create<agg_median, double>("agg_median");
   this->aggr->create<agg_mean<double>, double, int>("agg_mean");
 }
@@ -681,7 +682,9 @@ QHash<QChar, QHash<QString, QVariant>> DB::getKeyFrequency() {
     "sum(count) as total, "
     "100.0 * (1.0 - (sum(mistakes) / cast(sum(count) as real))) as accuracy, "
     "sum(mistakes) as mistakes, "
-    "agg_median(viscosity) as viscosity from statistic "
+    "agg_median(viscosity) as viscosity,"
+    "sum(count) * square(agg_median(time)) * (1.0 + sum(mistakes) / sum(count)) as damage "
+    "from statistic "
     "where length(data) is 1 group by data");
 
   for (auto const & row : rows) {
@@ -690,6 +693,7 @@ QHash<QChar, QHash<QString, QVariant>> DB::getKeyFrequency() {
     data[row[0].at(0)]["accuracy"] = row[3].toDouble();
     data[row[0].at(0)]["mistakes"] = row[4].toInt();
     data[row[0].at(0)]["viscosity"] = row[5].toDouble();
+    data[row[0].at(0)]["damage"] = row[6].toDouble();
   }
 
   return data;
