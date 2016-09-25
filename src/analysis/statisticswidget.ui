@@ -244,7 +244,7 @@
   <customwidget>
    <class>KeyboardMap</class>
    <extends>QGraphicsView</extends>
-   <header>keyboardmap.h</header>
+   <header>analysis/keyboardmap.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
