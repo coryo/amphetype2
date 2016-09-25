@@ -31,7 +31,7 @@ Test::Test(Text* t) :
 }
 
 Test::~Test() {
-  QLOG_DEBUG() << "deleting test";
+  QLOG_TRACE() << "deleting test";
   delete this->text;
 }
 
@@ -111,7 +111,7 @@ void Test::handleInput(const QString& currentText, int key,
     key == Qt::Key_AltGr ||
     key == Qt::Key_Control ||
     key == Qt::Key_Meta) {
-    QLOG_DEBUG() << "Ignoring key.";
+    QLOG_TRACE() << "Ignoring key.";
     return;
   }
 
@@ -144,7 +144,7 @@ void Test::handleInput(const QString& currentText, int key,
         this->timeAt[currentPos - 1];
       // store wpm
       this->wpm << 12.0 * ((this->currentPos) / this->secondsElapsed());
-      QLOG_DEBUG() << "pos:" << this->currentPos - 1 << currentPos
+      QLOG_TRACE() << "pos:" << this->currentPos - 1 << currentPos
                    << "ms between:"
                    << this->msBetween[this->currentPos - 1]
                    << "wpm:" <<this->wpm.last();

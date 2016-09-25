@@ -35,7 +35,7 @@ class KeyboardMap : public QGraphicsView {
   qreal scaleToRange2(qreal, qreal, qreal min = 0, qreal max = 1, qreal factor = 10);
 
   void drawKeyboard(
-    QHash<QChar, QHash<QString, QVariant>>&,
+    const QHash<QChar, QHash<QString, QVariant>>&,
     bool shift,
     qreal min = 0.0,
     qreal max = 100.0,

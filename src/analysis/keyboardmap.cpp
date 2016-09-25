@@ -77,7 +77,6 @@ void KeyboardMap::addKeys() {
 
   double max = 0;
   double min = std::numeric_limits<double>::max();
-  // QHash<QChar, QHash<QString, QVariant>> frequencyData = DB::getKeyFrequency();
 
   // find the min and max of the data
   foreach (auto const & value, this->statsData) {
@@ -91,7 +90,7 @@ void KeyboardMap::addKeys() {
                      6 * (this->keySize + this->keySpacing));
 }
 
-void KeyboardMap::drawKeyboard(QHash<QChar, QHash<QString, QVariant>>& data,
+void KeyboardMap::drawKeyboard(const QHash<QChar, QHash<QString, QVariant>>& data,
                                bool shift, qreal min, qreal max,
                                qreal x, qreal y) {
   QStringList* keys;
@@ -122,14 +121,11 @@ void KeyboardMap::drawKeyboard(QHash<QChar, QHash<QString, QVariant>>& data,
       QChar key;
       if (column - column_offset >=0 && column - column_offset < (*keys)[row].size())
         key = (*keys)[row][column - column_offset];
-      // QChar key = (*keys)[row].at(column - column_offset);//, QChar());
-      bool letter_key = !key.isNull();//!key.isNonCharacter();
 
       QBrush brush;
-      QPen pen(QBrush(), 0);
+      QPen pen(brush, 0);
       QColor color;
-      if (letter_key) {
-        QLOG_DEBUG() << "letter_key" << key << "@" << row << column;
+      if (!key.isNull()) {
         brush.setStyle(Qt::SolidPattern);
         qreal value = data[key][this->dataToMap].toDouble();
 
@@ -173,7 +169,7 @@ void KeyboardMap::drawKeyboard(QHash<QChar, QHash<QString, QVariant>>& data,
 
       auto keyRect = this->keyboardScene->addPath(path, pen, brush);
 
-      if (letter_key) {
+      if (!key.isNull()) {
         // add the text on the key
         QString display;
         if (key == QChar::Space)

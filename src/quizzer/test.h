@@ -24,17 +24,17 @@ class Test : public QObject {
   double getFinalWpm() { return this->finalWPM; }
   double getFinalAccuracy() { return this->finalACC; }
   double getFinalViscosity() { return this->finalVIS; }
-
   void start();
-
   int mistakeCount() const;
   int msElapsed() const;
   double secondsElapsed() const;
-
   void handleInput(const QString&, int, Qt::KeyboardModifiers);
 
+ private:
+  void saveResult(const QString&, double, double, double);
+  void finish();
+  void addMistake(int, const QChar&, const QChar&);
   Text* text;
-
   bool started;
   bool finished;
   int currentPos;
@@ -43,23 +43,15 @@ class Test : public QObject {
   QVector<int> msBetween;
   QVector<int> timeAt;
   QVector<double> wpm;
-
+  QSet<int> mistakes;
+  QList<QPair<QChar, QChar>> mistakeList;
   double minWPM;
   double minAPM;
   double maxWPM;
   double maxAPM;
-  QSet<int> mistakes;
-
- private:
-  void saveResult(const QString&, double, double, double);
-  void finish();
-  void addMistake(int, const QChar&, const QChar&);
-
-  QList<QPair<QChar, QChar>> mistakeList;
   QElapsedTimer timer;
   QElapsedTimer intervalTimer;
   int apmWindow;
-
   double finalWPM;
   double finalACC;
   double finalVIS;
