@@ -1,0 +1,11 @@
+{
+  "configurations": [
+    {
+      "name": "Win32",
+      "includePath": [
+        "C:/Qt/5.7/msvc2015/include",
+        "D:/Qt/5.7/msvc2015/include"
+      ]
+    }
+  ]
+}
