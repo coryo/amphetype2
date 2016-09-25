@@ -65,22 +65,29 @@ void KeyboardMap::setData(const QString & data) {
   emit dataChanged();
 }
 
+void KeyboardMap::updateData() {
+  this->statsData =  DB::getKeyFrequency();
+  emit dataChanged();
+}
+
 void KeyboardMap::addKeys() {
   this->keyboardScene->clear();
+  if (this->statsData.isEmpty())
+    return;
 
   double max = 0;
   double min = std::numeric_limits<double>::max();
-  QHash<QChar, QHash<QString, QVariant>> frequencyData = DB::getKeyFrequency();
+  // QHash<QChar, QHash<QString, QVariant>> frequencyData = DB::getKeyFrequency();
 
   // find the min and max of the data
-  foreach (auto const & value, frequencyData) {
+  foreach (auto const & value, this->statsData) {
     if (value[this->dataToMap] > max)
       max = value[this->dataToMap].toDouble();
     if (value[this->dataToMap] > 0 && value[this->dataToMap] < min)
       min = value[this->dataToMap].toDouble();
   }
-  this->drawKeyboard(frequencyData, false, min, max, 0, 0);
-  this->drawKeyboard(frequencyData, true, min, max, 0,
+  this->drawKeyboard(this->statsData, false, min, max, 0, 0);
+  this->drawKeyboard(this->statsData, true, min, max, 0,
                      6 * (this->keySize + this->keySpacing));
 }
 

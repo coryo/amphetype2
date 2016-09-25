@@ -19,8 +19,10 @@ class KeyboardMap : public QGraphicsView {
   void setStandard(KeyboardStandard);
   void setData(const QString&);
   void addKeys();
+  void updateData();
 
  private:
+  QHash<QChar, QHash<QString, QVariant>> statsData;
   QGraphicsScene* keyboardScene;
   KeyboardLayout keyboardLayout;
   KeyboardStandard keyboardStandard;

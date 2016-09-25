@@ -34,11 +34,14 @@ StatisticsWidget::StatisticsWidget(QWidget *parent) :
   connect(ui->generatorButton, &QPushButton::pressed,
           this,                &StatisticsWidget::generateList);
 
-  ui->keyboardMap->addKeys();
   connect(ui->updateButton,  &QPushButton::pressed,
-          ui->keyboardMap,   &KeyboardMap::addKeys);
+          ui->keyboardMap,   &KeyboardMap::updateData);
   connect(ui->mapComboBox,   &QComboBox::currentTextChanged,
           ui->keyboardMap,   &KeyboardMap::setData);
+
+  this->populateStatistics();
+
+  ui->keyboardMap->updateData();
 }
 
 StatisticsWidget::~StatisticsWidget() {
