@@ -1,12 +1,15 @@
 // Place your settings in this file to overwrite default and user settings.
 {
-    "files.exclude": {
-        "build/": true,
-        "build_*/": true,
-        "dist/": true,
-        "**/*VC.DB*": true
-    },
-    "editor.tabSize": 8,
-    "editor.insertSpaces": true,
-    "editor.detectIndentation": false
+  "files.exclude": {
+    "build/": true,
+    "build_*/": true,
+    "dist/": true,
+    "**/*VC.DB*": true,
+    "*.log*": true,
+    "*.sqlite": true
+  },
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.rulers": [80]
 }
