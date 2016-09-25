@@ -30,8 +30,12 @@ void LessonGenWidget::generate() {
   QDateTime now = QDateTime::currentDateTime();
   int targetLength = 250;
   int targetCount = 5;
-  QStringList list = ui->inputTextEdit->toPlainText().replace('\n', "")
-    .split("|");
+  QString plainText = ui->inputTextEdit->toPlainText();
+
+  if (plainText.isEmpty() || plainText.isNull())
+    return;
+
+  QStringList list = plainText.replace('\n', "").split("|");
 
   if (list.isEmpty())
     return;
@@ -51,6 +55,8 @@ void LessonGenWidget::generate() {
           .replace("␣", " ")
           .trimmed()
           .replace("↵", "\n");
+        if (corrected.isEmpty() || corrected.isNull())
+          return;
 
         if (!lesson.isEmpty()
           && !lesson.endsWith(QChar::Space)
