@@ -31,20 +31,26 @@ int counter() {
 
 struct agg_median {
   void step(double x) {
-    l.push_back(x);
+    v.push_back(x);
   }
+
   double finish() {
-    if (l.empty()) return 0;
-    std::sort(l.begin(), l.end());
-    double median;
-    int length = l.size();
-    if (length % 2 == 0)
-      median = (l[length / 2] + l[length / 2 - 1]) / 2;
-    else
-      median = l[length / 2];
-    return median;
+    if (v.empty())
+      return 0.0;
+
+    auto n = v.size() / 2;
+    std::nth_element(v.begin(), v.begin() + n, v.end());
+    auto med = v[n];
+
+    if (v.size() % 2 == 1) {
+      return med;
+    } else {
+      std::nth_element(v.begin(), v.begin() + n - 1, v.end());
+      return 0.5 * (med + v[n - 1]);
+    }
   }
-  std::vector<double> l;
+
+  std::vector<double> v;
 };
 
 template <class T>
