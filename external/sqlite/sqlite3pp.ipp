@@ -272,7 +272,7 @@ namespace sqlite3pp
 
   inline int statement::prepare_impl(char const* stmt)
   {
-    return sqlite3_prepare(db_.db_, stmt, std::strlen(stmt), &stmt_, &tail_);
+    return sqlite3_prepare(db_.db_, stmt, (int)std::strlen(stmt), &stmt_, &tail_);
   }
 
   inline int statement::finish()
@@ -324,7 +324,7 @@ namespace sqlite3pp
 
   inline int statement::bind(int idx, char const* value, copy_semantic fcopy)
   {
-    return sqlite3_bind_text(stmt_, idx, value, std::strlen(value), fcopy == copy ? SQLITE_TRANSIENT : SQLITE_STATIC );
+    return sqlite3_bind_text(stmt_, idx, value, (int)std::strlen(value), fcopy == copy ? SQLITE_TRANSIENT : SQLITE_STATIC );
   }
 
   inline int statement::bind(int idx, void const* value, int n, copy_semantic fcopy)
@@ -334,7 +334,7 @@ namespace sqlite3pp
 
   inline int statement::bind(int idx, std::string const& value, copy_semantic fcopy)
   {
-    return sqlite3_bind_text(stmt_, idx, value.c_str(), value.size(), fcopy == copy ? SQLITE_TRANSIENT : SQLITE_STATIC );
+    return sqlite3_bind_text(stmt_, idx, value.c_str(), (int)value.size(), fcopy == copy ? SQLITE_TRANSIENT : SQLITE_STATIC );
   }
 
   inline int statement::bind(int idx)
