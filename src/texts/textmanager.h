@@ -1,15 +1,17 @@
 #ifndef SRC_TEXTS_TEXTMANAGER_H_
 #define SRC_TEXTS_TEXTMANAGER_H_
 
-#include <QWidget>
 #include <QModelIndex>
+#include <QResizeEvent>
+#include <QWidget>
+
 
 #include <memory>
 
 #include "texts/lessonminercontroller.h"
+#include "texts/sourcemodel.h"
 #include "texts/text.h"
 #include "texts/textmodel.h"
-#include "texts/sourcemodel.h"
 
 #include "defs.h"
 
@@ -52,7 +54,6 @@ class TextManager : public QWidget {
  private slots:
   void addFiles();
   void processNextFile();
-  void changeSelectMethod(int);
   void addSource();
   void deleteSource();
   void addText();

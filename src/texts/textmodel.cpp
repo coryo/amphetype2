@@ -4,16 +4,37 @@
 
 #include "database/db.h"
 
-TextItem::TextItem(int text_id, const QString& text, int length, int results,
-                   double wpm, int dis)
-    : text_id(text_id),
-      text(text),
-      length(length),
-      results(results),
-      wpm(wpm),
-      dis(dis) {}
+TextItem::TextItem(Database* db, int text_id, const QString& text, int length,
+                   int results, double wpm, int dis)
+    : db_(db),
+      id_(text_id),
+      text_(text),
+      length_(length),
+      results_(results),
+      wpm_(wpm),
+      dis_(dis) {}
 
 TextItem::~TextItem() {}
+
+void TextItem::refresh() {
+  auto data = db_->getTextData(id_);
+  id_ = data[0].toInt();
+  text_ = data[1].toString().simplified();
+  length_ = data[2].toInt();
+  results_ = data[3].toInt();
+  wpm_ = data[4].toDouble();
+  dis_ = data[5].toInt();
+}
+
+void TextItem::deleteFromDb() {
+  QList<int> ids;
+  ids << id_;
+  db_->deleteText(ids);
+}
+
+void TextItem::enable() {}
+
+void TextItem::disable() {}
 
 TextModel::TextModel(QObject* parent) : QAbstractTableModel(parent) {
   page_size = 100;
@@ -62,23 +83,18 @@ QVariant TextModel::data(const QModelIndex& index, int role) const {
   if (role == Qt::DisplayRole) {
     switch (column) {
       case 0:
-        return item->text;
-        break;
+        return item->text_;
       case 1:
-        return item->length;
-        break;
+        return item->length_;
       case 2:
-        return item->results;
-        break;
+        return item->results_;
       case 3:
-        return item->wpm;
-        break;
+        return item->wpm_;
       case 4:
-        return item->dis;
-        break;
+        return item->dis_;
     }
   } else if (role == Qt::UserRole) {
-    return item->text_id;
+    return item->id_;
   }
   return QVariant();
 }
@@ -88,15 +104,14 @@ bool TextModel::canFetchMore(const QModelIndex& parent) const {
 }
 
 void TextModel::fetchMore(const QModelIndex& parent) {
-  Database db;
   QList<QVariantList> rows =
-      db.getTextsData(this->source, this->current_page, this->page_size);
+      db_.getTextsData(this->source, this->current_page, this->page_size);
   this->beginInsertRows(QModelIndex(), this->rowCount(),
                         this->rowCount() + rows.size() - 1);
   for (const auto& row : rows) {
-    TextItem* item =
-        new TextItem(row[0].toInt(), row[1].toString().simplified(), row[2].toInt(),
-                     row[3].toInt(), row[4].toDouble(), row[5].toInt());
+    TextItem* item = new TextItem(
+        &db_, row[0].toInt(), row[1].toString().simplified(), row[2].toInt(),
+        row[3].toInt(), row[4].toDouble(), row[5].toInt());
 
     this->items.append(item);
   }
@@ -106,13 +121,24 @@ void TextModel::fetchMore(const QModelIndex& parent) {
 
 int TextModel::getSource() { return this->source; }
 
+void TextModel::refresh() { this->setSource(this->source); }
+
+void TextModel::refreshText(const QModelIndex& index) {
+  if (!index.isValid()) return;
+
+  if (index.row() >= this->rowCount()) return;
+
+  TextItem* item = this->items[index.row()];
+  item->refresh();
+  emit dataChanged(index, this->index(index.row(), this->columnCount()));
+}
+
 void TextModel::setSource(int source) {
   this->beginResetModel();
 
   this->source = source;
   this->current_page = 0;
-  Database db;
-  this->total_size = db.getTextsCount(this->source);
+  this->total_size = db_.getTextsCount(this->source);
 
   for (TextItem* item : this->items) delete item;
   this->items.clear();

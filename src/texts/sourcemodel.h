@@ -4,14 +4,16 @@
 #include <QAbstractTableModel>
 #include <QModelIndex>
 #include <QObject>
-#include <QVector>
 #include <QVariant>
+#include <QVector>
+
+#include "database/db.h"
 
 class SourceItem {
   friend class SourceModel;
 
  public:
-  SourceItem(int, const QString &, int, int, int, int, int, double);
+  SourceItem(Database *, int, const QString &, int, int, int, int, int, double);
   int id() { return id_; };
   void refresh();
   void deleteFromDb();
@@ -19,6 +21,7 @@ class SourceItem {
   void disable();
 
  private:
+  Database *db_;
   int id_;
   QString name_;
   int disabled_;
@@ -44,14 +47,15 @@ class SourceModel : public QAbstractTableModel {
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 
   void removeIndexes(const QModelIndexList &indexes);
-  void refreshSource(const QModelIndex& index);
+  void refreshSource(const QModelIndex &index);
   void refreshSource(int source);
   void deleteSource(const QModelIndex &index);
   void enableSource(const QModelIndex &index);
   void disableSource(const QModelIndex &index);
-  void addSource(const QString& name);
+  void addSource(const QString &name);
 
  private:
+  Database db_;
   QVector<SourceItem *> items;
 };
 

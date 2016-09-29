@@ -4,9 +4,11 @@
 
 #include "database/db.h"
 
-SourceItem::SourceItem(int id, const QString& name, int disabled, int discount,
-                       int type, int count, int results, double wpm)
-    : id_(id),
+SourceItem::SourceItem(Database* db, int id, const QString& name, int disabled,
+                       int discount, int type, int count, int results,
+                       double wpm)
+    : db_(db),
+      id_(id),
       name_(name),
       disabled_(disabled),
       discount_(discount),
@@ -16,8 +18,7 @@ SourceItem::SourceItem(int id, const QString& name, int disabled, int discount,
       wpm_(wpm) {}
 
 void SourceItem::refresh() {
-  Database db;
-  auto data = db.getSourceData(id_);
+  auto data = db_->getSourceData(id_);
   id_ = data[0].toInt();
   name_ = data[1].toString();
   disabled_ = data[5].isNull() ? 1 : 0;
@@ -29,25 +30,22 @@ void SourceItem::refresh() {
 }
 
 void SourceItem::deleteFromDb() {
-  Database db;
   QList<int> ids;
   ids << id_;
-  db.deleteSource(ids);
+  db_->deleteSource(ids);
 }
 
 void SourceItem::enable() {
-  Database db;
   QList<int> ids;
   ids << id_;
-  db.enableSource(ids);
+  db_->enableSource(ids);
   disabled_ = 0;
 }
 
 void SourceItem::disable() {
-  Database db;
   QList<int> ids;
   ids << id_;
-  db.disableSource(ids);
+  db_->disableSource(ids);
   disabled_ = 1;
 }
 
@@ -111,14 +109,13 @@ QVariant SourceModel::data(const QModelIndex& index, int role) const {
 void SourceModel::refresh() {
   this->clear();
 
-  Database db;
-  QList<QVariantList> rows = db.getSourcesData();
+  QList<QVariantList> rows = db_.getSourcesData();
   this->beginInsertRows(QModelIndex(), this->rowCount(),
                         this->rowCount() + rows.size() - 1);
   for (const auto& row : rows) {
     SourceItem* item =
-        new SourceItem(row[0].toInt(), row[1].toString(), row[5].toInt(), 0, 0,
-                       row[2].toInt(), row[3].toInt(), row[4].toDouble());
+        new SourceItem(&db_, row[0].toInt(), row[1].toString(), row[5].toInt(),
+                       0, 0, row[2].toInt(), row[3].toInt(), row[4].toDouble());
     this->items.append(item);
   }
   this->endInsertRows();
@@ -196,7 +193,6 @@ void SourceModel::disableSource(const QModelIndex& index) {
 }
 
 void SourceModel::addSource(const QString& name) {
-  Database db;
-  db.getSource(name);
+  db_.getSource(name);
   this->refresh();
 }

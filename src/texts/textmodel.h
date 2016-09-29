@@ -4,26 +4,32 @@
 #include <QAbstractTableModel>
 #include <QModelIndex>
 #include <QObject>
-#include <QVector>
 #include <QVariant>
+#include <QVector>
+
+#include "database/db.h"
 
 class TextItem {
   friend class TextModel;
 
  public:
-  TextItem(int text_id, const QString &text, int length, int results,
-           double wpm, int dis);
+  TextItem(Database *, int text_id, const QString &text, int length,
+           int results, double wpm, int dis);
   ~TextItem();
-
+  void refresh();
+  void deleteFromDb();
+  void enable();
+  void disable();
   QString getFullText();
 
  private:
-  int text_id;
-  QString text;
-  int length;
-  int results;
-  double wpm;
-  int dis;
+  Database *db_;
+  int id_;
+  QString text_;
+  int length_;
+  int results_;
+  double wpm_;
+  int dis_;
 };
 
 class TextModel : public QAbstractTableModel {
@@ -48,7 +54,11 @@ class TextModel : public QAbstractTableModel {
   void setSource(int);
   int getSource();
 
+  void refresh();
+  void refreshText(const QModelIndex &index);
+
  private:
+  Database db_;
   QVector<TextItem *> items;
   int source;
   int page_size;

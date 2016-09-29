@@ -1,25 +1,26 @@
 #include "texts/textmanager.h"
 
-#include <QString>
-#include <QFileDialog>
-#include <QSettings>
-#include <QFile>
-#include <QProgressBar>
-#include <QModelIndex>
-#include <QInputDialog>
-#include <QMenu>
 #include <QAction>
 #include <QCursor>
+#include <QFile>
+#include <QFileDialog>
+#include <QHeaderView>
+#include <QInputDialog>
+#include <QMenu>
+#include <QModelIndex>
+#include <QProgressBar>
+#include <QSettings>
+#include <QString>
 
 #include <QsLog.h>
 
-#include "ui_textmanager.h"
-#include "texts/textmodel.h"
-#include "texts/sourcemodel.h"
+#include "database/db.h"
 #include "texts/lessonminer.h"
 #include "texts/lessonminercontroller.h"
-#include "database/db.h"
+#include "texts/sourcemodel.h"
 #include "texts/text.h"
+#include "texts/textmodel.h"
+#include "ui_textmanager.h"
 
 TextManager::TextManager(QWidget* parent)
     : QWidget(parent),
@@ -33,19 +34,26 @@ TextManager::TextManager(QWidget* parent)
   ui->sourcesTable->setModel(source_model_);
   ui->textsTable->setModel(text_model_);
 
+  // Set resize mode on both tables, stretch 1st col, resize the rest
+  auto sourceHeader = ui->sourcesTable->horizontalHeader();
+  auto textHeader = ui->textsTable->horizontalHeader();
+  sourceHeader->setSectionResizeMode(0, QHeaderView::Stretch);
+  for (int col = 1; col < sourceHeader->count(); col++)
+    sourceHeader->setSectionResizeMode(col, QHeaderView::ResizeToContents);
+  textHeader->setSectionResizeMode(0, QHeaderView::Stretch);
+  for (int col = 1; col < textHeader->count(); col++)
+    textHeader->setSectionResizeMode(col, QHeaderView::ResizeToContents);
+
   // progress bar/text setup
   ui->progress->setRange(0, 100);
   ui->progress->hide();
   ui->progressText->hide();
 
-  ui->selectionMethod->setCurrentIndex(s.value("select_method").toInt());
-
   connect(ui->importButton, SIGNAL(clicked()), this, SLOT(addFiles()));
-  connect(ui->refreshSources, SIGNAL(clicked()), this, SLOT(refreshSources()));
+  // connect(ui->refreshSources, &QPushButton::clicked, source_model_,
+  //         &SourceModel::refresh);
   connect(ui->addSourceButton, SIGNAL(clicked()), this, SLOT(addSource()));
   connect(ui->addTextButton, SIGNAL(clicked()), this, SLOT(addText()));
-  connect(ui->selectionMethod, SIGNAL(currentIndexChanged(int)), this,
-          SLOT(changeSelectMethod(int)));
 
   connect(ui->textsTable, &QTableView::clicked, this,
           &TextManager::textsTableClickHandler);
@@ -59,14 +67,11 @@ TextManager::TextManager(QWidget* parent)
   connect(ui->textsTable, &QWidget::customContextMenuRequested, this,
           &TextManager::textsContextMenu);
 
-  connect(text_model_, &QAbstractItemModel::rowsInserted, ui->textsTable,
-          &QTableView::resizeColumnsToContents);
-
   connect(ui->sourcesTable->selectionModel(),
           &QItemSelectionModel::currentRowChanged, this,
           &TextManager::sourceSelectionChanged);
 
-  this->refreshSources();
+  source_model_->refresh();
 }
 
 TextManager::~TextManager() {
@@ -113,7 +118,7 @@ void TextManager::textsContextMenu(const QPoint& pos) {
             &TextManager::actionSendToTyper);
 
     QAction* editAction = menu.addAction("edit");
-    editAction->setData(selectedRows[0].data(Qt::UserRole));
+    // editAction->setData(selectedRows[0].data(Qt::UserRole));
     connect(editAction, &QAction::triggered, this,
             &TextManager::actionEditText);
   }
@@ -126,8 +131,12 @@ void TextManager::textsContextMenu(const QPoint& pos) {
 }
 
 void TextManager::actionEditText(bool checked) {
-  auto sender = reinterpret_cast<QAction*>(this->sender());
-  int id = sender->data().toInt();
+  // auto sender = reinterpret_cast<QAction*>(this->sender());
+  auto indexes = ui->textsTable->selectionModel()->selectedRows();
+  if (!ui->textsTable->selectionModel()->hasSelection() || indexes.size() > 1)
+    return;
+  int id = indexes[0].data(Qt::UserRole).toInt();
+  // int id = sender->data().toInt();
 
   Database db;
   auto t = db.getText(id);
@@ -141,6 +150,7 @@ void TextManager::actionEditText(bool checked) {
       return;
     }
     db.updateText(id, text);
+    text_model_->refreshText(indexes[0]);
   }
 }
 
@@ -214,6 +224,7 @@ void TextManager::addText() {
     Database db;
     db.addText(source, text, -1, false);
     source_model_->refreshSource(indexes[0]);
+    text_model_->refresh();
   }
 }
 
@@ -233,15 +244,7 @@ void TextManager::deleteSource() {
   emit sourcesChanged();
 }
 
-void TextManager::changeSelectMethod(int i) {
-  QSettings s;
-  if (s.value("select_method").toInt() != i) s.setValue("select_method", i);
-}
-
-void TextManager::refreshSources() {
-  source_model_->refresh();
-  ui->sourcesTable->resizeColumnsToContents();
-}
+void TextManager::refreshSources() { source_model_->refresh(); }
 
 void TextManager::refreshSource(int source) {
   source_model_->refreshSource(source);
