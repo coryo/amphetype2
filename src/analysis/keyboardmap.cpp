@@ -1,19 +1,19 @@
 #include "analysis/keyboardmap.h"
 
-#include <QtGlobal>
-#include <QtMath>
-#include <QSettings>
-#include <QGraphicsScene>
-#include <QStringList>
-#include <QPointF>
-#include <QGraphicsTextItem>
-#include <QHash>
 #include <QBrush>
 #include <QColor>
-#include <QPen>
+#include <QGraphicsScene>
+#include <QGraphicsTextItem>
+#include <QHash>
 #include <QPainter>
 #include <QPainterPath>
+#include <QPen>
+#include <QPointF>
 #include <QRectF>
+#include <QSettings>
+#include <QStringList>
+#include <QtGlobal>
+#include <QtMath>
 
 #include <limits>
 
@@ -25,13 +25,13 @@ KeyboardMap::KeyboardMap(QWidget* parent)
     : QGraphicsView(parent),
       keySpacing(3),
       keySize(24),
-      dataToMap("frequency") {
+      dataToMap("frequency"),
+      keyboardScene(new QGraphicsScene) {
   QSettings s;
-
   this->setKeyboard(
       static_cast<Amphetype::Layout>(s.value("keyboard_layout", 0).toInt()),
-      static_cast<Amphetype::Standard>(s.value("keyboard_standard", 0).toInt()));
-  this->keyboardScene = new QGraphicsScene;
+      static_cast<Amphetype::Standard>(
+          s.value("keyboard_standard", 0).toInt()));
   this->setScene(this->keyboardScene);
   connect(this, &KeyboardMap::dataChanged, this, &KeyboardMap::addKeys);
   this->setRenderHints(QPainter::Antialiasing);
@@ -84,7 +84,6 @@ void KeyboardMap::addKeys() { this->drawKeyboard(Amphetype::Modifier::None); }
 
 void KeyboardMap::drawKeyboard(Amphetype::Modifier modifier) {
   this->keyboardScene->clear();
-  if (this->statsData.isEmpty()) return;
 
   double max = 0;
   double min = std::numeric_limits<double>::max();
@@ -145,7 +144,7 @@ void KeyboardMap::drawKeyboard(
       QColor color;
       if (display_key_label) {
         brush.setStyle(Qt::SolidPattern);
-        qreal value = data[key][this->dataToMap].toDouble();
+        qreal value = data.isEmpty() ? -1 : data[key][this->dataToMap].toDouble();
 
         // set the brush alpha based on the data
         if (value > 0) {
@@ -198,7 +197,6 @@ void KeyboardMap::drawKeyboard(
       sum += key_size;
     }
   }
-  this->adjustSize();
 }
 
 qreal KeyboardMap::scaleToRange(qreal x, qreal range, qreal min, qreal max) {
