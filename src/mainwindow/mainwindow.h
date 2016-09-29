@@ -32,7 +32,7 @@ class MainWindow : public QMainWindow {
  private slots:
   void gotoTab(int);
   void gotoLessonGenTab();
-  void togglePlot(bool);
+  // void togglePlot(bool);
 };
 
 #endif  // SRC_MAINWINDOW_MAINWINDOW_H_

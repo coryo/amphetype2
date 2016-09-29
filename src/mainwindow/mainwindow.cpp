@@ -1,14 +1,14 @@
 #include "mainwindow/mainwindow.h"
 
+#include <QApplication>
 #include <QSettings>
 #include <QSize>
-#include <QApplication>
 
-#include "ui_mainwindow.h"
-#include "texts/text.h"
-#include "quizzer/typer.h"
 #include "liveplot/liveplot.h"
+#include "quizzer/typer.h"
+#include "texts/text.h"
 #include "texts/textmanager.h"
+#include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
@@ -22,8 +22,6 @@ MainWindow::MainWindow(QWidget* parent)
   // Set UI state
   this->settingsWidget->hide();
   this->libraryWidget->hide();
-  if (!s.value("liveplot_visible").toBool()) ui->plotDock->close();
-  ui->action_Plot->setChecked(s.value("liveplot_visible").toBool());
 
   // Actions
   connect(ui->action_Settings, &QAction::triggered, this->settingsWidget,
@@ -34,7 +32,13 @@ MainWindow::MainWindow(QWidget* parent)
           &QWidget::show);
   connect(ui->action_Library, &QAction::triggered, this->libraryWidget,
           &QWidget::activateWindow);
-  connect(ui->action_Plot, &QAction::triggered, this, &MainWindow::togglePlot);
+
+  ui->menuView->addAction(ui->plotDock->toggleViewAction());
+
+  connect(ui->mapComboBox, &QComboBox::currentTextChanged, ui->keyboardMap,
+          &KeyboardMap::setData);
+  ui->keyboardMap->updateData();
+  ui->menuView->addAction(ui->mapDock->toggleViewAction());
 
   // Typer
   connect(ui->quizzer, &Quizzer::wantText, this->libraryWidget,
@@ -45,6 +49,8 @@ MainWindow::MainWindow(QWidget* parent)
           &TextManager::refreshSource);
   connect(ui->quizzer, &Quizzer::newStatistics, ui->statisticsWidget,
           &StatisticsWidget::update);
+  connect(ui->quizzer, &Quizzer::newStatistics, ui->keyboardMap,
+          &KeyboardMap::updateData);
   // Live Plot
   connect(ui->quizzer, &Quizzer::newWpm, ui->plot, &LivePlot::addWpm);
   connect(ui->quizzer, &Quizzer::newApm, ui->plot, &LivePlot::addApm);
@@ -97,18 +103,12 @@ MainWindow::MainWindow(QWidget* parent)
           &Quizzer::updateTyperDisplay);
   connect(settingsWidget, &SettingsWidget::settingsChanged,
           ui->performanceHistory, &PerformanceHistory::refreshCurrentPlot);
-  connect(settingsWidget, &SettingsWidget::newKeyboard,
-          ui->statisticsWidget->getKeyboardMap(), &KeyboardMap::setKeyboard);
+  connect(settingsWidget, &SettingsWidget::newKeyboard, ui->keyboardMap,
+          &KeyboardMap::setKeyboard);
 
-  this->resize(s.value("window_width", 600).toInt(),
-               s.value("window_height", 400).toInt());
+  this->restoreState(s.value("mainWindow/windowState").toByteArray());
+  this->restoreGeometry(s.value("mainWindow/windowGeometry").toByteArray());
   ui->quizzer->wantText(0, Amphetype::SelectionMethod::Random);
-}
-
-void MainWindow::togglePlot(bool checked) {
-  QSettings s;
-  s.setValue("liveplot_visible", checked);
-  ui->plotDock->setVisible(checked);
 }
 
 MainWindow::~MainWindow() {
@@ -123,7 +123,7 @@ void MainWindow::gotoLessonGenTab() { ui->tabWidget->setCurrentIndex(3); }
 void MainWindow::closeEvent(QCloseEvent* event) {
   QSettings s;
   QSize size = this->size();
-  s.setValue("window_width", size.width());
-  s.setValue("window_height", size.height());
+  s.setValue("mainWindow/windowState", this->saveState());
+  s.setValue("mainWindow/windowGeometry", this->saveGeometry());
   qApp->quit();
 }
