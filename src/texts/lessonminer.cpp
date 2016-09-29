@@ -14,31 +14,166 @@
 
 #include "database/db.h"
 
-LessonMiner::LessonMiner(QObject *parent) : QObject(parent) {
+LessonMiner::LessonMiner(QObject* parent) : QObject(parent) {
   QSettings s;
   min_chars = s.value("min_chars").toInt();
 
   // things to ignore as sentence enders.
   // ie "Mr. Smith." is shouldn't be 2 sentences
-  abbr << "jr" << "mr" << "mrs" << "ms" << "dr" << "prof" << "sr" << "sen" << "rep"
-       << "sens" << "reps" << "gov" << "attys" << "atty" << "supt" << "det"
-       << "rev" << "col" << "gen" << "lt" << "cmdr" << "adm" << "capt" << "sgt"
-       << "cpl" << "maj" << "dept" << "univ" << "assn" << "bros" << "inc" << "ltd"
-       << "co" << "corp" << "arc" << "al" << "ave" << "blvd" << "bld" << "cl"
-       << "ct" << "cres" << "dr" << "expy" << "exp" << "dist" << "mt" << "ft"
-       << "fwy" << "fy" << "hway" << "hwy" << "la" << "pde" << "pd" << "pl"
-       << "plz" << "rd" << "st" << "tce" << "Ala" << "Ariz" << "Ark" << "Cal"
-       << "Calif" << "Col" << "Colo" << "Conn" << "Del" << "Fed" << "Fla" << "Ga"
-       << "Ida" << "Id" << "Ill" << "Ind" << "Ia" << "Kan" << "Kans" << "Ken"
-       << "Ky" << "La" << "Me" << "Md" << "Is" << "Mass" << "Mich" << "Minn"
-       << "Miss" << "Mo" << "Mont" << "Neb" << "Nebr" << "Nev" << "Mex" << "Okla"
-       << "Ok" << "Ore" << "Penna" << "Penn" << "Pa" << "Dak" << "Tenn" << "Tex"
-       << "Ut" << "Vt" << "Va" << "Wash" << "Wis" << "Wisc" << "Wy" << "Wyo"
-       << "USAFA" << "Alta" << "Man" << "Ont" << "Qué" << "Sask" << "Yuk" << "jan"
-       << "feb" << "mar" << "apr" << "may" << "jun" << "jul" << "aug" << "sep"
-       << "oct" << "nov" << "dec" << "sept" << "vs" << "etc" << "no" << "esp"
-       << "eg" << "ie" << "1" << "2" << "3" << "4" << "5" << "6" << "7" << "8" << "9"
-       << "10" << "11" << "12" << "avg" << "viz" << "m" << "mme";
+  abbr << "jr"
+       << "mr"
+       << "mrs"
+       << "ms"
+       << "dr"
+       << "prof"
+       << "sr"
+       << "sen"
+       << "rep"
+       << "sens"
+       << "reps"
+       << "gov"
+       << "attys"
+       << "atty"
+       << "supt"
+       << "det"
+       << "rev"
+       << "col"
+       << "gen"
+       << "lt"
+       << "cmdr"
+       << "adm"
+       << "capt"
+       << "sgt"
+       << "cpl"
+       << "maj"
+       << "dept"
+       << "univ"
+       << "assn"
+       << "bros"
+       << "inc"
+       << "ltd"
+       << "co"
+       << "corp"
+       << "arc"
+       << "al"
+       << "ave"
+       << "blvd"
+       << "bld"
+       << "cl"
+       << "ct"
+       << "cres"
+       << "dr"
+       << "expy"
+       << "exp"
+       << "dist"
+       << "mt"
+       << "ft"
+       << "fwy"
+       << "fy"
+       << "hway"
+       << "hwy"
+       << "la"
+       << "pde"
+       << "pd"
+       << "pl"
+       << "plz"
+       << "rd"
+       << "st"
+       << "tce"
+       << "Ala"
+       << "Ariz"
+       << "Ark"
+       << "Cal"
+       << "Calif"
+       << "Col"
+       << "Colo"
+       << "Conn"
+       << "Del"
+       << "Fed"
+       << "Fla"
+       << "Ga"
+       << "Ida"
+       << "Id"
+       << "Ill"
+       << "Ind"
+       << "Ia"
+       << "Kan"
+       << "Kans"
+       << "Ken"
+       << "Ky"
+       << "La"
+       << "Me"
+       << "Md"
+       << "Is"
+       << "Mass"
+       << "Mich"
+       << "Minn"
+       << "Miss"
+       << "Mo"
+       << "Mont"
+       << "Neb"
+       << "Nebr"
+       << "Nev"
+       << "Mex"
+       << "Okla"
+       << "Ok"
+       << "Ore"
+       << "Penna"
+       << "Penn"
+       << "Pa"
+       << "Dak"
+       << "Tenn"
+       << "Tex"
+       << "Ut"
+       << "Vt"
+       << "Va"
+       << "Wash"
+       << "Wis"
+       << "Wisc"
+       << "Wy"
+       << "Wyo"
+       << "USAFA"
+       << "Alta"
+       << "Man"
+       << "Ont"
+       << "Qué"
+       << "Sask"
+       << "Yuk"
+       << "jan"
+       << "feb"
+       << "mar"
+       << "apr"
+       << "may"
+       << "jun"
+       << "jul"
+       << "aug"
+       << "sep"
+       << "oct"
+       << "nov"
+       << "dec"
+       << "sept"
+       << "vs"
+       << "etc"
+       << "no"
+       << "esp"
+       << "eg"
+       << "ie"
+       << "1"
+       << "2"
+       << "3"
+       << "4"
+       << "5"
+       << "6"
+       << "7"
+       << "8"
+       << "9"
+       << "10"
+       << "11"
+       << "12"
+       << "avg"
+       << "viz"
+       << "m"
+       << "mme";
 }
 
 LessonMiner::~LessonMiner() {}
@@ -46,8 +181,7 @@ LessonMiner::~LessonMiner() {}
 void LessonMiner::doWork(const QString& fname) {
   // open the file
   QFile file(fname);
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    return;
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
 
   // parse the file into a list of lists. each QStringList is a paragraph,
   // each QString in the QStringList is a sentence.
@@ -61,8 +195,9 @@ void LessonMiner::doWork(const QString& fname) {
   // add the lessons to the database
   QFileInfo fi(fname);
 
-  int id = DB::getSource(fi.fileName(), -1);
-  DB::addTexts(id, lessons, -1, false);
+  Database db;
+  int id = db.getSource(fi.fileName(), -1);
+  db.addTexts(id, lessons, -1, false);
 
   // done
   emit resultReady();
@@ -93,8 +228,8 @@ void LessonMiner::fileToParagraphs(QFile* f, QList<QStringList>* paragraphs) {
 // Splits a QString representing a paragraph into a QStringList of its sentences
 QStringList LessonMiner::sentenceSplitter(const QString& text) {
   QRegularExpression re(
-    "(?:(?: |^)[^\\w. ]*(?P<pre>\\w+)"
-    "[^ .]*\\.+|[?!]+)['\"]?(?= +(?:[^ a-z]|$))|$");
+      "(?:(?: |^)[^\\w. ]*(?P<pre>\\w+)"
+      "[^ .]*\\.+|[?!]+)['\"]?(?= +(?:[^ a-z]|$))|$");
 
   int start = 0;
   QStringList list;
@@ -106,17 +241,13 @@ QStringList LessonMiner::sentenceSplitter(const QString& text) {
     // the next
     // match because it's not a valid sentence ending
     bool a = match.captured("pre").isNull();
-    bool b = abbr.contains(match.captured("pre"),
-                           Qt::CaseInsensitive);
-    if (!a && b)
-      continue;
+    bool b = abbr.contains(match.captured("pre"), Qt::CaseInsensitive);
+    if (!a && b) continue;
 
     // the position of the character at the end of the match
     int end = match.capturedEnd();
     // add substring from start to end, to the list
-    list << QStringRef(&text, start, end - start)
-      .toString()
-      .trimmed();
+    list << QStringRef(&text, start, end - start).toString().trimmed();
     start = end;
   }
 
@@ -132,8 +263,7 @@ void LessonMiner::makeLessons(const QList<QStringList>& pgs,
   double i = 0.0;
   QList<QStringList>::const_iterator p;
   for (p = pgs.constBegin(); p != pgs.constEnd(); ++p) {
-    if (backlog.size() > 0)
-      backlog << QString("");
+    if (backlog.size() > 0) backlog << QString("");
     QStringList::const_iterator s;
     for (s = (*p).constBegin(); s != (*p).constEnd(); ++s) {
       backlog << (*s);
@@ -146,8 +276,7 @@ void LessonMiner::makeLessons(const QList<QStringList>& pgs,
     i += 1.0;
     emit progress(static_cast<int>(100 * (i / pgs.size())));
   }
-  if (backlen > 0)
-    (*lessons) << popFormat(&backlog);
+  if (backlen > 0) (*lessons) << popFormat(&backlog);
 }
 
 // joins the backlog list into a qstring, with \n between sentences of different
@@ -166,8 +295,7 @@ QString LessonMiner::popFormat(QStringList* lst) {
       p.clear();
     }
   }
-  if (p.size() > 0)
-    ret << p.join(" ");
+  if (p.size() > 0) ret << p.join(" ");
 
   return ret.join("\n");
 }

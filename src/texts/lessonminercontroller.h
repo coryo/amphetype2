@@ -8,7 +8,6 @@
 
 #include "texts/lessonminer.h"
 
-
 class LessonMinerController : public QObject {
   Q_OBJECT
 
@@ -16,12 +15,11 @@ class LessonMinerController : public QObject {
   LessonMinerController() {
     miner = new LessonMiner();
     miner->moveToThread(&lessonMinerThread);
-    connect(this,  &LessonMinerController::operate,
-            miner, &LessonMiner::doWork);
-    connect(miner, &LessonMiner::resultReady,
-            this,  &LessonMinerController::handleResults);
-    connect(miner, &LessonMiner::progress,
-            this,  &LessonMinerController::progressUpdate);
+    connect(this, &LessonMinerController::operate, miner, &LessonMiner::doWork);
+    connect(miner, &LessonMiner::resultReady, this,
+            &LessonMinerController::handleResults);
+    connect(miner, &LessonMiner::progress, this,
+            &LessonMinerController::progressUpdate);
     lessonMinerThread.start();
   }
   ~LessonMinerController() {

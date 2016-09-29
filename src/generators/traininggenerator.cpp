@@ -2,38 +2,38 @@
 
 #include <QStringList>
 
-
-TrainingGenerator::TrainingGenerator(KeyboardLayout layout,
-                                     KeyboardStandard standard, QObject* parent)
-  : QObject(parent), standard(standard), layout(layout) {
+TrainingGenerator::TrainingGenerator(Amphetype::Layout layout,
+                                     Amphetype::Standard standard,
+                                     QObject* parent)
+    : QObject(parent), standard(standard), layout(layout) {
   switch (layout) {
-    case KeyboardLayout::QWERTY:
+    case Amphetype::Layout::QWERTY:
       rows.append("qwertyuiop");
       rows.append("asdfghjkl;");
       rows.append("zxcvbnm,./");
       break;
-    case KeyboardLayout::QWERTZ:
+    case Amphetype::Layout::QWERTZ:
       rows.append("qwertzuiopü");
       rows.append("asdfghjklöä");
       rows.append(">yxcvbnm,.-");
-      this->standard = KeyboardStandard::ISO;
+      this->standard = Amphetype::Standard::ISO;
       break;
-    case KeyboardLayout::AZERTY:
+    case Amphetype::Layout::AZERTY:
       rows.append("azertyuiop");
       rows.append("qsdfghjklm");
       rows.append(">wxcvbn,;:!");
-      this->standard = KeyboardStandard::ISO;
+      this->standard = Amphetype::Standard::ISO;
       break;
-    case KeyboardLayout::COLEMAK:
+    case Amphetype::Layout::COLEMAK:
       rows.append("qwfpgjluy;");
       rows.append("arstdhneio'");
       rows.append("zxcvbkm,./");
       break;
-    case KeyboardLayout::DVORAK:
+    case Amphetype::Layout::DVORAK:
       rows.append("',.pyfgcrl");
       rows.append("aoeuidhtns");
       rows.append(";qjkxbmwvz");
-    case KeyboardLayout::WORKMAN:
+    case Amphetype::Layout::WORKMAN:
       rows.append("qdrwbjfup;");
       rows.append("ashtgyneoi");
       rows.append("zxmcvkl,./");
@@ -44,35 +44,38 @@ TrainingGenerator::TrainingGenerator(KeyboardLayout layout,
   }
 }
 TrainingGenerator::TrainingGenerator(QString& u, QString& m, QString& l,
-                                     KeyboardStandard standard, QObject* parent)
-  : QObject(parent), standard(standard), layout(KeyboardLayout::QWERTY) {
+                                     Amphetype::Standard standard,
+                                     QObject* parent)
+    : QObject(parent), standard(standard), layout(Amphetype::Layout::QWERTY) {
   rows.append(u);
   rows.append(m);
   rows.append(l);
 
   if (l.size() == 10) {
-    this->standard = KeyboardStandard::ANSI;
+    this->standard = Amphetype::Standard::ANSI;
   } else if (l.size() == 11) {
-    this->standard = KeyboardStandard::ISO;
+    this->standard = Amphetype::Standard::ISO;
   }
 }
 
 QList<QStringList>* TrainingGenerator::generate(int lessonsPerFingerGroup,
-                                                int maxLength, KeyboardRow r) {
+                                                int maxLength,
+                                                Amphetype::KeyboardRow r) {
   QString& homeRow = rows[1];
 
-  int rowLength  = homeRow.size();
+  int rowLength = homeRow.size();
   int startIndex = 0;
 
   // ISO has an extra key on bottom row before the main typing area
-  if (standard == KeyboardStandard::ISO && r == KeyboardRow::LOWER)
+  if (standard == Amphetype::Standard::ISO &&
+      r == Amphetype::KeyboardRow::LOWER)
     startIndex = 1;
 
   // innerindex, index, m, a, c
   QStringList keys_by_finger;
   for (int i = 4; i >= 0; --i) {
     QString finger_keys(homeRow[startIndex + i]);
-    finger_keys += homeRow[startIndex + (9-i)];
+    finger_keys += homeRow[startIndex + (9 - i)];
     keys_by_finger.append(finger_keys);
   }
 
@@ -93,34 +96,41 @@ QList<QStringList>* TrainingGenerator::generate(int lessonsPerFingerGroup,
     stages.append(keys_by_finger.value(4) + keys_by_finger.value(5));
   }
 
-  stages.append(charactersPerFinger(Finger::INDEX).left(4));
-  stages.append(charactersPerFinger(Finger::MIDDLE).left(4));
-  stages.append(stages.value(stages.size()-1) + stages.value(stages.size()-2));
-  stages.append(charactersPerFinger(Finger::RING).left(4));
-  stages.append(stages.value(stages.size()-1) + stages.value(stages.size()-2));
-  stages.append(charactersPerFinger(Finger::PINKY).left(4));
-  stages.append(stages.value(stages.size()-1) +
-          stages.value(stages.size()-2));
-  // stages.append(charactersPerFinger(Finger::PINKY_EXTRA).left(4));
+  stages.append(charactersPerFinger(Amphetype::Finger::INDEX).left(4));
+  stages.append(charactersPerFinger(Amphetype::Finger::MIDDLE).left(4));
+  stages.append(stages.value(stages.size() - 1) +
+                stages.value(stages.size() - 2));
+  stages.append(charactersPerFinger(Amphetype::Finger::RING).left(4));
+  stages.append(stages.value(stages.size() - 1) +
+                stages.value(stages.size() - 2));
+  stages.append(charactersPerFinger(Amphetype::Finger::PINKY).left(4));
+  stages.append(stages.value(stages.size() - 1) +
+                stages.value(stages.size() - 2));
+  // stages.append(charactersPerFinger(Amphetype::Finger::PINKY_EXTRA).left(4));
 
-  stages.append(charactersPerFinger(Finger::INDEX).right(4));
-  stages.append(charactersPerFinger(Finger::MIDDLE).right(4));
-  stages.append(stages.value(stages.size()-1) + stages.value(stages.size()-2));
-  stages.append(charactersPerFinger(Finger::RING).right(4));
-  stages.append(stages.value(stages.size()-1) + stages.value(stages.size()-2));
-  stages.append(charactersPerFinger(Finger::PINKY).right(4));
-  stages.append(stages.value(stages.size()-1) +
-          stages.value(stages.size()-2));
-  // stages.append(charactersPerFinger(Finger::PINKY_EXTRA).right(4));
+  stages.append(charactersPerFinger(Amphetype::Finger::INDEX).right(4));
+  stages.append(charactersPerFinger(Amphetype::Finger::MIDDLE).right(4));
+  stages.append(stages.value(stages.size() - 1) +
+                stages.value(stages.size() - 2));
+  stages.append(charactersPerFinger(Amphetype::Finger::RING).right(4));
+  stages.append(stages.value(stages.size() - 1) +
+                stages.value(stages.size() - 2));
+  stages.append(charactersPerFinger(Amphetype::Finger::PINKY).right(4));
+  stages.append(stages.value(stages.size() - 1) +
+                stages.value(stages.size() - 2));
+  // stages.append(charactersPerFinger(Amphetype::Finger::PINKY_EXTRA).right(4));
 
-  stages.append(charactersPerFinger(Finger::INDEX));
-  stages.append(charactersPerFinger(Finger::MIDDLE));
-  stages.append(stages.value(stages.size()-1) + stages.value(stages.size()-2));
-  stages.append(charactersPerFinger(Finger::RING));
-  stages.append(stages.value(stages.size()-1) + stages.value(stages.size()-2));
-  stages.append(charactersPerFinger(Finger::PINKY));
-  stages.append(stages.value(stages.size()-1) + stages.value(stages.size()-2));
-  // stages.append(charactersPerFinger(Finger::PINKY_EXTRA));
+  stages.append(charactersPerFinger(Amphetype::Finger::INDEX));
+  stages.append(charactersPerFinger(Amphetype::Finger::MIDDLE));
+  stages.append(stages.value(stages.size() - 1) +
+                stages.value(stages.size() - 2));
+  stages.append(charactersPerFinger(Amphetype::Finger::RING));
+  stages.append(stages.value(stages.size() - 1) +
+                stages.value(stages.size() - 2));
+  stages.append(charactersPerFinger(Amphetype::Finger::PINKY));
+  stages.append(stages.value(stages.size() - 1) +
+                stages.value(stages.size() - 2));
+  // stages.append(charactersPerFinger(Amphetype::Finger::PINKY_EXTRA));
 
   QList<QStringList>* rowLessons = new QList<QStringList>;
   for (QString stage : stages) {
@@ -137,32 +147,32 @@ QList<QStringList>* TrainingGenerator::generate(int lessonsPerFingerGroup,
 }
 
 // return a QString of the characters assigned to a given finger
-QString TrainingGenerator::charactersPerFinger(Finger f) {
+QString TrainingGenerator::charactersPerFinger(Amphetype::Finger f) {
   int colLeft, colRight;
 
   switch (f) {
-    case Finger::INDEX_INNER:
-      colLeft  = 4;
+    case Amphetype::Finger::INDEX_INNER:
+      colLeft = 4;
       colRight = 5;
       break;
-    case Finger::INDEX:
-      colLeft  = 3;
+    case Amphetype::Finger::INDEX:
+      colLeft = 3;
       colRight = 6;
       break;
-    case Finger::MIDDLE:
-      colLeft  = 2;
+    case Amphetype::Finger::MIDDLE:
+      colLeft = 2;
       colRight = 7;
       break;
-    case Finger::RING:
-      colLeft  = 1;
+    case Amphetype::Finger::RING:
+      colLeft = 1;
       colRight = 8;
       break;
-    case Finger::PINKY:
-      colLeft  = 0;
+    case Amphetype::Finger::PINKY:
+      colLeft = 0;
       colRight = 9;
       break;
-    case Finger::PINKY_EXTRA:
-      colLeft  = 0;
+    case Amphetype::Finger::PINKY_EXTRA:
+      colLeft = 0;
       colRight = 10;
       break;
   }
@@ -176,8 +186,8 @@ QString TrainingGenerator::charactersPerFinger(Finger f) {
   return keys;
 }
 
-QString TrainingGenerator::generateLesson(QString& characters,
-                                          int wordLength, int maxLength) {
+QString TrainingGenerator::generateLesson(QString& characters, int wordLength,
+                                          int maxLength) {
   QString lesson;
   while (lesson.length() < maxLength) {
     // word of 1 to wordLength characters

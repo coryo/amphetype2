@@ -18,7 +18,8 @@ class TrainingGenWidget : public QWidget {
   Ui::TrainingGenWidget *ui;
 
  signals:
-  void generatedLessons();
+  // void generatedLessons();
+  void newTraining();
 
  public slots:
   void generate();

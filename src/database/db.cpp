@@ -5,38 +5,32 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QDateTime>
+#include <QDir>
+#include <QApplication>
 
 #include <sqlite3pp.h>
 #include <sqlite3.h>
 
 #include <vector>
 #include <algorithm>
+#include <memory>
+#include <cmath>
 
 #include <QsLog.h>
 
 #include "texts/text.h"
 #include "quizzer/test.h"
 
-QMutex DB::db_lock;
-QString DB::db_path;
+static QMutex db_lock;
 
-//////////////////////////////////////////////////////
-// Sqlite extension functions
-//////////////////////////////////////////////////////
-int _count = -1;
-int counter() {
-  _count += 1;
-  return _count;
-}
+namespace sqlite_extensions {
+double pow(double x, double y) { return std::pow(x, y); }
 
 struct agg_median {
-  void step(double x) {
-    v.push_back(x);
-  }
+  void step(double x) { v.push_back(x); }
 
   double finish() {
-    if (v.empty())
-      return 0.0;
+    if (v.empty()) return 0.0;
 
     auto n = v.size() / 2;
     std::nth_element(v.begin(), v.begin() + n, v.end());
@@ -63,65 +57,65 @@ struct agg_mean {
     sum_ += value * count;
     c_ += count;
   }
-  double finish() {
-    return sum_ / static_cast<double>(c_);
-  }
+  double finish() { return sum_ / static_cast<double>(c_); }
   double sum_;
   int c_;
 };
-
-////////////////////////////////////////////////////////////////////////////////
+};  // sqlite_extensions
 
 DBConnection::DBConnection(const QString& path) {
-  this->db = new sqlite3pp::database(path.toUtf8().data());
-  this->func = new sqlite3pp::ext::function(*(this->db));
-  this->aggr = new sqlite3pp::ext::aggregate(*(this->db));
-  _count = -1;
-  this->func->create<int()>("counter", &counter);
-  this->func->create<double(double)>("square", [](double i){ return i * i; });
-  this->aggr->create<agg_median, double>("agg_median");
-  this->aggr->create<agg_mean<double>, double, int>("agg_mean");
+  db_ = std::make_unique<sqlite3pp::database>(path.toUtf8().data());
+  func_ = std::make_unique<sqlite3pp::ext::function>(*(db_));
+  aggr_ = std::make_unique<sqlite3pp::ext::aggregate>(*(db_));
+  func_->create<double(double, double)>("pow", &sqlite_extensions::pow);
+  aggr_->create<sqlite_extensions::agg_median, double>("agg_median");
+  aggr_->create<sqlite_extensions::agg_mean<double>, double, int>("agg_mean");
 }
-DBConnection::~DBConnection() {
-  delete this->aggr;
-  delete this->func;
-  delete this->db;
+
+sqlite3pp::database& DBConnection::db() { return *(db_); }
+
+Database::Database(const QString& name) {
+  if (name.isNull()) {
+    QSettings s;
+    db_path_ = qApp->applicationDirPath() + QDir::separator() +
+               s.value("db_name", "default").toString() + QString(".profile");
+  } else {
+    db_path_ = name;
+  }
+  conn_ = std::make_unique<DBConnection>(db_path_);
 }
-sqlite3pp::database& DBConnection::getDB() { return *(this->db); }
 
-////////////////////////////////////////////////////////////////////////////////
+void Database::changeDatabase(const QString& name) {
+  db_path_ = qApp->applicationDirPath() + QDir::separator() + name +
+             QString(".profile");
+  conn_ = std::make_unique<DBConnection>(db_path_);
+  this->initDB();
+}
 
-void DB::setDBPath(const QString& path) { DB::db_path = path; }
-
-void DB::initDB() {
+void Database::initDB() {
   QLOG_DEBUG() << "sqlite3_threadsafe() =" << sqlite3_threadsafe();
   try {
-    DBConnection conn(db_path);
-    sqlite3pp::database& db = conn.getDB();
+    sqlite3pp::database& db = conn_->db();
     sqlite3pp::transaction xct(db);
     {
       db.execute(
-        "CREATE TABLE source (name text, disabled integer, "
-        "discount integer, type integer)");
+          "CREATE TABLE IF NOT EXISTS source (id INTEGER PRIMARY KEY,"
+          "name text, disabled integer, "
+          "discount integer, type integer)");
       db.execute(
-        "CREATE TABLE text(id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "source integer, text text, disabled integer)");
+          "CREATE TABLE IF NOT EXISTS text(id INTEGER PRIMARY KEY,"
+          "source integer, text text, disabled integer)");
       db.execute(
-        "CREATE TABLE result (w DATETIME, text_id int, "
-        "source integer, wpm real, accuracy real,"
-        "viscosity real, PRIMARY KEY (w, text_id, source))");
+          "CREATE TABLE IF NOT EXISTS result (w DATETIME, text_id int, "
+          "source integer, wpm real, accuracy real,"
+          "viscosity real, PRIMARY KEY (w, text_id, source))");
       db.execute(
-        "CREATE TABLE statistic (w DATETIME, data text,"
-        "type integer,time real,count integer, mistakes integer,"
-        "viscosity real)");
+          "CREATE TABLE IF NOT EXISTS statistic (w DATETIME, data text,"
+          "type integer,time real,count integer, mistakes integer,"
+          "viscosity real)");
       db.execute(
-        "CREATE TABLE mistake (w DATETIME, target text,"
-        "mistake text, count integer)");
-      db.execute(
-        "CREATE VIEW text_source as SELECT id, s.name, text,"
-        "coalesce(t.disabled, s.disabled) "
-        "FROM text AS t LEFT JOIN source AS s "
-        "ON (t.source = s.rowid)");
+          "CREATE TABLE IF NOT EXISTS mistake (w DATETIME, target text,"
+          "mistake text, count integer)");
     }
     QMutexLocker locker(&db_lock);
     xct.commit();
@@ -131,45 +125,43 @@ void DB::initDB() {
   }
 }
 
-void DB::disableSource(const QList<int>& sources) {
-  QLOG_DEBUG() << "DB::disableSource";
-  DBConnection conn(db_path);
-  sqlite3pp::database& db = conn.getDB();
+void Database::disableSource(const QList<int>& sources) {
+  QLOG_DEBUG() << "Database::disableSource";
+  sqlite3pp::database& db = conn_->db();
   sqlite3pp::transaction xct(db);
   {
     sqlite3pp::command cmd(db, "UPDATE text SET disabled = 1 where source = ?");
     for (int source : sources) {
-      DB::bindAndRun(&cmd, source);
+      bindAndRun(&cmd, source);
     }
   }
   QMutexLocker locker(&db_lock);
   xct.commit();
 }
-void DB::enableSource(const QList<int>& sources) {
-    QLOG_DEBUG() << "DB::enableSource";
-    DBConnection conn(db_path);
-    sqlite3pp::database& db = conn.getDB();
-    sqlite3pp::transaction xct(db);
-    {
-      sqlite3pp::command cmd(
-        db, "UPDATE text SET disabled = NULL where source = ?");
-      for (int source : sources) {
-        DB::bindAndRun(&cmd, source);
-      }
+
+void Database::enableSource(const QList<int>& sources) {
+  QLOG_DEBUG() << "Database::enableSource";
+  sqlite3pp::database& db = conn_->db();
+  sqlite3pp::transaction xct(db);
+  {
+    sqlite3pp::command cmd(db,
+                           "UPDATE text SET disabled = NULL where source = ?");
+    for (int source : sources) {
+      bindAndRun(&cmd, source);
     }
-    QMutexLocker locker(&db_lock);
-    xct.commit();
+  }
+  QMutexLocker locker(&db_lock);
+  xct.commit();
 }
 
-int DB::getSource(const QString& sourceName, int lesson, int type) {
-  QLOG_DEBUG() << "DB::getSource";
+int Database::getSource(const QString& sourceName, int lesson, int type) {
   try {
-    QStringList row = DB::getOneRow(
-      "select rowid from source where name = ? limit 1", sourceName);
+    QLOG_DEBUG() << sourceName;
+    QVariantList row =
+        getOneRow("select id from source where name = ? limit 1", sourceName);
 
     // if the source exists return it
-    if (!row.isEmpty())
-      return row[0].toInt();
+    if (!row.isEmpty()) return row[0].toInt();
 
     // source didn't exist. add it
     QVariantList data;
@@ -182,169 +174,166 @@ int DB::getSource(const QString& sourceName, int lesson, int type) {
 
     data << type;
 
-    DB::bindAndRun(
-      "insert into source (name, discount, type) values (?, ?, ?)", data);
+    bindAndRun("insert into source values (NULL, ?, NULL, ?, ?)", data);
     // try again now that it's in the db
     return getSource(sourceName, lesson);
   } catch (const std::exception& e) {
-    QLOG_DEBUG() << "error getting source";
-    QLOG_DEBUG() << e.what();
+    QLOG_DEBUG() << "error getting source" << e.what();
     return -1;
   }
 }
 
-void DB::deleteSource(const QList<int>& sources) {
-  DBConnection conn(db_path);
-  sqlite3pp::database& db = conn.getDB();
+void Database::deleteSource(const QList<int>& sources) {
+  sqlite3pp::database& db = conn_->db();
   sqlite3pp::transaction xct(db);
   {
     sqlite3pp::command cmd1(db, "DELETE FROM text WHERE source = ?");
     sqlite3pp::command cmd2(db, "DELETE FROM result WHERE source = ?");
-    sqlite3pp::command cmd3(db, "DELETE FROM source WHERE rowid = ?");
+    sqlite3pp::command cmd3(db, "DELETE FROM source WHERE id = ?");
     for (int source : sources) {
-      DB::bindAndRun(&cmd1, source);
-      DB::bindAndRun(&cmd2, source);
-      DB::bindAndRun(&cmd3, source);
+      bindAndRun(&cmd1, source);
+      bindAndRun(&cmd2, source);
+      bindAndRun(&cmd3, source);
     }
   }
   QMutexLocker locker(&db_lock);
   xct.commit();
 }
 
-void DB::deleteText(const QList<int>& rowids) {
-  DBConnection conn(db_path);
-  sqlite3pp::database& db = conn.getDB();
+void Database::deleteText(const QList<int>& text_ids) {
+  sqlite3pp::database& db = conn_->db();
   sqlite3pp::transaction xct(db);
   {
-    sqlite3pp::command cmd(db, "DELETE FROM text WHERE rowid = ?");
-    for (int rowid : rowids)
-      DB::bindAndRun(&cmd, rowid);
+    sqlite3pp::command cmd(db, "DELETE FROM text WHERE id = ?");
+    for (int id : text_ids) bindAndRun(&cmd, id);
   }
   QMutexLocker locker(&db_lock);
   xct.commit();
 }
 
-void DB::deleteResult(const QString& id, const QString& datetime) {
+void Database::deleteResult(const QString& id, const QString& datetime) {
   QVariantList args;
   args << id << datetime;
-  DB::bindAndRun(
-    "DELETE FROM result WHERE text_id is ? and datetime(w) = datetime(?)",
-    args);
+  bindAndRun(
+      "DELETE FROM result WHERE text_id is ? and datetime(w) = datetime(?)",
+      args);
 }
 
-void DB::addText(int source, const QString& text, int lesson, bool update) {
+void Database::addText(int source, const QString& text, int lesson,
+                       bool update) {
   int dis = ((lesson == 2) ? 1 : 0);
   QVariantList items;
-  items << text;
   items << source;
+  items << text;
   if (dis == 0)
     items << QVariant();  // null
   else
     items << dis;
-  DB::bindAndRun(
-    "insert into text (text,source,disabled) values (?, ?, ?)", items);
+  bindAndRun("INSERT INTO text VALUES (NULL, ?, ?, ?)", items);
 }
 
-void DB::addTexts(int source, const QStringList& lessons, int lesson,
-  bool update) {
+void Database::addTexts(int source, const QStringList& lessons, int lesson,
+                        bool update) {
   int dis = ((lesson == 2) ? 1 : 0);
   try {
-    DBConnection conn(db_path);
-    sqlite3pp::database& db = conn.getDB();
+    sqlite3pp::database& db = conn_->db();
     sqlite3pp::transaction xct(db);
     {
-      sqlite3pp::command cmd(
-        db, "insert into text (text,source,disabled) values (?, ?, ?)");
+      sqlite3pp::command cmd(db, "INSERT INTO text VALUES (NULL, ?, ?, ?)");
       for (QString text : lessons) {
         QVariantList items;
-        items << text;
         items << source;
+        items << text;
         if (dis == 0)
           items << QVariant();  // null
         else
           items << dis;
-        DB::bindAndRun(&cmd, items);
+        bindAndRun(&cmd, items);
       }
     }
     QMutexLocker locker(&db_lock);
     xct.commit();
   } catch (const std::exception& e) {
-    QLOG_DEBUG() << "error adding text";
-    QLOG_DEBUG() << e.what();
+    QLOG_DEBUG() << "error adding text" << e.what();
   }
 }
 
-void DB::addResult(const QString& time, const Text* text, double wpm,
-  double acc, double vis) {
+void Database::addResult(const QString& time, const std::shared_ptr<Text>& text,
+                         double wpm, double acc, double vis) {
   try {
-    DBConnection conn(db_path);
-    sqlite3pp::database& db = conn.getDB();
+    sqlite3pp::database& db = conn_->db();
     sqlite3pp::transaction resultTransaction(db);
     {
-      sqlite3pp::command cmd(db,
-        "insert into result (w,text_id,source,wpm,accuracy,viscosity) "
-        "values (?, ?, ?, ?, ?, ?)");
+      sqlite3pp::command cmd(
+          db,
+          "insert into result (w, text_id, source, wpm, accuracy, viscosity) "
+          "values (?, ?, ?, ?, ?, ?)");
       QVariantList items;
-      items << time << text->getId() << text->getSource()
-        << wpm << acc << vis;
-      DB::bindAndRun(&cmd, items);
+      items << time << text->getId() << text->getSource() << wpm << acc << vis;
+      bindAndRun(&cmd, items);
     }
     QMutexLocker locker(&db_lock);
     resultTransaction.commit();
   } catch (const std::exception& e) {
-    QLOG_DEBUG() << "error adding result";
-    QLOG_DEBUG() << e.what();
+    QLOG_DEBUG() << "error adding result" << e.what();
   }
 }
 
-void DB::addStatistics(
-  const QString& time,
-  const QMultiHash<QStringRef, double>& stats,
-  const QMultiHash<QStringRef, double>& visc,
-  const QMultiHash<QStringRef, int>& mistakeCount) {
+void Database::addStatistics(const QMultiHash<QStringRef, double>& stats,
+                             const QMultiHash<QStringRef, double>& visc,
+                             const QMultiHash<QStringRef, int>& mistakeCount) {
+  QString now = QDateTime::currentDateTime().toString(Qt::ISODate);
   try {
-    DBConnection conn(db_path);
-    sqlite3pp::database& db = conn.getDB();
+    sqlite3pp::database& db = conn_->db();
     db.execute("PRAGMA journal_mode = MEMORY");
     sqlite3pp::transaction statisticsTransaction(db);
     {
-      sqlite3pp::command cmd(db,
-        "insert into statistic (time,viscosity,w,count,mistakes,"
-        "type,data) values (?, ?, ?, ?, ?, ?, ?)");
+      sqlite3pp::command cmd(
+          db,
+          "insert into statistic (time,viscosity,w,count,mistakes,"
+          "type,data) values (?, ?, ?, ?, ?, ?, ?)");
       QList<QStringRef> keys = stats.uniqueKeys();
-      for (QStringRef k : keys) {
+      for (const auto& k : keys) {
         QVariantList items;
         // median time
         const QList<double>& timeValues = stats.values(k);
-        if (timeValues.length() > 1)
-          items << (timeValues[timeValues.length() / 2] + (timeValues[timeValues.length() / 2 - 1])) / 2.0;
-        else if (timeValues.length() == 1)
+        if (timeValues.length() > 1) {
+          items << (timeValues[timeValues.length() / 2] +
+                    (timeValues[timeValues.length() / 2 - 1])) /
+                       2.0;
+        } else if (timeValues.length() == 1) {
           items << timeValues[timeValues.length() / 2];
-        else
+        } else {
           items << timeValues.first();
+        }
 
         // get the median viscosity
         const QList<double>& viscValues = visc.values(k);
-        if (viscValues.length() > 1)
-          items << ((viscValues[viscValues.length() / 2] + viscValues[viscValues.length() / 2 - 1]) / 2.0) * 100.0;
-        else if (viscValues.length() == 1)
+        if (viscValues.length() > 1) {
+          items << ((viscValues[viscValues.length() / 2] +
+                     viscValues[viscValues.length() / 2 - 1]) /
+                    2.0) *
+                       100.0;
+        } else if (viscValues.length() == 1) {
           items << viscValues[viscValues.length() / 2] * 100.0;
-        else
+        } else {
           items << viscValues.first() * 100.0;
+        }
 
-        items << time;
+        items << now;
         items << stats.count(k);
         items << mistakeCount.count(k);
 
-        if (k.length() == 1)
+        if (k.length() == 1) {
           items << 0;  // char
-        else if (k.length() == 3)
+        } else if (k.length() == 3) {
           items << 1;  // tri
-        else
+        } else {
           items << 2;  // word
+        }
 
         items << k.toString();
-        DB::bindAndRun(&cmd, items);
+        bindAndRun(&cmd, items);
       }
     }
     QElapsedTimer t;
@@ -353,97 +342,121 @@ void DB::addStatistics(
     statisticsTransaction.commit();
     QLOG_DEBUG() << "addStatistics" << t.elapsed() << "ms.";
   } catch (const std::exception& e) {
-    QLOG_DEBUG() << "error adding statistics";
-    QLOG_DEBUG() << e.what();
+    QLOG_DEBUG() << "error adding statistics" << e.what();
   }
 }
 
-void DB::addMistakes(const QString& time, const Test* test) {
+void Database::addMistakes(const Test* test) {
+  QString now = QDateTime::currentDateTime().toString(Qt::ISODate);
   try {
-    DBConnection conn(db_path);
-    sqlite3pp::database& db = conn.getDB();
+    sqlite3pp::database& db = conn_->db();
     sqlite3pp::transaction mistakesTransaction(db);
     {
       sqlite3pp::command cmd(db,
-        "insert into mistake (w,target,mistake,count) "
-        "values (?, ?, ?, ?)");
+                             "insert into mistake (w,target,mistake,count) "
+                             "values (?, ?, ?, ?)");
       auto mistakes = test->getMistakes();
       QHashIterator<QPair<QChar, QChar>, int> it(mistakes);
       while (it.hasNext()) {
         it.next();
         QVariantList items;
-        items << time
-            << QString(it.key().first)
-            << QString(it.key().second)
-            << it.value();
-        DB::bindAndRun(&cmd, items);
+        items << now << QString(it.key().first) << QString(it.key().second)
+              << it.value();
+        bindAndRun(&cmd, items);
       }
     }
     QMutexLocker locker(&db_lock);
     mistakesTransaction.commit();
   } catch (const std::exception& e) {
-    QLOG_DEBUG() << "error adding mistakes";
-    QLOG_DEBUG() << e.what();
+    QLOG_DEBUG() << "error adding mistakes" << e.what();
   }
 }
 
-QPair<double, double> DB::getMedianStats(int n)  {
-  QStringList cols = getOneRow(
-    "select agg_median(wpm), agg_median(acc) "
-    "from (select wpm,100.0*accuracy as acc from result "
-    "order by datetime(w) desc limit ?)", n);
+QPair<double, double> Database::getMedianStats(int n) {
+  QVariantList cols = getOneRow(
+      "select agg_median(wpm), agg_median(acc) "
+      "from (select wpm,100.0*accuracy as acc from result "
+      "order by datetime(w) desc limit ?)",
+      n);
   return QPair<double, double>(cols[0].toDouble(), cols[1].toDouble());
 }
 
-QList<QStringList> DB::getSourcesData() {
-  return getRows(
-    "select s.rowid, s.name, t.count, r.count, r.wpm, "
-        "nullif(t.dis,t.count) "
-    "from source as s "
-    "left join (select source,count(*) as count, "
-        "count(disabled) as dis "
-        "from text group by source) as t "
-        "on (s.rowid = t.source) "
-    "left join (select source,count(*) as count, "
-        "avg(wpm) as wpm from result group by source) "
-        "as r on (t.source = r.source) "
-    "where s.disabled is null "
-    "order by s.name");
+QVariantList Database::getSourceData(int source) {
+  return getOneRow(
+      "select s.id, s.name, t.count, r.count, r.wpm, "
+      "nullif(t.dis,t.count) "
+      "from source as s "
+      "left join (select source, count(*) as count, "
+      "count(disabled) as dis "
+      "from text group by source) as t "
+      "on (s.id = t.source) "
+      "left join (select source,count(*) as count, "
+      "avg(wpm) as wpm from result group by source) "
+      "as r on (t.source = r.source) "
+      "where s.disabled is null and s.id = ? "
+      "order by s.name",
+      source);
 }
 
-QList<QStringList> DB::getTextsData(int source) {
-  QString sql = QString(
-    "select t.rowid, substr(t.text,0,30)||' ...', "
+QList<QVariantList> Database::getSourcesData() {
+  return getRows(
+      "select s.id, s.name, t.count, r.count, r.wpm, "
+      "nullif(t.dis,t.count) "
+      "from source as s "
+      "left join (select source,count(*) as count, "
+      "count(disabled) as dis "
+      "from text group by source) as t "
+      "on (s.id = t.source) "
+      "left join (select source,count(*) as count, "
+      "avg(wpm) as wpm from result group by source) "
+      "as r on (t.source = r.source) "
+      "where s.disabled is null "
+      "order by s.name");
+}
+
+QList<QVariantList> Database::getTextsData(int source, int page, int limit) {
+  QVariantList args;
+  args << source << limit << page * limit;
+  return getRows(
+      "select t.id, substr(t.text,0,30)||' ...', "
       "length(t.text), r.count, r.m, t.disabled "
-    "from (select rowid,* from text where source = %1) as t "
-    "left join (select text_id,count(*) as count, agg_median(wpm) "
+      "from text as t "
+      "left join (select text_id,count(*) as count, agg_median(wpm) "
       "as m from result group by text_id) "
       "as r on (t.id = r.text_id) "
-    "order by t.rowid").arg(source);
-  return getRows(sql.toUtf8().data());
+      "where source is ? "
+      "order by t.id LIMIT ? OFFSET ?",
+      args);
 }
 
-QList<QStringList> DB::getPerformanceData(int w, int source, int limit) {
+int Database::getTextsCount(int source) {
+  return getOneRow("SELECT count() FROM text where source is ?", source)[0]
+      .toInt();
+}
+
+QList<QVariantList> Database::getPerformanceData(int w, int source, int limit) {
   QSettings s;
   int g = s.value("perf_group_by").toInt();
   bool grouping = (g == 0) ? false : true;
   QStringList query;
+  QVariantList args;
   switch (w) {
-  case 0:
-    break;
-  case 1:
-    query << "r.text_id = (select text_id from result order by "
-      "datetime(w) desc limit 1)";
-    break;
-  case 2:
-    query << "s.discount is null";
-    break;
-  case 3:
-    query << "s.discount is not null";
-    break;
-  default:
-    query << QString("r.source = %1").arg(source);
-    break;
+    case 0:
+      break;
+    case 1:
+      query << "r.text_id = (select text_id from result order by "
+               "datetime(w) desc limit 1)";
+      break;
+    case 2:
+      query << "s.discount is null";
+      break;
+    case 3:
+      query << "s.discount is not null";
+      break;
+    default:
+      query << "r.source = ?";
+      args << source;
+      break;
   }
   QString where;
   if (query.length() > 0)
@@ -451,255 +464,267 @@ QList<QStringList> DB::getPerformanceData(int w, int source, int limit) {
   else
     where = "";
 
-  // Grouping
-  QString group;
-  if (g == 1)  // days
-    group = "GROUP BY cast(strftime('%s', w) / 86400 as int)";
-  else if (g == 2)
-    group = QString("GROUP BY cast(counter() / %1 as int)")
-      .arg(s.value("def_group_by").toInt());
-
   QString sql;
   if (!grouping) {
     sql = QString(
-      "select text_id, w, s.name, wpm, 100.0*accuracy, viscosity "
-      "from result as r "
-      "left join source as s on(r.source = s.rowid) "
-      "%1 %2 order by datetime(w) DESC limit ?")
-      .arg(where).arg(group);
+              "select r.text_id, r.w, s.name, "
+              "r.wpm, 100.0 * r.accuracy, r.viscosity "
+              "from result as r "
+              "left join source as s on(r.source = s.rowid) "
+              "%1 order by datetime(w) DESC limit ?")
+              .arg(where);
   } else {
     sql = QString(
-      "SELECT count(text_id),"
-      "strftime('%Y-%m-%dT%H:%M:%S', datetime(avg(strftime('%s', r.w)),"
-        "'unixepoch')) as w,"
-      "count(r.rowid) || ' result(s)',"
-      "agg_median(r.wpm),"
-      "100.0 * agg_median(r.accuracy),"
-      "agg_median(r.viscosity) "
-      "FROM result as r "
-      "LEFT JOIN source as s on(r.source = s.rowid) "
-      "%1 %2 order by datetime(w) DESC limit ?")
-      .arg(where).arg(group);
+        "SELECT count(*),"
+        "strftime('%Y-%m-%dT%H:%M:%S',avg(julianday(r.w))),"
+        "count(*) || ' result(s)',"
+        "agg_median(r.wpm),"
+        "100.0 * agg_median(r.accuracy),"
+        "agg_median(r.viscosity) ");
+    if (g == 1) {
+      sql += QString(
+                 "FROM result as r "
+                 "LEFT JOIN source s on(r.source = s.id) "
+                 "%1 "
+                 "GROUP BY cast(strftime('%s', r.w) / 86400 as int) "
+                 "ORDER BY datetime(w) DESC limit ?")
+                 .arg(where);
+
+    } else if (g == 2) {
+      sql +=
+          QString(
+              "FROM ( "
+              "    select (select count(*) from result) - "
+              "           ((select count(*) from result as r2 "
+              "            where r2.rowid <= r.rowid) - 1) / %1 as grouping, * "
+              "    FROM result r "
+              "    LEFT JOIN source s ON (s.id = r.source) "
+              "    %2 "
+              "    order by datetime(w) desc "
+              ") as r "
+              "group by grouping ")
+              .arg(s.value("def_group_by").toInt())
+              .arg(where);
+    }
   }
 
-  return getRows(sql.toUtf8().data(), limit);
+  args << limit;
+  return getRows(sql, args);
 }
 
-QList<QStringList> DB::getStatisticsData(const QString& when, int type,
-  int count, int ord, int limit) {
+QList<QVariantList> Database::getStatisticsData(const QString& when, int type,
+                                                int count, int ord, int limit) {
   QString order, dir;
-
+  QVariantList args;
   switch (ord) {
-    case 0: order = "wpm";       dir = "asc";  break;
-    case 1: order = "wpm";       dir = "desc"; break;
-    case 2: order = "viscosity"; dir = "desc"; break;
-    case 3: order = "viscosity"; dir = "asc";  break;
-    case 4: order = "accuracy";  dir = "asc";  break;
-    case 5: order = "misses";    dir = "desc"; break;
-    case 6: order = "total";     dir = "desc"; break;
-    case 7: order = "damage";    dir = "desc"; break;
+    case 0:
+      order = "wpm asc";
+      break;
+    case 1:
+      order = "wpm desc";
+      break;
+    case 2:
+      order = "viscosity desc";
+      break;
+    case 3:
+      order = "viscosity asc";
+      break;
+    case 4:
+      order = "accuracy asc";
+      break;
+    case 5:
+      order = "misses desc";
+      break;
+    case 6:
+      order = "total desc";
+      break;
+    case 7:
+      order = "damage desc";
+      break;
   }
 
   QString sql = QString(
-    "SELECT data, "
-      "12.0 / time as wpm, "
-      "100 * (1.0 - misses / cast(total as real)) as accuracy, "
-      "viscosity, "
-      "total, "
-      "misses, "
-      "total * time * time * (1.0 + misses / total) as damage "
-    "FROM (SELECT data, "
-      "agg_median(time) as time, "
-      "agg_median(viscosity) as viscosity, "
-      "sum(count) as total, "
-      "sum(mistakes) as misses "
-      "FROM statistic "
-      "WHERE datetime(w) >= datetime('%1') "
-      "and type = %2 group by data) "
-    "WHERE total >= %3 "
-    "ORDER BY %4 %5 LIMIT %6").arg(when).arg(type).arg(count).arg(order)
-      .arg(dir).arg(limit);
+                    "SELECT data, 12.0 / time as wpm, "
+                    "100 * (1.0 - misses / cast(total as real)) as accuracy, "
+                    "viscosity, total, misses, "
+                    "total * pow(time, 2) * (1.0 + misses / total) as damage "
+                    "FROM (SELECT data, "
+                    "agg_median(time) as time, "
+                    "agg_median(viscosity) as viscosity, "
+                    "sum(count) as total, "
+                    "sum(mistakes) as misses "
+                    "FROM statistic "
+                    "WHERE datetime(w) >= datetime(?) "
+                    "and type = ? group by data) "
+                    "WHERE total >= ? "
+                    "ORDER BY %1 LIMIT ?")
+                    .arg(order);
 
-  return getRows(sql.toUtf8().data());
+  args << when << type << count << limit;
+  return getRows(sql, args);
 }
 
-QList<QStringList> DB::getSourcesList() {
-  return getRows("select rowid, name from source order by name");
+QList<QVariantList> Database::getSourcesList() {
+  return getRows("select id, name from source order by name");
 }
 
-Text* DB::getText(const QString& textHash) {
-  QString sql = QString(
-    "select t.id, t.source, t.text, s.name, t.rowid, s.type "
-    "from text as t "
-    "inner join source as s "
-    "on (t.source = s.rowid) "
-    "where t.id = \"%1\"").arg(textHash);
-  return DB::getTextWithQuery(sql);
+std::shared_ptr<Text> Database::getText(int id) {
+  return getTextWithQuery(
+      "select text.id, source, text, source.name, source.type "
+      "from text "
+      "left join source "
+      "on (text.source = source.id) "
+      "where text.id = ?",
+      id);
 }
 
-Text* DB::getText(int rowid) {
-  QString sql = QString(
-    "select t.id, t.source, t.text, s.name, t.rowid, s.type "
-    "from text as t "
-    "inner join source as s "
-    "on (t.source = s.rowid) "
-    "where t.rowid = %1").arg(rowid);
-  return DB::getTextWithQuery(sql);
-}
-
-Text* DB::getRandomText() {
-  QString sql;
+std::shared_ptr<Text> Database::getRandomText() {
   QSettings s;
-
-  int num_rand = s.value("num_rand").toInt();
-
-  sql = QString(
-    "SELECT t.id, t.source, t.text, s.name, t.rowid, s.type "
-    "FROM ((select id,source,text,rowid from text "
-        "where disabled is null order by random() "
-        "limit %1) as t) "
-    "INNER JOIN source as s "
-    "ON (t.source = s.rowid)").arg(num_rand);
-
-  return DB::getTextWithQuery(sql);
+  return getTextWithQuery(
+      "SELECT t.id, t.source, t.text, s.name, s.type "
+      "FROM ((select id,source,text,rowid from text "
+      "where disabled is null order by random() "
+      "limit ?) as t) "
+      "INNER JOIN source as s "
+      "ON (t.source = s.rowid)",
+      s.value("num_rand").toInt());
 }
 
-Text* DB::getNextText() {
+std::shared_ptr<Text> Database::getNextText() {
   // in order
-  QStringList row = DB::getOneRow(
-    "SELECT r.text_id from result as r "
-    "left join source as s on (r.source = s.rowid) "
-    "where (s.discount is null) or (s.discount = 1) "
-    "order by r.w desc limit 1");
+  QVariantList row = getOneRow(
+      "SELECT r.text_id from result as r "
+      "left join source as s on (r.source = s.id) "
+      "where (s.discount is null) or (s.discount = 1) "
+      "order by r.w desc limit 1");
 
-  if (row.isEmpty())
-    return new Text();
+  if (row.isEmpty()) return std::make_shared<Text>();
 
-  QStringList row2 = DB::getOneRow(
-    "select rowid from text where id = ?", row[0]);
+  QVariantList row2 =
+      getOneRow("select id from text where id = ?", row[0].toInt());
 
-  if (row2.isEmpty())
-    return new Text();
+  if (row2.isEmpty()) return std::make_shared<Text>();
 
-  QString sql2(
-    "select t.id,t.source,t.text, s.name, t.rowid, s.type "
-    "from text as t "
-    "LEFT JOIN source as s "
-    "ON (t.source = s.rowid) "
-    "WHERE t.rowid > %1 and t.disabled is null "
-    "ORDER BY t.rowid ASC LIMIT 1");
-  return DB::getTextWithQuery(sql2.arg(row2[0]));
+  return getTextWithQuery(
+      "select t.id, t.source, t.text, s.name, s.type "
+      "from text as t "
+      "LEFT JOIN source as s "
+      "ON (t.source = s.id) "
+      "WHERE t.id > ? and t.disabled is null "
+      "ORDER BY t.id ASC LIMIT 1",
+      row2[0].toInt());
 }
 
-Text* DB::getNextText(Text* lastText) {
-  QString textid = QString(lastText->getId());
-  QString sql = QString(
-    "select t.id, t.source, t.text, s.name, t.rowid, s.type "
-    "from text as t "
-    "inner join source as s "
-    "on (t.source = s.rowid) "
-    "where t.rowid = (select rowid+1 from text where id = \"%1\")")
-      .arg(textid);
-  return DB::getTextWithQuery(sql);
+std::shared_ptr<Text> Database::getNextText(
+    const std::shared_ptr<Text>& lastText) {
+  return getTextWithQuery(
+      "select t.id, t.source, t.text, s.name, s.type "
+      "from text as t "
+      "inner join source as s "
+      "on (t.source = s.id) "
+      "where t.id = (select id + 1 from text where id = ?)",
+      lastText->getId());
 }
 
-void DB::updateText(int rowid, const QString& newText) {
+void Database::updateText(int id, const QString& newText) {
   QVariantList args;
-  args << newText << rowid;
-  DB::bindAndRun("UPDATE text SET text = ? WHERE rowid = ?", args);
+  args << newText << id;
+  bindAndRun("UPDATE text SET text = ? WHERE id = ?", args);
 }
 
-void DB::compress() {
-  QLOG_DEBUG() << "DB::compress" << "initial count:"
-          << getOneRow("SELECT count(), sum(count) from statistic");
+void Database::compress() {
+  QLOG_DEBUG() << "Database::compress"
+               << "initial count:"
+               << getOneRow("SELECT count(), sum(count) from statistic");
   QDateTime now = QDateTime::currentDateTime();
   QList<QPair<QString, int>> groupings;
   int dayInSecs = 86400;
-  groupings
-    << qMakePair(now.addDays(-365).toString(Qt::ISODate), dayInSecs * 365)
-    << qMakePair(now.addDays(-30).toString(Qt::ISODate), dayInSecs * 30)
-    << qMakePair(now.addDays(-7).toString(Qt::ISODate), dayInSecs * 7)
-    << qMakePair(now.addDays(-1).toString(Qt::ISODate), dayInSecs * 1)
-    << qMakePair(now.addSecs(-3600).toString(Qt::ISODate), dayInSecs / 24);
+  groupings << qMakePair(now.addDays(-365).toString(Qt::ISODate),
+                         dayInSecs * 365)
+            << qMakePair(now.addDays(-30).toString(Qt::ISODate), dayInSecs * 30)
+            << qMakePair(now.addDays(-7).toString(Qt::ISODate), dayInSecs * 7)
+            << qMakePair(now.addDays(-1).toString(Qt::ISODate), dayInSecs * 1)
+            << qMakePair(now.addSecs(-3600).toString(Qt::ISODate),
+                         dayInSecs / 24);
 
-  const char * sql = "SELECT strftime('%Y-%m-%dT%H:%M:%S',avg(julianday(w))),"
-    "data, type, agg_mean(time, count), sum(count), sum(mistakes),"
-    "agg_median(viscosity) "
-    "FROM statistic "
-    "WHERE datetime(w) <= datetime(?) "
-    "GROUP BY data, type, cast(strftime('%s', w) / ? as int)";
+  QString sql =
+      "SELECT strftime('%Y-%m-%dT%H:%M:%S',avg(julianday(w))),"
+      "data, type, agg_mean(time, count), sum(count), sum(mistakes),"
+      "agg_median(viscosity) "
+      "FROM statistic "
+      "WHERE datetime(w) <= datetime('%1') "
+      "GROUP BY data, type, cast(strftime('%s', w) / %2 as int)";
 
   int groupCount = 0;
-  DBConnection conn(db_path);
-  for (auto const & g : groupings) {
-    QVariantList args;
-    args << g.first << g.second;
-    QLOG_DEBUG() << "\t" << "grouping stats older than:"
-      << g.first << "by"
-      << g.second / static_cast<double>(dayInSecs) << "days";
+  for (const auto& g : groupings) {
+    QLOG_DEBUG() << "\tgrouping stats older than:" << g.first << "by"
+                 << g.second / static_cast<double>(dayInSecs) << "days";
 
-    auto rows = getRows(sql, args);
-    if (rows.isEmpty())
-      continue;
+    QList<QVariantList> rows = getRows(sql.arg(g.first).arg(g.second));
+
+    if (rows.isEmpty()) continue;
 
     groupCount++;
-
-    sqlite3pp::transaction xct(conn.getDB());
+    sqlite3pp::transaction xct(conn_->db());
     {
-      sqlite3pp::command deleteCmd(conn.getDB(),
-        "DELETE FROM statistic WHERE datetime(w) <= datetime(?)");
-      sqlite3pp::command insertCmd(conn.getDB(),
-        "INSERT INTO statistic (w, data, type, time, count, mistakes,"
-        "viscosity) VALUES (?, ?, ?, ?, ?, ?, ?)");
-      QLOG_DEBUG() << "\t" << "a"
-        << getOneRow(conn.getDB(), "SELECT count(), sum(count) from statistic");
+      sqlite3pp::command deleteCmd(
+          conn_->db(),
+          "DELETE FROM statistic WHERE datetime(w) <= datetime(?)");
+      sqlite3pp::command insertCmd(
+          conn_->db(),
+          "INSERT INTO statistic (w, data, type, time, count, mistakes,"
+          "viscosity) VALUES (?, ?, ?, ?, ?, ?, ?)");
+      QLOG_DEBUG() << "\ta"
+                   << getOneRow(conn_->db(),
+                                "SELECT count(), sum(count) from statistic");
       bindAndRun(&deleteCmd, g.first);
-      for (auto const & row : rows) {
-        QVariantList args;
-        for (auto const & item : row)
-          args << item;
-        bindAndRun(&insertCmd, args);
+      for (const QVariantList& row : rows) {
+        bindAndRun(&insertCmd, row);
       }
-      QLOG_DEBUG() << "\t" << "b"
-        << getOneRow(conn.getDB(), "SELECT count(), sum(count) from statistic");
+      QLOG_DEBUG() << "\tb"
+                   << getOneRow(conn_->db(),
+                                "SELECT count(), sum(count) from statistic");
     }
     db_lock.lock();
     xct.commit();
     db_lock.unlock();
   }
-  QLOG_DEBUG() << "DB::compress"
-         << "final count:"
-         << getOneRow("SELECT count(), sum(count) from statistic");
+  QLOG_DEBUG() << "Database::compress"
+               << "final count:"
+               << getOneRow("SELECT count(), sum(count) from statistic");
 
   if (groupCount >= 3) {
     db_lock.lock();
-    QLOG_DEBUG() << "DB::compress" << "vacuuming";
-    sqlite3pp::command cmd(conn.getDB(), "vacuum");
+    QLOG_DEBUG() << "Database::compress"
+                 << "vacuuming";
+    sqlite3pp::command cmd(conn_->db(), "vacuum");
     cmd.execute();
     db_lock.unlock();
   }
 }
 
-QHash<QChar, QHash<QString, QVariant>> DB::getKeyFrequency() {
+QHash<QChar, QHash<QString, QVariant>> Database::getKeyFrequency() {
   QHash<QChar, QHash<QString, QVariant>> data;
-  auto rows = DB::getRows(
-    "select data, "
-    "agg_median(time) as speed, "
-    "sum(count) as total, "
-    "100.0 * (1.0 - (sum(mistakes) / cast(sum(count) as real))) as accuracy, "
-    "sum(mistakes) as mistakes, "
-    "agg_median(viscosity) as viscosity,"
-    "sum(count) * square(agg_median(time)) * (1.0 + sum(mistakes) / sum(count)) as damage "
-    "from statistic "
-    "where length(data) is 1 group by data");
+  auto rows = Database::getRows(
+      "select data, "
+      "agg_median(time) as speed, "
+      "sum(count) as total, "
+      "100.0 * (1.0 - (sum(mistakes) / cast(sum(count) as real))) as accuracy, "
+      "sum(mistakes) as mistakes, "
+      "agg_median(viscosity) as viscosity,"
+      "sum(count) * pow(agg_median(time), 2)"
+      "* (1.0 + sum(mistakes) / sum(count)) as damage "
+      "from statistic "
+      "where type is 0 group by data");
 
-  for (auto const & row : rows) {
-    data[row[0].at(0)]["speed"] = row[1].toDouble();
-    data[row[0].at(0)]["frequency"] = row[2].toInt();
-    data[row[0].at(0)]["accuracy"] = row[3].toDouble();
-    data[row[0].at(0)]["mistakes"] = row[4].toInt();
-    data[row[0].at(0)]["viscosity"] = row[5].toDouble();
-    data[row[0].at(0)]["damage"] = row[6].toDouble();
+  for (const auto& row : rows) {
+    QChar c = row[0].toString().at(0);
+    data[c]["speed"] = row[1].toDouble();
+    data[c]["frequency"] = row[2].toInt();
+    data[c]["accuracy"] = row[3].toDouble();
+    data[c]["mistakes"] = row[4].toInt();
+    data[c]["viscosity"] = row[5].toDouble();
+    data[c]["damage"] = row[6].toDouble();
   }
 
   return data;
@@ -709,173 +734,125 @@ QHash<QChar, QHash<QString, QVariant>> DB::getKeyFrequency() {
 // PRIVATE FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 
-QStringList DB::getOneRow(const char * sql) {
-  return DB::getOneRow(sql, QVariantList());
+QVariantList Database::getOneRow(const QString& sql, const QVariant& args) {
+  return getOneRow(conn_->db(), sql, args);
 }
 
-QStringList DB::getOneRow(const char * sql, QVariant arg) {
-  QVariantList args;
-  args << arg;
-  return DB::getOneRow(sql, args);
-}
-
-QStringList DB::getOneRow(const char * sql, QVariantList& args) {
-  DBConnection conn(db_path);
-  return DB::getOneRow(conn.getDB(), sql, args);
-}
-
-QStringList DB::getOneRow(sqlite3pp::database& db, const char * sql) {
-  return DB::getOneRow(db, sql, QVariantList());
-}
-
-QStringList DB::getOneRow(sqlite3pp::database& db, const char * sql,
-  QVariant arg) {
-  QVariantList args;
-  args << arg;
-  return DB::getOneRow(db, sql, args);
-}
-
-QStringList DB::getOneRow(sqlite3pp::database& db, const char * sql,
-  QVariantList& args) {
+QVariantList Database::getOneRow(sqlite3pp::database& db, const QString& sql,
+                                 const QVariant& args) {
   QMutexLocker locker(&db_lock);
   try {
-    sqlite3pp::query qry(db, sql);
-    if (!args.isEmpty())
-      DB::binder(&qry, args);
+    sqlite3pp::query qry(db, sql.toUtf8().constData());
+    if (!args.isNull()) binder(&qry, args);
 
-    QStringList row;
+    QVariantList row;
     for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
       for (int j = 0; j < qry.column_count(); ++j)
         row << (*i).get<char const*>(j);
     }
     return row;
   } catch (const std::exception& e) {
-    QLOG_DEBUG() << "error running query: " << sql;
-    QLOG_DEBUG() << e.what();
-    return QStringList();
+    QLOG_DEBUG() << "error running query:" << e.what() << sql;
+    return QVariantList();
   }
 }
 
-QList<QStringList> DB::getRows(const char * sql) {
-  return DB::getRows(sql, QVariantList());
-}
-
-QList<QStringList> DB::getRows(const char * sql, QVariant arg) {
-  QVariantList args;
-  args << arg;
-  return DB::getRows(sql, args);
-}
-
-QList<QStringList> DB::getRows(const char * sql, QVariantList& args) {
+QList<QVariantList> Database::getRows(const QString& sql,
+                                      const QVariant& args) {
   QMutexLocker locker(&db_lock);
   try {
-    DBConnection conn(db_path);
+    sqlite3pp::query qry(conn_->db(), sql.toUtf8().constData());
 
-    sqlite3pp::query qry(conn.getDB(), sql);
+    if (!args.isNull()) binder(&qry, args);
 
-    if (!args.isEmpty())
-      DB::binder(&qry, args);
-
-    QList<QStringList> rows;
+    QList<QVariantList> rows;
     for (sqlite3pp::query::iterator i = qry.begin(); i != qry.end(); ++i) {
-      QStringList row;
+      QVariantList row;
       for (int j = 0; j < qry.column_count(); ++j)
         row << (*i).get<char const*>(j);
       rows << row;
     }
     return rows;
   } catch (const std::exception& e) {
-    QLOG_DEBUG() << "error running query: ";
-    QLOG_DEBUG() << e.what();
-    return QList<QStringList>();
+    QLOG_DEBUG() << "error running query:" << e.what();
+    return QList<QVariantList>();
   }
 }
 
-void DB::binder(sqlite3pp::statement* stmnt, const QVariantList& values) {
-  QList<QByteArray> items;
-  // whatever the bind value is can't go out of scope before the execute()
-  for (int i = 0; i < values.length(); ++i) {
-    items << values[i].toByteArray();
-    if (items[i].isEmpty())
-      stmnt->bind(i + 1);
-    else
-      stmnt->bind(i + 1, items[i].data(), sqlite3pp::nocopy);
+void Database::bind_value(sqlite3pp::statement* stmnt, int pos,
+                          const QVariant& value) {
+  if (value.isNull()) {
+    stmnt->bind(pos);
+  } else {
+    switch (value.type()) {
+      case QMetaType::Int: {
+        stmnt->bind(pos, value.toInt());
+        break;
+      }
+      case QMetaType::Double: {
+        stmnt->bind(pos, value.toDouble());
+        break;
+      }
+      default: {
+        stmnt->bind(pos, value.toString().toUtf8().constData(),
+                    sqlite3pp::copy);
+        break;
+      }
+    }
   }
 }
 
-void DB::bindAndRun(const QString& sql, const QVariant& value) {
-  QVariantList values;
-  values << value;
-  DB::bindAndRun(sql, values);
+void Database::binder(sqlite3pp::statement* stmnt, const QVariant& values) {
+  if (values.isNull()) return;
+
+  if (values.canConvert<QVariantList>()) {
+    int pos = 1;
+    for (const QVariant& value : qvariant_cast<QVariantList>(values)) {
+      this->bind_value(stmnt, pos, value);
+      pos++;
+    }
+  } else {
+    this->bind_value(stmnt, 1, values);
+  }
 }
 
-void DB::bindAndRun(sqlite3pp::command* cmd, const QVariant& value) {
-  QVariantList values;
-  values << value;
-  DB::bindAndRun(cmd, values);
-}
-
-void DB::bindAndRun(const QString& sql, const QVariantList& values) {
+void Database::bindAndRun(const QString& sql, const QVariant& values) {
   try {
-    DBConnection conn(db_path);
-    sqlite3pp::transaction xct(conn.getDB());
+    sqlite3pp::transaction xct(conn_->db());
     {
-      sqlite3pp::command cmd(conn.getDB(), sql.toUtf8().data());
-      DB::bindAndRun(&cmd, values);
+      sqlite3pp::command cmd(conn_->db(), sql.toUtf8().constData());
+      bindAndRun(&cmd, values);
     }
     QMutexLocker locker(&db_lock);
     xct.commit();
   } catch (const std::exception& e) {
-    QLOG_ERROR() << "error inserting data: ";
-    QLOG_ERROR() << e.what();
+    QLOG_ERROR() << "error inserting data:" << e.what();
   }
 }
 
-void DB::bindAndRun(sqlite3pp::command* cmd, const QVariantList& values) {
+void Database::bindAndRun(sqlite3pp::command* cmd, const QVariant& values) {
   try {
-    DB::binder(cmd, values);
+    binder(cmd, values);
     cmd->execute();
     cmd->clear_bindings();
     cmd->reset();
   } catch (const std::exception& e) {
-    QLOG_ERROR() << "error inserting data: ";
-    QLOG_ERROR() << e.what();
+    QLOG_ERROR() << "error inserting data:" << e.what();
   }
 }
 
-Text* DB::getTextWithQuery(const QString& query) {
-  try {
-    QString sql = query;
+std::shared_ptr<Text> Database::getTextWithQuery(const QString& query,
+                                                 const QVariant& args) {
+  QVariantList row = getOneRow(query, args);
 
-    QStringList row = getOneRow(sql.toUtf8().data());
+  if (row.isEmpty()) return std::make_shared<Text>();
 
-    if (row.isEmpty())
-      return new Text();
+  QVariantList row2 =
+      getOneRow("SELECT id FROM text WHERE source = ? LIMIT 1", row[1].toInt());
 
-    QStringList data;
-    data << row[0];  // id
-    data << row[1];  // source
-    data << row[2];  // text
-    data << row[3];  // name
+  int offset = row2.isEmpty() ? 0 : row2[0].toInt() - 1;
 
-    QStringList row2 = getOneRow(
-      "SELECT rowid FROM text WHERE source = ? LIMIT 1", row[1].toInt());
-
-    if (row2.isEmpty())
-      return new Text();
-
-    int offset = row2[0].toInt() - 1;
-    data << QString::number(row[4].toInt() - offset);  // text number
-
-    data << row[5];
-    if (data[5].isEmpty())
-      data[5] = "0";
-    return new Text(
-      data[0].toUtf8(), data[1].toInt(), data[2], data[3], data[4].toInt(),
-      data[5].toInt());
-  }
-  catch (const std::exception& e) {
-    QLOG_ERROR() << e.what();
-    return new Text();
-  }
+  return std::make_shared<Text>(row[0].toInt(), row[1].toInt(),
+                                row[2].toString(), row[3].toString(),
+                                row[0].toInt() - offset, row[4].toInt());
 }

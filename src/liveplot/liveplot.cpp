@@ -5,12 +5,10 @@
 #include <qcustomplot.h>
 #include <QsLog.h>
 
-LivePlot::LivePlot(QWidget *parent) : QCustomPlot(parent),
-  goColor("#00FF00"), stopColor("#FF0000") {
-  connect(this, &LivePlot::colorChanged,
-          this, &LivePlot::updateColors);
-  connect(this, &LivePlot::colorChanged,
-          this, &LivePlot::updatePlotTargetLine);
+LivePlot::LivePlot(QWidget* parent)
+    : QCustomPlot(parent), goColor("#00FF00"), stopColor("#FF0000") {
+  connect(this, &LivePlot::colorChanged, this, &LivePlot::updateColors);
+  connect(this, &LivePlot::colorChanged, this, &LivePlot::updatePlotTargetLine);
   // create the two graphs in the plot
   this->addLayer("topLayer", this->layer("main"), QCustomPlot::limAbove);
   this->addLayer("lineLayer", this->layer("grid"), QCustomPlot::limAbove);
@@ -60,9 +58,7 @@ void LivePlot::showGraphs() {
   this->replot();
 }
 
-void LivePlot::setPlotVisible(int s) {
-  this->setVisible(s > 0);
-}
+void LivePlot::setPlotVisible(int s) { this->setVisible(s > 0); }
 
 void LivePlot::updateColors() {
   this->graph(WPM_PLOT)->setPen(QPen(wpmLineColor, 3));

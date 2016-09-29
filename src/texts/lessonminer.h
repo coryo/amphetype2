@@ -8,7 +8,6 @@
 #include <QRegularExpression>
 #include <QFile>
 
-
 class LessonMiner : public QObject {
   Q_OBJECT
 

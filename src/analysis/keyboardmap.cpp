@@ -21,83 +21,99 @@
 
 #include "database/db.h"
 
-
-KeyboardMap::KeyboardMap(QWidget *parent) : QGraphicsView(parent),
-  keySpacing(3),
-  keySize(24),
-  dataToMap("frequency") {
-
+KeyboardMap::KeyboardMap(QWidget* parent)
+    : QGraphicsView(parent),
+      keySpacing(3),
+      keySize(24),
+      dataToMap("frequency") {
   QSettings s;
 
   this->setKeyboard(
-    static_cast<KeyboardLayout>(s.value("keyboard_layout", 0).toInt()),
-    static_cast<KeyboardStandard>(s.value("keyboard_standard", 0).toInt()));
+      static_cast<Amphetype::Layout>(s.value("keyboard_layout", 0).toInt()),
+      static_cast<Amphetype::Standard>(s.value("keyboard_standard", 0).toInt()));
   this->keyboardScene = new QGraphicsScene;
   this->setScene(this->keyboardScene);
   connect(this, &KeyboardMap::dataChanged, this, &KeyboardMap::addKeys);
   this->setRenderHints(QPainter::Antialiasing);
 }
 
-KeyboardMap::~KeyboardMap() {
-  delete this->keyboardScene;
-}
+KeyboardMap::~KeyboardMap() { delete this->keyboardScene; }
 
-void KeyboardMap::setKeyboard(KeyboardLayout layout, KeyboardStandard standard) {
+void KeyboardMap::setKeyboard(Amphetype::Layout layout,
+                              Amphetype::Standard standard) {
   this->keyboardLayout = layout;
   this->keyboardStandard = standard;
   this->loadLayout(layout);
   emit dataChanged();
 }
 
-void KeyboardMap::setLayout(KeyboardLayout layout) {
+void KeyboardMap::setLayout(Amphetype::Layout layout) {
   this->keyboardLayout = layout;
   this->loadLayout(layout);
   emit dataChanged();
 }
 
-void KeyboardMap::setStandard(KeyboardStandard standard) {
+void KeyboardMap::setStandard(Amphetype::Standard standard) {
   this->keyboardStandard = standard;
   emit dataChanged();
 }
 
-void KeyboardMap::setData(const QString & data) {
+void KeyboardMap::setData(const QString& data) {
   this->dataToMap = data;
   emit dataChanged();
 }
 
 void KeyboardMap::updateData() {
-  this->statsData =  DB::getKeyFrequency();
+  Database db;
+  this->statsData = db.getKeyFrequency();
   emit dataChanged();
 }
 
-void KeyboardMap::addKeys() {
+void KeyboardMap::mousePressEvent(QMouseEvent* event) {
+  if (event->button() == Qt::LeftButton)
+    this->drawKeyboard(Amphetype::Modifier::Shift);
+  else
+    this->drawKeyboard(Amphetype::Modifier::AltGr);
+}
+
+void KeyboardMap::mouseReleaseEvent(QMouseEvent* event) {
+  this->drawKeyboard(Amphetype::Modifier::None);
+}
+
+void KeyboardMap::addKeys() { this->drawKeyboard(Amphetype::Modifier::None); }
+
+void KeyboardMap::drawKeyboard(Amphetype::Modifier modifier) {
   this->keyboardScene->clear();
-  if (this->statsData.isEmpty())
-    return;
+  if (this->statsData.isEmpty()) return;
 
   double max = 0;
   double min = std::numeric_limits<double>::max();
 
   // find the min and max of the data
-  foreach (auto const & value, this->statsData) {
-    if (value[this->dataToMap] > max)
-      max = value[this->dataToMap].toDouble();
+  foreach (auto const& value, this->statsData) {
+    if (value[this->dataToMap] > max) max = value[this->dataToMap].toDouble();
     if (value[this->dataToMap] > 0 && value[this->dataToMap] < min)
       min = value[this->dataToMap].toDouble();
   }
-  this->drawKeyboard(this->statsData, false, min, max, 0, 0);
-  this->drawKeyboard(this->statsData, true, min, max, 0,
-                     6 * (this->keySize + this->keySpacing));
+  this->drawKeyboard(this->statsData, modifier, min, max, 0, 0);
 }
 
-void KeyboardMap::drawKeyboard(const QHash<QChar, QHash<QString, QVariant>>& data,
-                               bool shift, qreal min, qreal max,
-                               qreal x, qreal y) {
+void KeyboardMap::drawKeyboard(
+    const QHash<QChar, QHash<QString, QVariant>>& data,
+    Amphetype::Modifier modifier, qreal min, qreal max, qreal x, qreal y) {
   QStringList* keys;
-  if (shift)
-    keys = &(this->keyboardKeys[1]);
-  else
-    keys = &(this->keyboardKeys[0]);
+  switch (modifier) {
+    case Amphetype::Modifier::Shift:
+      keys = &(this->keyboardKeys[1]);
+      break;
+    case Amphetype::Modifier::AltGr:
+      keys = &(this->keyboardKeys[2]);
+      break;
+    case Amphetype::Modifier::None:
+    default:
+      keys = &(this->keyboardKeys[0]);
+      break;
+  }
 
   for (int row = 0; row < 5; row++) {
     double sum = 0;
@@ -105,27 +121,29 @@ void KeyboardMap::drawKeyboard(const QHash<QChar, QHash<QString, QVariant>>& dat
       qreal key_size;
 
       int column_offset;
-      switch(this->keyboardStandard) {
-        case KeyboardStandard::ANSI:
-          column_offset = Standards::ansi_offset[row];
-          key_size = Standards::ansi_keys[row][column];
+      switch (this->keyboardStandard) {
+        case Amphetype::Standard::ANSI:
+          column_offset = Amphetype::Standards::ansi_offset[row];
+          key_size = Amphetype::Standards::ansi_keys[row][column];
           break;
-        case KeyboardStandard::ISO:
-          column_offset = Standards::iso_offset[row];
-          key_size = Standards::iso_keys[row][column];
+        case Amphetype::Standard::ISO:
+          column_offset = Amphetype::Standards::iso_offset[row];
+          key_size = Amphetype::Standards::iso_keys[row][column];
           break;
       }
-      if (key_size == -1)
-        continue;
+      if (key_size == -1) continue;
 
       QChar key;
-      if (column - column_offset >=0 && column - column_offset < (*keys)[row].size())
+      if (column - column_offset >= 0 &&
+          column - column_offset < (*keys)[row].size())
         key = (*keys)[row][column - column_offset];
+
+      bool display_key_label = (!key.isNull() && key != QChar::Tabulation);
 
       QBrush brush;
       QPen pen(brush, 0);
       QColor color;
-      if (!key.isNull()) {
+      if (display_key_label) {
         brush.setStyle(Qt::SolidPattern);
         qreal value = data[key][this->dataToMap].toDouble();
 
@@ -134,7 +152,8 @@ void KeyboardMap::drawKeyboard(const QHash<QChar, QHash<QString, QVariant>>& dat
           color.setRgb(174, 86, 238);
           qreal alpha;
           if (this->dataToMap == "accuracy") {
-            alpha = -1.0 * this->scaleToRange2(value, 255.0, min, max, 100) + 255.0;
+            alpha =
+                -1.0 * this->scaleToRange2(value, 255.0, min, max, 100) + 255.0;
           } else if (this->dataToMap == "viscosity") {
             alpha = qMin(255.0, 2 * this->scaleToRange(value, 255.0, min, max));
           } else {
@@ -159,63 +178,58 @@ void KeyboardMap::drawKeyboard(const QHash<QChar, QHash<QString, QVariant>>& dat
       // add the key
       QPainterPath path;
       path.addRoundedRect(
-        QRectF(
-          x + (this->keySize * sum) + (qFloor(sum) * this->keySpacing),
-          y + row * this->keySize + (row * this->keySpacing),
-          this->keySize * key_size + widthOffset * this->keySpacing,
-          this->keySize
-        ),
-        this->keySize / 4, this->keySize / 4);
+          QRectF(x + (this->keySize * sum) + (qFloor(sum) * this->keySpacing),
+                 y + row * this->keySize + (row * this->keySpacing),
+                 this->keySize * key_size + widthOffset * this->keySpacing,
+                 this->keySize),
+          this->keySize / 4, this->keySize / 4);
 
       auto keyRect = this->keyboardScene->addPath(path, pen, brush);
 
-      if (!key.isNull()) {
+      if (display_key_label) {
         // add the text on the key
-        QString display;
-        if (key == QChar::Space)
-          display = "space";
-        else
-          display = key;
-        QGraphicsTextItem* textItem = this->keyboardScene->addText(
-          display);
-        textItem->setPos(
-          keyRect->boundingRect().center() - QPointF(
-            textItem->boundingRect().width() / 2,
-            textItem->boundingRect().height() / 2));
+        QString display = (key == QChar::Space) ? "space" : QString(key);
+        QGraphicsTextItem* textItem = this->keyboardScene->addText(display);
+        textItem->setPos(keyRect->boundingRect().center() -
+                         QPointF(textItem->boundingRect().width() / 2,
+                                 textItem->boundingRect().height() / 2));
       }
 
       sum += key_size;
     }
   }
+  this->adjustSize();
 }
 
 qreal KeyboardMap::scaleToRange(qreal x, qreal range, qreal min, qreal max) {
   return range - range * (1.0 - qAbs(x - min) / qAbs(max - min));
 }
 
-qreal KeyboardMap::scaleToRange2(qreal x, qreal range, qreal min, qreal max, qreal factor) {
-  return range * ((qPow(factor, qAbs(x-min) / qAbs(max-min)) - 1) / (factor - 1));
+qreal KeyboardMap::scaleToRange2(qreal x, qreal range, qreal min, qreal max,
+                                 qreal factor) {
+  return range *
+         ((qPow(factor, qAbs(x - min) / qAbs(max - min)) - 1) / (factor - 1));
 }
 
-void KeyboardMap::loadLayout(KeyboardLayout layout) {
+void KeyboardMap::loadLayout(Amphetype::Layout layout) {
   QString filename;
-  switch(this->keyboardLayout) {
-    case KeyboardLayout::QWERTY:
+  switch (this->keyboardLayout) {
+    case Amphetype::Layout::QWERTY:
       filename = ":/keyboard_layouts/qwerty.layout";
       break;
-    case KeyboardLayout::QWERTZ:
+    case Amphetype::Layout::QWERTZ:
       filename = ":/keyboard_layouts/qwertz.layout";
       break;
-    case KeyboardLayout::AZERTY:
+    case Amphetype::Layout::AZERTY:
       filename = ":/keyboard_layouts/azerty.layout";
       break;
-    case KeyboardLayout::WORKMAN:
+    case Amphetype::Layout::WORKMAN:
       filename = ":/keyboard_layouts/workman.layout";
       break;
-    case KeyboardLayout::COLEMAK:
+    case Amphetype::Layout::COLEMAK:
       filename = ":/keyboard_layouts/colemak.layout";
       break;
-    case KeyboardLayout::DVORAK:
+    case Amphetype::Layout::DVORAK:
       filename = ":/keyboard_layouts/dvorak.layout";
       break;
   }
@@ -243,5 +257,8 @@ void KeyboardMap::loadLayout(KeyboardLayout layout) {
     line_number++;
   }
   output << keys_standard << keys_shift << keys_altgr;
+  QLOG_DEBUG() << output[0];
+  QLOG_DEBUG() << output[1];
+  QLOG_DEBUG() << output[2];
   this->keyboardKeys = output;
 }

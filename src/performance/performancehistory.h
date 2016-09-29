@@ -6,6 +6,8 @@
 #include <QModelIndex>
 #include <QStandardItemModel>
 
+#include <memory>
+
 #include <qcustomplot.h>
 
 #include "texts/text.h"
@@ -16,27 +18,22 @@ class PerformanceHistory;
 
 class PerformanceHistory : public QWidget {
   Q_OBJECT
-  Q_PROPERTY(QColor wpmLineColor MEMBER wpmLineColor
-             NOTIFY colorChanged)
-  Q_PROPERTY(QColor accLineColor MEMBER accLineColor
-             NOTIFY colorChanged)
-  Q_PROPERTY(QColor visLineColor MEMBER visLineColor
-             NOTIFY colorChanged)
-  Q_PROPERTY(QColor smaLineColor MEMBER smaLineColor
-             NOTIFY colorChanged)
-  Q_PROPERTY(QColor targetLineColor MEMBER targetLineColor
-             NOTIFY colorChanged)
-  Q_PROPERTY(QColor plotBackgroundColor MEMBER plotBackgroundColor
-             NOTIFY colorChanged)
-  Q_PROPERTY(QColor plotForegroundColor MEMBER plotForegroundColor
-             NOTIFY colorChanged)
+  Q_PROPERTY(QColor wpmLineColor MEMBER wpmLineColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor accLineColor MEMBER accLineColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor visLineColor MEMBER visLineColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor smaLineColor MEMBER smaLineColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor targetLineColor MEMBER targetLineColor NOTIFY colorChanged)
+  Q_PROPERTY(
+      QColor plotBackgroundColor MEMBER plotBackgroundColor NOTIFY colorChanged)
+  Q_PROPERTY(
+      QColor plotForegroundColor MEMBER plotForegroundColor NOTIFY colorChanged)
 
  public:
   explicit PerformanceHistory(QWidget* parent = 0);
   ~PerformanceHistory();
 
  private:
-  void contextMenu(const QPoint &);
+  void contextMenu(const QPoint&);
   QCPGraph* dampen(QCPGraph*, int n = 10);
 
   Ui::PerformanceHistory* ui;
@@ -51,7 +48,7 @@ class PerformanceHistory : public QWidget {
   QColor plotForegroundColor;
 
  signals:
-  void setText(Text*);
+  void setText(std::shared_ptr<Text>);
   void gotoTab(int);
   void colorChanged();
   void settingsChanged();

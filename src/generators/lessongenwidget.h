@@ -23,7 +23,7 @@ class LessonGenWidget : public QWidget {
   void newLesson();
 
  public slots:
-  void addItems(QStringList&);
+  void addItems(QStringList &);
 };
 
 #endif  // SRC_GENERATORS_LESSONGENWIDGET_H_

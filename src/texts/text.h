@@ -8,12 +8,11 @@ class Text {
  public:
   Text();
   explicit Text(Text*);
-  Text(const QByteArray&, int, const QString&, int type = 0);
-  Text(const QByteArray&, int, const QString&, const QString&, int,
-       int type = 0);
+  Text(int, int, const QString&, int type = 0);
+  Text(int, int, const QString&, const QString&, int, int type = 0);
   ~Text();
 
-  const QByteArray& getId() const;
+  int getId() const;
   int getSource() const;
   const QString& getText() const;
   const QString& getSourceName() const;
@@ -21,7 +20,7 @@ class Text {
   int getType() const;
 
  private:
-  QByteArray id;
+  int id;
   int source;
   QString text;
   QString sourceName;

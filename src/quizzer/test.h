@@ -11,14 +11,15 @@
 #include <QObject>
 #include <QKeyEvent>
 
-#include "texts/text.h"
+#include <memory>
 
+#include "texts/text.h"
 
 class Test : public QObject {
   Q_OBJECT
 
  public:
-  explicit Test(Text*);
+  explicit Test(const std::shared_ptr<Text>&);
   ~Test();
   QHash<QPair<QChar, QChar>, int> getMistakes() const;
   double getFinalWpm() { return this->finalWPM; }
@@ -34,7 +35,7 @@ class Test : public QObject {
   void saveResult(const QString&, double, double, double);
   void finish();
   void addMistake(int, const QChar&, const QChar&);
-  Text* text;
+  std::shared_ptr<Text> text;
   bool started;
   bool finished;
   int currentPos;
@@ -59,8 +60,9 @@ class Test : public QObject {
  signals:
   void testStarted(int);
   void done(double, double, double);
-  void cancel(Test*);
-  void restart(Test*);
+  void cancel();
+  void restart();
+  void deleteable();
 
   void newResult();
   void newStatistics();

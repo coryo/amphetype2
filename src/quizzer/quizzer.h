@@ -4,10 +4,11 @@
 #include <QWidget>
 #include <QTimer>
 #include <QTime>
-#include <QColor>
 #include <QString>
 #include <QThread>
-#include <QStringList>
+#include <QFocusEvent>
+
+#include <memory>
 
 #include "texts/textmanager.h"
 #include "texts/text.h"
@@ -26,20 +27,21 @@ class Quizzer : public QWidget {
  public:
   explicit Quizzer(QWidget *parent = 0);
   ~Quizzer();
-  Typer* getTyper() const;
-  void alertText(const char *);
+  Typer *getTyper() const;
 
  private:
-  Ui::Quizzer* ui;
-  Text* text;
+  void focusInEvent(QFocusEvent *event);
+  void focusOutEvent(QFocusEvent *event);
+  Ui::Quizzer *ui;
+  std::shared_ptr<Text> text;
   QTimer lessonTimer;
   QTime lessonTime;
   QString goColor;
   QString stopColor;
-  QThread testThread;
 
  signals:
-  void wantText(Text*, SelectionMethod = SelectionMethod::None);
+  void wantText(const std::shared_ptr<Text> &,
+                Amphetype::SelectionMethod = Amphetype::SelectionMethod::None);
   void colorChanged();
   void newResult();
   void newStatistics();
@@ -50,18 +52,18 @@ class Quizzer : public QWidget {
   void testStarted(int);
 
  public slots:
-  void setText(Text *);
-  void tabActive(int);
+  void setText(const std::shared_ptr<Text> &);
   void setTyperFont();
   void updateTyperDisplay();
 
  private slots:
+  void alertText(const char *);
   void beginTest(int);
   void done(double, double, double);
 
   void setPreviousResultText(double, double);
-  void cancelled(Test*);
-  void restart(Test*);
+  void cancelled();
+  void restart();
 
   void timerLabelUpdate();
   void timerLabelReset();

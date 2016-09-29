@@ -4,15 +4,17 @@
 
 #include <utility>
 
-
-TyperDisplay::TyperDisplay(QWidget* parent) :
-  QTextEdit(parent),
-  testPosition(0),
-  cursorPosition(0),
-  errorColor("#995555"),
-  correctColor("#79B221"),
-  highlightedTextColor("#000000"),
-  cols(80) {}
+TyperDisplay::TyperDisplay(QWidget* parent)
+    : QTextEdit(parent),
+      testPosition(0),
+      cursorPosition(0),
+      errorColor("#995555"),
+      correctColor("#79B221"),
+      highlightedTextColor("#000000"),
+      cols(80) {
+  this->setFocusPolicy(Qt::NoFocus);
+  this->setReadOnly(true);
+}
 
 void TyperDisplay::setTextTarget(const QString& t) {
   QSettings s;
@@ -35,24 +37,21 @@ void TyperDisplay::moveCursor(int testPosition, int cursorPosition) {
     pos = this->posToListPos(testPosition);
     if (cursorPosition >= originalText.length()) {
       int diff = cursorPosition - (originalText.length() - 1);
-      for (int i = 0; i < diff; i++)
-        wrapped.last().append("&nbsp;");
+      for (int i = 0; i < diff; i++) wrapped.last().append("&nbsp;");
       pos2 = {wrapped.size() - 1, wrapped.last().size() - 1};
     } else {
       pos2 = this->posToListPos(cursorPosition);
     }
     wrapped[pos2.first].insert(pos2.second + 1, "</span>");
-    wrapped[pos.first].insert(
-      pos.second,
-      "<span style='color:" + highlightedTextColor +
-      "; background-color:" + errorColor + "'>");
+    wrapped[pos.first].insert(pos.second,
+                              "<span style='color:" + highlightedTextColor +
+                                  "; background-color:" + errorColor + "'>");
   } else {
     pos = this->posToListPos(testPosition);
     wrapped[pos.first].insert(pos.second + 1, "</span>");
-    wrapped[pos.first].insert(
-      pos.second,
-      "<span style='color:" + highlightedTextColor +
-      "; background-color:" + correctColor + "'>");
+    wrapped[pos.first].insert(pos.second,
+                              "<span style='color:" + highlightedTextColor +
+                                  "; background-color:" + correctColor + "'>");
   }
 
   this->setText(wrapped.join("<br>"));
@@ -61,8 +60,7 @@ void TyperDisplay::moveCursor(int testPosition, int cursorPosition) {
 }
 
 void TyperDisplay::wordWrap(int w) {
-  if (this->originalText.isEmpty())
-    return;
+  if (this->originalText.isEmpty()) return;
   this->wrappedText.clear();
 
   QSettings s;

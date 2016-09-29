@@ -15,18 +15,19 @@ class StatisticsWidget : public QWidget {
   Q_OBJECT
 
  public:
-  explicit StatisticsWidget(QWidget *parent = 0);
+  explicit StatisticsWidget(QWidget* parent = 0);
   KeyboardMap* getKeyboardMap() const;
   ~StatisticsWidget();
 
  private:
-  Ui::StatisticsWidget *ui;
+  Ui::StatisticsWidget* ui;
   QStandardItemModel* model;
 
  signals:
   void newItems(QStringList&);
 
  public slots:
+  void update();
   void populateStatistics();
 
  private slots:

@@ -13,27 +13,29 @@
 #include "texts/text.h"
 #include "database/db.h"
 
-Test::Test(Text* t) :
-  text(new Text(t)),
-  started(false), finished(false),
-  currentPos(0),
-  maxWPM(0), maxAPM(0),
-  minWPM(std::numeric_limits<double>::max()),
-  minAPM(std::numeric_limits<double>::max()),
-  apmWindow(5),
-  finalWPM(-1),
-  finalACC(-1),
-  finalVIS(-1),
-  totalMs(0) {
+Test::Test(const std::shared_ptr<Text>& t)
+    : text(t),
+      started(false),
+      finished(false),
+      currentPos(0),
+      maxWPM(0),
+      maxAPM(0),
+      minWPM(std::numeric_limits<double>::max()),
+      minAPM(std::numeric_limits<double>::max()),
+      apmWindow(5),
+      finalWPM(-1),
+      finalACC(-1),
+      finalVIS(-1),
+      totalMs(0) {
   msBetween.resize(t->getText().length());
   timeAt.resize(t->getText().length());
   wpm.resize(t->getText().length());
+  connect(this, &Test::deleteable, this, &QObject::deleteLater);
+  connect(this, &Test::cancel, this, &QObject::deleteLater);
+  connect(this, &Test::restart, this, &QObject::deleteLater);
 }
 
-Test::~Test() {
-  QLOG_TRACE() << "deleting test";
-  delete this->text;
-}
+Test::~Test() { QLOG_TRACE() << "deleting test"; }
 
 int Test::msElapsed() const { return this->timer.elapsed(); }
 double Test::secondsElapsed() const { return this->msElapsed() / 1000.0; }
@@ -58,25 +60,25 @@ void Test::finish() {
   // tally mistakes
   int mistakes = this->mistakeCount();
   // calc accuracy
-  this->finalACC = 1.0 -
-    mistakes / static_cast<double>(this->text->getText().length());
+  this->finalACC =
+      1.0 - mistakes / static_cast<double>(this->text->getText().length());
   // viscocity
   double spc = (this->totalMs / 1000.0) /
-          this->text->getText().length();  // seconds per character
+               this->text->getText().length();  // seconds per character
   QVector<double> v;
   for (int i = 0; i < this->msBetween.size(); ++i) {
-    v << qPow((((this->msBetween.at(i)/1000.0)-spc)/spc), 2);
+    v << qPow((((this->msBetween.at(i) / 1000.0) - spc) / spc), 2);
   }
   double sum = 0.0;
-  for (double x : v)
-    sum += x;
+  for (double x : v) sum += x;
   this->finalVIS = sum / this->text->getText().length();
   this->finished = true;
 
   if (s.value("perf_logging").toBool()) {
+    Database db;
     QLOG_DEBUG() << "Test Complete. Adding result to database.";
-    DB::addResult(now_str, this->text, this->finalWPM,
-                  this->finalACC, this->finalVIS);
+    db.addResult(now_str, this->text, this->finalWPM, this->finalACC,
+                 this->finalVIS);
     emit done(this->finalWPM, this->finalACC, this->finalVIS);
     QLOG_DEBUG() << "done result.";
     emit newResult();
@@ -88,29 +90,24 @@ void Test::finish() {
     QLOG_DEBUG() << "Test Complete. Skipping results.";
     emit done(this->finalWPM, this->finalACC, this->finalVIS);
   }
-
-  this->deleteLater();
+  emit deleteable();
 }
 
 void Test::handleInput(const QString& currentText, int key,
                        Qt::KeyboardModifiers modifiers) {
-  if (this->text->getText().isEmpty())
-    return;
+  if (this->text->getText().isEmpty()) return;
 
   if (key == Qt::Key_Escape) {
-    emit restart(this);
+    emit restart();
     return;
-  } else if (key == Qt::Key_F1 || ((key == Qt::Key_1 || key == Qt::Key_Space)
-         && modifiers == Qt::ControlModifier)) {
-    emit cancel(this);
+  } else if (key == Qt::Key_F1 || ((key == Qt::Key_1 || key == Qt::Key_Space) &&
+                                   modifiers == Qt::ControlModifier)) {
+    emit cancel();
     return;
   }
 
-  if (key == Qt::Key_Shift ||
-    key == Qt::Key_Alt ||
-    key == Qt::Key_AltGr ||
-    key == Qt::Key_Control ||
-    key == Qt::Key_Meta) {
+  if (key == Qt::Key_Shift || key == Qt::Key_Alt || key == Qt::Key_AltGr ||
+      key == Qt::Key_Control || key == Qt::Key_Meta) {
     QLOG_TRACE() << "Ignoring key.";
     return;
   }
@@ -121,12 +118,12 @@ void Test::handleInput(const QString& currentText, int key,
   }
 
   QSettings s;
-  this->currentPos = std::min(currentText.length(),
-                              this->text->getText().length());
+  this->currentPos =
+      std::min(currentText.length(), this->text->getText().length());
 
   for (this->currentPos; this->currentPos >= -1; this->currentPos--) {
     if (QStringRef(&currentText, 0, this->currentPos) ==
-      QStringRef(&this->text->getText(), 0, this->currentPos)) {
+        QStringRef(&this->text->getText(), 0, this->currentPos)) {
       break;
     }
   }
@@ -140,34 +137,29 @@ void Test::handleInput(const QString& currentText, int key,
 
     if (this->currentPos > 1) {
       // store time between keys
-      this->msBetween[this->currentPos - 1] = this->timeAt[currentPos] -
-        this->timeAt[currentPos - 1];
+      this->msBetween[this->currentPos - 1] =
+          this->timeAt[currentPos] - this->timeAt[currentPos - 1];
       // store wpm
       this->wpm << 12.0 * ((this->currentPos) / this->secondsElapsed());
       QLOG_TRACE() << "pos:" << this->currentPos - 1 << currentPos
-                   << "ms between:"
-                   << this->msBetween[this->currentPos - 1]
-                   << "wpm:" <<this->wpm.last();
+                   << "ms between:" << this->msBetween[this->currentPos - 1]
+                   << "wpm:" << this->wpm.last();
 
       // check for new min/max wpm
-      if (this->wpm.last() > this->maxWPM)
-        this->maxWPM = this->wpm.last();
-      if (this->wpm.last() < this->minWPM)
-        this->minWPM = this->wpm.last();
+      if (this->wpm.last() > this->maxWPM) this->maxWPM = this->wpm.last();
+      if (this->wpm.last() < this->minWPM) this->minWPM = this->wpm.last();
     }
 
     if (this->currentPos > this->apmWindow) {
       // time since 1 window ago
-      int t = this->timeAt[currentPos] -
-        this->timeAt[currentPos - this->apmWindow];
+      int t =
+          this->timeAt[currentPos] - this->timeAt[currentPos - this->apmWindow];
 
       double apm = 12.0 * (this->apmWindow / (t / 1000.0));
 
       // check for new min/max apm
-      if (apm > this->maxAPM)
-        this->maxAPM = apm;
-      if (apm < this->minAPM)
-        this->minAPM = apm;
+      if (apm > this->maxAPM) this->maxAPM = apm;
+      if (apm < this->minAPM) this->minAPM = apm;
 
       emit newWpm(this->currentPos - 1, this->wpm.last());
       emit newApm(this->currentPos - 1, apm);
@@ -187,22 +179,21 @@ void Test::handleInput(const QString& currentText, int key,
   emit positionChanged(this->currentPos, currentText.length());
 
   // Mistake handling
-  if (this->currentPos < currentText.length()
-    && this->currentPos < this->text->getText().length()) {
+  if (this->currentPos < currentText.length() &&
+      this->currentPos < this->text->getText().length()) {
     if (key == Qt::Key_Backspace) {
       QLOG_DEBUG() << "ignoring backspace.";
       return;
     }
     if (currentText.length() - this->currentPos > 1) {
       QLOG_DEBUG() << currentText.length() - this->currentPos
-             << "ignoring repeat error.";
+                   << "ignoring repeat error.";
       return;
     }
     QLOG_DEBUG() << "Mistake" << currentText[this->currentPos] << "for"
-                 << this->text->getText()[this->currentPos]
-                 << "at" << this->currentPos;
-    this->addMistake(this->currentPos,
-                     this->text->getText()[this->currentPos],
+                 << this->text->getText()[this->currentPos] << "at"
+                 << this->currentPos;
+    this->addMistake(this->currentPos, this->text->getText()[this->currentPos],
                      currentText[this->currentPos]);
     emit mistake(this->currentPos);
   }
@@ -216,7 +207,7 @@ void Test::addMistake(int pos, const QChar& target, const QChar& mistake) {
 QHash<QPair<QChar, QChar>, int> Test::getMistakes() const {
   QHash<QPair<QChar, QChar>, int> mis;
 
-  for (auto const & pair : this->mistakeList) {
+  for (auto const& pair : this->mistakeList) {
     if (mis.contains(pair))
       mis.insert(pair, mis.value(pair) + 1);
     else
@@ -250,41 +241,36 @@ void Test::saveResult(const QString& now_str, double wpm, double accuracy,
     // time isn't valid for char 0
     if (i > 0) {
       stats.insert(c, this->msBetween.at(i) / 1000.0);
-      visc.insert(
-        c,
-        qPow((((this->msBetween.at(i) / 1000.0) - spc) / spc), 2));
+      visc.insert(c, qPow((((this->msBetween.at(i) / 1000.0) - spc) / spc), 2));
     }
     // add the mistake to the key
-    if (this->mistakes.contains(i))
-      mistakeCount.insert(c, i);
+    if (this->mistakes.contains(i)) mistakeCount.insert(c, i);
   }
   // trigrams
   for (int i = 0; i < this->text->getText().length() - 2; ++i) {
     // the trigram as a qstringref
     QStringRef tri(&(this->text->getText()), i, 3);
     start = i;
-    end   = i + 3;
+    end = i + 3;
 
     perch = 0;
     visco = 0;
     // for each character in the tri
     for (int j = start; j < end; ++j) {
       // add a mistake to the trigram, if it had one
-      if (this->mistakes.contains(j))
-        mistakeCount.insert(tri, j);
+      if (this->mistakes.contains(j)) mistakeCount.insert(tri, j);
       // sum the times for the chracters in the tri
       perch += this->msBetween.at(j);
     }
     if (i > 0) {
       // average time per key
-      perch = perch / static_cast<double>(end-start);
+      perch = perch / static_cast<double>(end - start);
       // seconds per character
       tspc = perch / 1000.0;
       // get the average viscosity
       for (int j = start; j < end; ++j)
-        visco += qPow(
-          ((this->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
-      visco = visco/(end-start);
+        visco += qPow(((this->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
+      visco = visco / (end - start);
 
       stats.insert(tri, tspc);
       visc.insert(tri, visco);
@@ -299,8 +285,7 @@ void Test::saveResult(const QString& now_str, double wpm, double accuracy,
 
     // ignore matches of 3characters of less
     int length = match.capturedLength();
-    if (length <= 3)
-      continue;
+    if (length <= 3) continue;
 
     // start and end pos of the word in the original text
     start = match.capturedStart();
@@ -313,24 +298,24 @@ void Test::saveResult(const QString& now_str, double wpm, double accuracy,
     visco = 0;
     // for each character in the word
     for (int j = start; j < end; ++j) {
-      if (this->mistakes.contains(j))
-        mistakeCount.insert(word, j);
+      if (this->mistakes.contains(j)) mistakeCount.insert(word, j);
       perch += this->msBetween.at(j);
     }
     perch = perch / static_cast<double>(end - start);
 
     tspc = perch / 1000.0;
     for (int j = start; j < end; ++j)
-      visco += qPow(((this->msBetween.at(j)/ 1000.0 - tspc) / tspc), 2);
-    visco = visco/(end-start);
+      visco += qPow(((this->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
+    visco = visco / (end - start);
 
     stats.insert(word, tspc);
     visc.insert(word, visco);
   }
 
   // // add stuff to the database
+  Database db;
   QLOG_DEBUG() << "Adding statistics,";
-  DB::addStatistics(now_str, stats, visc, mistakeCount);
+  db.addStatistics(stats, visc, mistakeCount);
   QLOG_DEBUG() << "Adding mistakes";
-  DB::addMistakes(now_str, this);
+  db.addMistakes(this);
 }

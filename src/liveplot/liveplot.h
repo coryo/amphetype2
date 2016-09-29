@@ -8,16 +8,13 @@
 
 class LivePlot : public QCustomPlot {
   Q_OBJECT
-  Q_PROPERTY(QColor wpmLineColor MEMBER wpmLineColor
-             NOTIFY colorChanged)
-  Q_PROPERTY(QColor apmLineColor MEMBER apmLineColor
-             NOTIFY colorChanged)
-  Q_PROPERTY(QColor targetLineColor MEMBER targetLineColor
-             NOTIFY colorChanged)
-  Q_PROPERTY(QColor plotBackgroundColor MEMBER plotBackgroundColor
-             NOTIFY colorChanged)
-  Q_PROPERTY(QColor plotForegroundColor MEMBER plotForegroundColor
-             NOTIFY colorChanged)
+  Q_PROPERTY(QColor wpmLineColor MEMBER wpmLineColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor apmLineColor MEMBER apmLineColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor targetLineColor MEMBER targetLineColor NOTIFY colorChanged)
+  Q_PROPERTY(
+      QColor plotBackgroundColor MEMBER plotBackgroundColor NOTIFY colorChanged)
+  Q_PROPERTY(
+      QColor plotForegroundColor MEMBER plotForegroundColor NOTIFY colorChanged)
 
  public:
   explicit LivePlot(QWidget* parent = 0);

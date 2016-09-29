@@ -10,16 +10,14 @@
 
 #include <QsLog.h>
 
-LessonGenWidget::LessonGenWidget(QWidget *parent)
-  : QWidget(parent), ui(new Ui::LessonGenWidget) {
+LessonGenWidget::LessonGenWidget(QWidget* parent)
+    : QWidget(parent), ui(new Ui::LessonGenWidget) {
   ui->setupUi(this);
-  connect(ui->generateButton, &QPushButton::pressed,
-          this,               &LessonGenWidget::generate);
+  connect(ui->generateButton, &QPushButton::pressed, this,
+          &LessonGenWidget::generate);
 }
 
-LessonGenWidget::~LessonGenWidget() {
-  delete ui;
-}
+LessonGenWidget::~LessonGenWidget() { delete ui; }
 
 void LessonGenWidget::addItems(QStringList& items) {
   QString input = items.join("|");
@@ -32,13 +30,11 @@ void LessonGenWidget::generate() {
   int targetCount = 5;
   QString plainText = ui->inputTextEdit->toPlainText();
 
-  if (plainText.isEmpty() || plainText.isNull())
-    return;
+  if (plainText.isEmpty() || plainText.isNull()) return;
 
   QStringList list = plainText.replace('\n', "").split("|");
 
-  if (list.isEmpty())
-    return;
+  if (list.isEmpty()) return;
 
   std::random_device rd;
   std::mt19937 g(rd());
@@ -48,31 +44,25 @@ void LessonGenWidget::generate() {
     QString lesson;
     while (lesson.length() < targetLength) {
       std::shuffle(list.begin(), list.end(), g);
-      for (auto const & str : list) {
-        if (lesson.length() >= targetLength)
-          break;
-        QString corrected = QString(str)
-          .replace("␣", " ")
-          .trimmed()
-          .replace("↵", "\n");
-        if (corrected.isEmpty() || corrected.isNull())
-          return;
+      for (auto const& str : list) {
+        if (lesson.length() >= targetLength) break;
+        QString corrected =
+            QString(str).replace("␣", " ").trimmed().replace("↵", "\n");
+        if (corrected.isEmpty() || corrected.isNull()) return;
 
-        if (!lesson.isEmpty()
-          && !lesson.endsWith(QChar::Space)
-          && !lesson.endsWith('\n')
-          && !corrected.startsWith(QChar::Space)) {
+        if (!lesson.isEmpty() && !lesson.endsWith(QChar::Space) &&
+            !lesson.endsWith('\n') && !corrected.startsWith(QChar::Space)) {
           lesson.append(QChar::Space);
         }
         lesson.append(corrected);
       }
     }
-    QLOG_DEBUG() << lesson;
     lessons << lesson;
   }
 
-  int source = DB::getSource(QString("Lesson Gen: %1")
-    .arg(now.toString("MMM d hh:mm:ss.zzz")), 1, 1);
-  DB::addTexts(source, lessons);
+  Database db;
+  int source = db.getSource(
+      QString("Lesson Gen: %1").arg(now.toString("MMM d hh:mm:ss.zzz")), 1, 1);
+  db.addTexts(source, lessons);
   emit newLesson();
 }

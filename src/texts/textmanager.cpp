@@ -8,30 +8,27 @@
 #include <QModelIndex>
 #include <QStandardItemModel>
 #include <QInputDialog>
+#include <QMenu>
+#include <QAction>
+#include <QCursor>
 
 #include <QsLog.h>
 
 #include "ui_textmanager.h"
+#include "texts/textmodel.h"
 #include "texts/lessonminer.h"
 #include "texts/lessonminercontroller.h"
 #include "database/db.h"
 #include "texts/text.h"
 
-TextManager::TextManager(QWidget *parent) :
-  QWidget(parent),
-  ui(new Ui::TextManager),
-  refreshed(false),
-  sourcesModel(new QStandardItemModel),
-  textsModel(new QStandardItemModel) {
+TextManager::TextManager(QWidget* parent)
+    : QWidget(parent), ui(new Ui::TextManager) {
   ui->setupUi(this);
 
   QSettings s;
 
-  ui->sourcesTable->setModel(sourcesModel);
-  ui->sourcesTable->verticalHeader()->setVisible(false);
-  ui->textsTable->setModel(textsModel);
-  ui->textsTable->verticalHeader()->setVisible(false);
-  ui->textsWidget->hide();
+  ui->sourcesTable->setModel(new QStandardItemModel);
+  ui->textsTable->setModel(new TextModel);
 
   // progress bar/text setup
   ui->progress->setRange(0, 100);
@@ -40,136 +37,211 @@ TextManager::TextManager(QWidget *parent) :
 
   ui->selectionMethod->setCurrentIndex(s.value("select_method").toInt());
 
-  connect(ui->importButton,        SIGNAL(clicked()),
-          this,                    SLOT(addFiles()));
-  connect(ui->refreshSources,      SIGNAL(clicked()),
-          this,                    SLOT(refreshSources()));
-  connect(ui->addSourceButton,     SIGNAL(clicked()),
-          this,                    SLOT(addSource()));
-  connect(ui->deleteSourceButton,  SIGNAL(clicked()),
-          this,                    SLOT(deleteSource()));
-  connect(ui->addTextButton,       SIGNAL(clicked()),
-          this,                    SLOT(addText()));
-  connect(ui->deleteTextButton,    SIGNAL(clicked()),
-          this,                    SLOT(deleteText()));
-  connect(ui->textsTable,          SIGNAL(doubleClicked(const QModelIndex&)),
-          this,                    SLOT(doubleClicked(const QModelIndex&)));
-  connect(ui->sourcesTable,        SIGNAL(pressed(const QModelIndex&)),
-          this,                    SLOT(populateTexts(const QModelIndex&)));
-  connect(ui->sourcesTable,        SIGNAL(doubleClicked(const QModelIndex&)),
-          this,                    SLOT(toggleTextsWidget()));
-  connect(ui->selectionMethod,     SIGNAL(currentIndexChanged(int)),
-          this,                    SLOT(changeSelectMethod(int)));
-  connect(ui->enableSourceButton,  SIGNAL(pressed()),
-          this,                    SLOT(enableSource()));
-  connect(ui->disableSourceButton, SIGNAL(pressed()),
-          this,                    SLOT(disableSource()));
-  connect(ui->showTextsButton,     SIGNAL(pressed()),
-          this,                    SLOT(toggleTextsWidget()));
-  connect(ui->editTextButton,      SIGNAL(pressed()),
-          this,                    SLOT(editText()));
+  connect(ui->importButton, SIGNAL(clicked()), this, SLOT(addFiles()));
+  connect(ui->refreshSources, SIGNAL(clicked()), this, SLOT(refreshSources()));
+  connect(ui->addSourceButton, SIGNAL(clicked()), this, SLOT(addSource()));
+  connect(ui->addTextButton, SIGNAL(clicked()), this, SLOT(addText()));
+  connect(ui->sourcesTable, SIGNAL(pressed(const QModelIndex&)), this,
+          SLOT(populateTexts(const QModelIndex&)));
+  connect(ui->selectionMethod, SIGNAL(currentIndexChanged(int)), this,
+          SLOT(changeSelectMethod(int)));
+
+  connect(ui->textsTable, &QTableView::clicked, this,
+          &TextManager::textsTableClickHandler);
+
+  connect(ui->textsTable, &QTableView::doubleClicked, this,
+          &TextManager::textsTableDoubleClickHandler);
+
+  connect(this, &TextManager::sourceSelected,
+          reinterpret_cast<TextModel*>(ui->textsTable->model()),
+          &TextModel::setSource);
+
+  connect(ui->sourcesTable, &QWidget::customContextMenuRequested, this,
+          &TextManager::sourcesContextMenu);
+
+  connect(ui->textsTable, &QWidget::customContextMenuRequested, this,
+          &TextManager::textsContextMenu);
+
+  connect(reinterpret_cast<TextModel*>(ui->textsTable->model()),
+          &QAbstractItemModel::rowsInserted, ui->textsTable,
+          &QTableView::resizeColumnsToContents);
+
+  connect(this, &TextManager::sourceChanged, this, &TextManager::refreshSource);
+  connect(this, &TextManager::sourceDeleted, this,
+          &TextManager::ui_deleteSource);
+
+  this->refreshSources();
 }
 
-TextManager::~TextManager() {
-  delete ui;
-  delete sourcesModel;
-  delete textsModel;
+TextManager::~TextManager() { delete ui; }
+
+void TextManager::sourcesContextMenu(const QPoint& pos) {
+  QMenu menu(this);
+
+  auto selectedRows = ui->sourcesTable->selectionModel()->selectedRows();
+  int selectedCount = selectedRows.size();
+
+  QAction* deleteAction = menu.addAction("delete");
+  connect(deleteAction, &QAction::triggered, this, &TextManager::deleteSource);
+
+  QAction* enableAction = menu.addAction("enable");
+  connect(enableAction, &QAction::triggered, this, &TextManager::enableSource);
+
+  QAction* disableAction = menu.addAction("disable");
+  connect(disableAction, &QAction::triggered, this,
+          &TextManager::disableSource);
+
+  menu.exec(QCursor::pos());
 }
 
-void TextManager::editText() {
-  auto sourceIndexes = ui->sourcesTable->selectionModel()->selectedIndexes();
-  auto textIndexes = ui->textsTable->selectionModel()->selectedIndexes();
-  if (sourceIndexes.isEmpty() || textIndexes.isEmpty())
-    return;
+void TextManager::textsContextMenu(const QPoint& pos) {
+  QMenu menu(this);
 
-  auto textRow = textsModel->index(textIndexes[0].row(), 0);
-  auto sourceRow = sourcesModel->index(sourceIndexes[0].row(), 0);
+  auto selectedRows = ui->textsTable->selectionModel()->selectedRows();
+  int selectedCount = selectedRows.size();
 
-  int source = sourceRow.data().toInt();
-  int rowid  = textRow.data().toInt();
+  if (selectedCount == 1) {
+    QAction* testAction = menu.addAction("Send to Typer");
+    testAction->setData(selectedRows[0].data(Qt::UserRole));
+    connect(testAction, &QAction::triggered, this,
+            &TextManager::actionSendToTyper);
 
-  Text* t = DB::getText(rowid);
+    QAction* editAction = menu.addAction("edit");
+    editAction->setData(selectedRows[0].data(Qt::UserRole));
+    connect(editAction, &QAction::triggered, this,
+            &TextManager::actionEditText);
+  }
+
+  QAction* deleteAction = menu.addAction("delete");
+  connect(deleteAction, &QAction::triggered, this,
+          &TextManager::actionDeleteTexts);
+
+  menu.exec(QCursor::pos());
+}
+
+void TextManager::actionEditText(bool checked) {
+  auto sender = reinterpret_cast<QAction*>(this->sender());
+  int id = sender->data().toInt();
+
+  Database db;
+  auto t = db.getText(id);
 
   bool ok;
   QString text = QInputDialog::getMultiLineText(this, tr("Edit Text:"),
-    tr("Text:"), t->getText(), &ok);
+                                                tr("Text:"), t->getText(), &ok);
 
   if (ok && !text.isEmpty()) {
     if (text == t->getText()) {
-      delete t;
+      // delete t;
       return;
     }
-    DB::updateText(rowid, text);
-    refreshSources();
-    ui->sourcesTable->selectRow(sourceRow.row());
-    populateTexts(sourceRow);
+    db.updateText(id, text);
   }
-  delete t;
+  // delete t;
 }
 
-void TextManager::toggleTextsWidget() {
-  if (ui->textsWidget->isVisible()) {
-    ui->textsWidget->hide();
-    ui->emptyWidget->show();
-    textsModel->clear();
-    ui->showTextsButton->setText("Show Texts ->");
-  } else {
-    ui->textsWidget->show();
-    ui->emptyWidget->hide();
-    ui->showTextsButton->setText("<- Hide Texts");
-    auto indexes = ui->sourcesTable->selectionModel()->selectedIndexes();
-    if (!indexes.isEmpty())
-      populateTexts(indexes[0]);
+void TextManager::actionDeleteTexts(bool checked) {
+  if (!ui->textsTable->selectionModel()->hasSelection()) return;
+
+  auto indexes = ui->textsTable->selectionModel()->selectedRows();
+
+  QList<int> text_ids;
+  for (const auto& index : indexes) {
+    text_ids << index.data(Qt::UserRole).toInt();
   }
+  Database db;
+  db.deleteText(text_ids);
+
+  reinterpret_cast<TextModel*>(ui->textsTable->model())->removeIndexes(indexes);
+  emit sourceChanged(
+      reinterpret_cast<TextModel*>(ui->textsTable->model())->getSource());
+}
+
+void TextManager::actionSendToTyper(bool checked) {
+  auto sender = reinterpret_cast<QAction*>(this->sender());
+  const QVariant& id = sender->data();
+
+  if (!id.isValid()) return;
+
+  QLOG_DEBUG() << id.toInt();
+  Database db;
+  auto t = db.getText(id.toInt());
+  emit setText(t);
+  emit gotoTab(0);
+}
+
+void TextManager::textsTableDoubleClickHandler(const QModelIndex& index) {
+  QVariant text_id = index.data(Qt::UserRole);
+  if (!text_id.isValid()) return;
+
+  QLOG_DEBUG() << text_id.toInt();
+
+  Database db;
+  auto t = db.getText(text_id.toInt());
+  emit setText(t);
+  emit gotoTab(0);
+}
+
+void TextManager::textsTableClickHandler(const QModelIndex& index) {
+  QLOG_DEBUG() << index.data(Qt::UserRole);
 }
 
 void TextManager::enableSource() {
-  auto indexes = ui->sourcesTable->selectionModel()->selectedIndexes();
-  if (indexes.isEmpty())
-    return;
+  auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
+  if (indexes.isEmpty()) return;
 
   QList<int> sources;
   for (QModelIndex index : indexes) {
     int row = index.row();
-    const QModelIndex& f = sourcesModel->index(row, 0);
+    const QModelIndex& f =
+        reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+            ->index(row, 0);
     sources << f.data().toInt();
   }
-  DB::enableSource(sources);
-  refreshSources();
+  Database db;
+  db.enableSource(sources);
+  // refreshSources();
+  for (int source : sources) emit sourceChanged(source);
 }
 
 void TextManager::disableSource() {
-  auto indexes = ui->sourcesTable->selectionModel()->selectedIndexes();
-  if (indexes.isEmpty())
-    return;
+  auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
+  if (indexes.isEmpty()) return;
 
   QList<int> sources;
   for (QModelIndex index : indexes) {
     int row = index.row();
-    const QModelIndex& f = sourcesModel->index(row, 0);
+    const QModelIndex& f =
+        reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+            ->index(row, 0);
     sources << f.data().toInt();
   }
-  DB::disableSource(sources);
-  refreshSources();
+  Database db;
+  db.disableSource(sources);
+  // refreshSources();
+  for (int source : sources) emit sourceChanged(source);
 }
 
 void TextManager::addText() {
   auto indexes = ui->sourcesTable->selectionModel()->selectedIndexes();
-  if (indexes.isEmpty())
-    return;
+  if (indexes.isEmpty()) return;
 
   bool ok;
   QString text = QInputDialog::getMultiLineText(this, tr("Add Text:"),
-    tr("Text:"), "", &ok);
+                                                tr("Text:"), "", &ok);
 
   if (ok && !text.isEmpty()) {
     int row = indexes[0].row();
-    const QModelIndex& f = sourcesModel->index(row, 0);
+    const QModelIndex& f =
+        reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+            ->index(row, 0);
     int source = f.data().toInt();
+    Database db;
+    db.addText(source, text, -1, false);
 
-    DB::addText(source, text, -1, false);
+    // refreshSources();
+    emit sourceChanged(source);
 
-    refreshSources();
     ui->sourcesTable->selectRow(row);
     populateTexts(f);
   }
@@ -177,75 +249,94 @@ void TextManager::addText() {
 
 void TextManager::addSource() {
   bool ok;
-  QString sourceName = QInputDialog::getText(this, tr("Add Source:"),
-    tr("Source name:"), QLineEdit::Normal, "", &ok);
+  QString sourceName = QInputDialog::getText(
+      this, tr("Add Source:"), tr("Source name:"), QLineEdit::Normal, "", &ok);
 
-  if (ok && !sourceName.isEmpty())
-    DB::getSource(sourceName);
-
-  refreshSources();
-}
-
-void TextManager::deleteText() {
-  auto sourceIndexes = ui->sourcesTable->selectionModel()->selectedIndexes();
-  auto textIndexes = ui->textsTable->selectionModel()->selectedIndexes();
-  if (textIndexes.isEmpty() || sourceIndexes.isEmpty())
-    return;
-
-  int sourceRow = sourceIndexes[0].row();
-  const QModelIndex& source = sourcesModel->index(sourceRow, 0);
-
-  QList<int> rowids;
-  for (QModelIndex index : textIndexes) {
-    int row = index.row();
-    const QModelIndex& f = textsModel->index(row, 0);
-    int rowid = f.data().toInt();
-    rowids << rowid;
+  if (ok && !sourceName.isEmpty()) {
+    Database db;
+    db.getSource(sourceName);
   }
-  DB::deleteText(rowids);
 
   refreshSources();
-  ui->sourcesTable->selectRow(sourceRow);
-  populateTexts(source);
+  // emit sourcesChanged();
 }
 
 void TextManager::deleteSource() {
-  auto indexes = ui->sourcesTable->selectionModel()->selectedIndexes();
+  auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
 
-  if (indexes.isEmpty())
-    return;
+  if (indexes.isEmpty()) return;
 
   QList<int> sources;
   for (QModelIndex index : indexes) {
     int row = index.row();
-    const QModelIndex& f = sourcesModel->index(row, 0);
+    const QModelIndex& f =
+        reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+            ->index(row, 0);
     int source = f.data().toInt();
     sources << source;
   }
-  DB::deleteSource(sources);
+  Database db;
+  db.deleteSource(sources);
+  for (int source : sources) {
+    if (source ==
+        reinterpret_cast<TextModel*>(ui->textsTable->model())->getSource()) {
+      reinterpret_cast<TextModel*>(ui->textsTable->model())->clear();
+    }
+    emit sourceDeleted(source);
+  }
 
-  refreshSources();
-  ui->textsWidget->hide();
-  emit sourceDeleted();
+  // refreshSources();
+  emit sourcesChanged();
 }
 
 void TextManager::changeSelectMethod(int i) {
   QSettings s;
-  if (s.value("select_method").toInt() != i)
-    s.setValue("select_method", i);
+  if (s.value("select_method").toInt() != i) s.setValue("select_method", i);
 }
 
-void TextManager::tabActive(int i) {
-  if ((i == 1) && (!refreshed)) {
-    // do stuff when this tab is made active & the tree hasnt been loaded
-    refreshSources();
+void TextManager::refreshSource(int source) {
+  QList<QStandardItem*> items =
+      reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+          ->findItems(QString::number(source));
+  if (!items.isEmpty()) {
+    int row = items[0]->row();
+    QList<QStandardItem*> rowItems =
+        reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+            ->takeRow(row);
+    Database db;
+    QVariantList newData = db.getSourceData(items[0]->text().toInt());
+
+    rowItems[0]->setText(newData[0].toString());
+    rowItems[1]->setText(newData[1].toString());
+    rowItems[2]->setText(newData[2].toString());
+    rowItems[3]->setText(newData[3].toString());
+    if (newData[4].toDouble() == 0)
+      rowItems[4]->setText("");
+    else
+      rowItems[4]->setText(QString::number(newData[4].toDouble(), 'f', 1));
+    QString dis = (newData[5].isNull()) ? "Yes" : "";
+    rowItems[5]->setText(dis);
+
+    reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+        ->insertRow(row, rowItems);
+  }
+}
+
+void TextManager::ui_deleteSource(int source) {
+  QList<QStandardItem*> items =
+      reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+          ->findItems(QString::number(source));
+  if (!items.isEmpty()) {
+    int row = items[0]->row();
+    QList<QStandardItem*> rowItems =
+        reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+            ->takeRow(row);
+    for (QStandardItem* item : rowItems) delete item;
   }
 }
 
 void TextManager::refreshSources() {
-  ui->sourcesTable->hide();
-
-  sourcesModel->clear();
+  reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())->clear();
 
   QStringList headers;
   headers << "id"
@@ -254,162 +345,100 @@ void TextManager::refreshSources() {
           << "Results"
           << "avg WPM"
           << "Disabled";
-  sourcesModel->setHorizontalHeaderLabels(headers);
+  reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+      ->setHorizontalHeaderLabels(headers);
 
-  ui->sourcesTable->setSortingEnabled(false);
   ui->sourcesTable->setColumnHidden(0, true);
-  ui->sourcesTable->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
-  ui->sourcesTable->verticalHeader()->setDefaultSectionSize(24);
 
-  refreshed = true;
-
-  QList<QStringList> rows = DB::getSourcesData();
-  for (QStringList row : rows) {
+  Database db;
+  QList<QVariantList> rows = db.getSourcesData();
+  for (const QVariantList& row : rows) {
     QList<QStandardItem*> items;
-    items << new QStandardItem(row[0]);
-    items << new QStandardItem(row[1]);
-    items << new QStandardItem(row[2]);
-    items << new QStandardItem(row[3]);
+    items << new QStandardItem(row[0].toString());
+    items << new QStandardItem(row[1].toString());
+    items << new QStandardItem(row[2].toString());
+    items << new QStandardItem(row[3].toString());
     if (row[4].toDouble() == 0)
       items << new QStandardItem("");
     else
-      items << new QStandardItem(
-        QString::number(row[4].toDouble(), 'f', 1));
-    QString dis = (row[5].isEmpty()) ? "Yes" : "";
+      items << new QStandardItem(QString::number(row[4].toDouble(), 'f', 1));
+    QString dis = (row[5].isNull()) ? "Yes" : "";
     items << new QStandardItem(dis);
 
-    for (QStandardItem* item : items)
-      item->setFlags(Qt::ItemIsEnabled);
-    items[1]->setFlags(Qt::ItemIsEnabled|Qt::ItemIsSelectable);
+    for (QStandardItem* item : items) item->setFlags(Qt::ItemIsEnabled);
+    items[1]->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-    sourcesModel->appendRow(items);
+    reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+        ->appendRow(items);
   }
 
-  ui->sourcesTable->setModel(sourcesModel);
-  ui->sourcesTable->horizontalHeader()->setSectionResizeMode(
-    1, QHeaderView::Stretch);
   ui->sourcesTable->resizeColumnsToContents();
-  ui->sourcesTable->show();
 }
 
 void TextManager::populateTexts(const QModelIndex& index) {
-  if (!ui->textsWidget->isVisible())
-    return;
-  ui->textsTable->hide();
-
-  const QModelIndex& f = sourcesModel->index(index.row(), 0);
-
-  textsModel->clear();
-
-  QStringList headers;
-  headers << "id"
-          << "Text"
-          << "Length"
-          << "Results"
-          << "med WPM"
-          << "Dis";
-  textsModel->setHorizontalHeaderLabels(headers);
-
-  ui->textsTable->setSortingEnabled(false);
-  ui->textsTable->setColumnHidden(0, true);
-  ui->textsTable->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
-  ui->textsTable->verticalHeader()->setDefaultSectionSize(24);
-
-  QList<QStringList> rows = DB::getTextsData(f.data().toInt());
-  for (QStringList row : rows) {
-    QList<QStandardItem*> items;
-    items << new QStandardItem(row[0]);
-    items << new QStandardItem(row[1].simplified());
-    items << new QStandardItem(row[2]);
-    items << new QStandardItem(row[3]);
-    if (row[4].toDouble() == 0)
-      items << new QStandardItem("");
-    else
-      items << new QStandardItem(
-        QString::number(row[4].toDouble(), 'f', 1));
-    QString dis = (row[5].isEmpty()) ? "" : "Yes";
-    items << new QStandardItem(dis);
-
-    for (QStandardItem* item : items)
-      item->setFlags(Qt::ItemIsEnabled);
-    items[1]->setFlags(Qt::ItemIsEnabled|Qt::ItemIsSelectable);
-    textsModel->appendRow(items);
-  }
-
-  ui->textsTable->setModel(textsModel);
-  ui->textsTable->resizeColumnsToContents();
-  ui->textsTable->show();
+  const QModelIndex& f =
+      reinterpret_cast<QStandardItemModel*>(ui->sourcesTable->model())
+          ->index(index.row(), 0);
+  emit sourceSelected(f.data().toInt());
 }
 
-void TextManager::doubleClicked(const QModelIndex& idx) {
-  const QModelIndex& f = textsModel->index(idx.row(), 0);
-  int rowid = f.data().toInt();
-
-  Text* t = DB::getText(rowid);
-  emit setText(t);
-  emit gotoTab(0);
-}
-
-void TextManager::nextText(Text* lastText, SelectionMethod method) {
+void TextManager::nextText(const std::shared_ptr<Text>& lastText,
+                           Amphetype::SelectionMethod method) {
   QSettings s;
-  SelectionMethod selectMethod;
-  if (method != SelectionMethod::None) {
-    selectMethod = static_cast<SelectionMethod>(method);
+  Amphetype::SelectionMethod selectMethod;
+  if (method != Amphetype::SelectionMethod::None) {
+    selectMethod = static_cast<Amphetype::SelectionMethod>(method);
   } else {
     if (lastText && lastText->getType() > 0)
-      selectMethod = SelectionMethod::InOrder;
+      selectMethod = Amphetype::SelectionMethod::InOrder;
     else
-      selectMethod = static_cast<SelectionMethod>(
-        s.value("select_method").toInt());
+      selectMethod = static_cast<Amphetype::SelectionMethod>(
+          s.value("select_method").toInt());
   }
 
-  QLOG_DEBUG() << "TextManager::nextText" << "select_method ="
-               << static_cast<int>(selectMethod);
+  QLOG_DEBUG() << "TextManager::nextText"
+               << "select_method =" << static_cast<int>(selectMethod);
 
-  Text* nextText;
-
+  std::shared_ptr<Text> nextText;
+  Database db;
   switch (selectMethod) {
-  case SelectionMethod::Random:
-  case SelectionMethod::Ask:
-    QLOG_DEBUG() << "nextText: Random";
-    nextText = DB::getRandomText();
-    emit setText(nextText);
-    break;
-  case SelectionMethod::InOrder:
-    QLOG_DEBUG() << "nextText: In Order";
-    if (!s.value("perf_logging").toBool() && lastText) {
-      nextText = DB::getNextText(lastText);
+    case Amphetype::SelectionMethod::Random:
+    case Amphetype::SelectionMethod::Ask:
+      QLOG_DEBUG() << "nextText: Random";
+      nextText = db.getRandomText();
       emit setText(nextText);
-    } else {
-      nextText = DB::getNextText();
-      emit setText(nextText);
-    }
-    break;
-  case SelectionMethod::Repeat:
-    QLOG_DEBUG() << "nextText: Repeat";
-    emit setText(lastText);
-    break;
+      break;
+    case Amphetype::SelectionMethod::InOrder:
+      QLOG_DEBUG() << "nextText: In Order";
+      if (!s.value("perf_logging").toBool() && lastText) {
+        nextText = db.getNextText(lastText);
+        emit setText(nextText);
+      } else {
+        nextText = db.getNextText();
+        emit setText(nextText);
+      }
+      break;
+    case Amphetype::SelectionMethod::Repeat:
+      QLOG_DEBUG() << "nextText: Repeat";
+      emit setText(lastText);
+      return;
   }
 
-  if (lastText)
-    delete lastText;
+  // if (lastText) delete lastText;
 }
 
 void TextManager::addFiles() {
   files = QFileDialog::getOpenFileNames(
-      this, tr("Import"), ".",
-      tr("UTF-8 text files (*.txt);;All files (*)"));
-  if (files.isEmpty())
-    return;
+      this, tr("Import"), ".", tr("UTF-8 text files (*.txt);;All files (*)"));
+  if (files.isEmpty()) return;
 
   ui->progress->show();
   ui->progressText->show();
   lmc = new LessonMinerController;
   // lesson miner signals
-  connect(lmc,  SIGNAL(workDone()),
-          this, SLOT(processNextFile()));
-  connect(lmc,          &LessonMinerController::progressUpdate,
-          ui->progress, &QProgressBar::setValue);
+  connect(lmc, SIGNAL(workDone()), this, SLOT(processNextFile()));
+  connect(lmc, &LessonMinerController::progressUpdate, ui->progress,
+          &QProgressBar::setValue);
 
   processNextFile();
 }

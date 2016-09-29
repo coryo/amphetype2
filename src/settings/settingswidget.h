@@ -21,7 +21,7 @@ class SettingsWidget : public QWidget {
 
  signals:
   void settingsChanged();
-  void newKeyboard(KeyboardLayout, KeyboardStandard);
+  void newKeyboard(Amphetype::Layout, Amphetype::Standard);
 
  private slots:
   void selectFont();

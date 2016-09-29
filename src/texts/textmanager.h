@@ -5,56 +5,66 @@
 #include <QModelIndex>
 #include <QStandardItemModel>
 
+#include <memory>
+
 #include "texts/lessonminercontroller.h"
 #include "texts/text.h"
+#include "texts/textmodel.h"
+
+#include "defs.h"
 
 namespace Ui {
 class TextManager;
 }
 
-enum class SelectionMethod {None = -1, Random = 0, InOrder, Repeat, Ask};
-Q_DECLARE_METATYPE(SelectionMethod);
-
 class TextManager : public QWidget {
   Q_OBJECT
 
  public:
-  explicit TextManager(QWidget* parent = 0);
+  explicit TextManager(QWidget* parent = Q_NULLPTR);
   ~TextManager();
 
  private:
   Ui::TextManager* ui;
   QStringList files;
   LessonMinerController* lmc;
-  bool refreshed;
-  QStandardItemModel* sourcesModel;
-  QStandardItemModel* textsModel;
+  void textsTableDoubleClickHandler(const QModelIndex&);
+  void textsTableClickHandler(const QModelIndex&);
 
  signals:
-  void setText(Text*);
+  void setText(const std::shared_ptr<Text>&);
   void progress(int);
   void gotoTab(int);
-  void sourceDeleted();
+  void sourceDeleted(int);
+  void sourceSelected(int);
+  void sourcesChanged();
+  void sourceChanged(int);
 
  public slots:
-  void nextText(Text*, SelectionMethod method = SelectionMethod::None);
-  void tabActive(int);
+  void nextText(
+      const std::shared_ptr<Text>&,
+      Amphetype::SelectionMethod method = Amphetype::SelectionMethod::None);
   void refreshSources();
+  void refreshSource(int source);
+  void ui_deleteSource(int source);
 
  private slots:
   void addFiles();
-  void doubleClicked(const QModelIndex&);
   void processNextFile();
   void changeSelectMethod(int);
   void populateTexts(const QModelIndex&);
   void addSource();
   void deleteSource();
   void addText();
-  void deleteText();
   void enableSource();
   void disableSource();
-  void toggleTextsWidget();
-  void editText();
+
+  void actionDeleteTexts(bool checked);
+  void actionEditText(bool checked);
+  void actionSendToTyper(bool checked);
+
+  void sourcesContextMenu(const QPoint& pos);
+  void textsContextMenu(const QPoint& pos);
 };
 
 #endif  // SRC_TEXTS_TEXTMANAGER_H_

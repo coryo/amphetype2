@@ -12,10 +12,10 @@
 #include "ui_statisticswidget.h"
 #include "database/db.h"
 
-StatisticsWidget::StatisticsWidget(QWidget *parent) :
-  QWidget(parent),
-  ui(new Ui::StatisticsWidget),
-  model(new QStandardItemModel) {
+StatisticsWidget::StatisticsWidget(QWidget* parent)
+    : QWidget(parent),
+      ui(new Ui::StatisticsWidget),
+      model(new QStandardItemModel) {
   ui->setupUi(this);
 
   QSettings s;
@@ -23,21 +23,20 @@ StatisticsWidget::StatisticsWidget(QWidget *parent) :
   ui->limitSpinBox->setValue(s.value("ana_many").toInt());
   ui->minCountSpinBox->setValue(s.value("ana_count").toInt());
   ui->orderComboBox->setCurrentIndex(s.value("ana_which").toInt());
-  ui->typeComboBox-> setCurrentIndex(s.value("ana_what").toInt());
+  ui->typeComboBox->setCurrentIndex(s.value("ana_what").toInt());
 
-  connect(ui->orderComboBox, SIGNAL(currentIndexChanged(int)),
-          this,              SLOT(writeSettings()));
-  connect(ui->typeComboBox,  SIGNAL(currentIndexChanged(int)),
-          this,              SLOT(writeSettings()));
-  connect(ui->updateButton,  SIGNAL(pressed()),
-          this,              SLOT(writeSettings()));
-  connect(ui->generatorButton, &QPushButton::pressed,
-          this,                &StatisticsWidget::generateList);
+  connect(ui->orderComboBox, SIGNAL(currentIndexChanged(int)), this,
+          SLOT(writeSettings()));
+  connect(ui->typeComboBox, SIGNAL(currentIndexChanged(int)), this,
+          SLOT(writeSettings()));
+  connect(ui->updateButton, SIGNAL(pressed()), this, SLOT(writeSettings()));
+  connect(ui->generatorButton, &QPushButton::pressed, this,
+          &StatisticsWidget::generateList);
 
-  connect(ui->updateButton,  &QPushButton::pressed,
-          ui->keyboardMap,   &KeyboardMap::updateData);
-  connect(ui->mapComboBox,   &QComboBox::currentTextChanged,
-          ui->keyboardMap,   &KeyboardMap::setData);
+  connect(ui->updateButton, &QPushButton::pressed, ui->keyboardMap,
+          &KeyboardMap::updateData);
+  connect(ui->mapComboBox, &QComboBox::currentTextChanged, ui->keyboardMap,
+          &KeyboardMap::setData);
 
   this->populateStatistics();
 
@@ -49,7 +48,14 @@ StatisticsWidget::~StatisticsWidget() {
   delete model;
 }
 
-KeyboardMap* StatisticsWidget::getKeyboardMap() const { return this->ui->keyboardMap; }
+void StatisticsWidget::update() {
+  this->populateStatistics();
+  ui->keyboardMap->updateData();
+}
+
+KeyboardMap* StatisticsWidget::getKeyboardMap() const {
+  return this->ui->keyboardMap;
+}
 
 void StatisticsWidget::writeSettings() {
   QSettings s;
@@ -61,10 +67,8 @@ void StatisticsWidget::writeSettings() {
 }
 
 void StatisticsWidget::generateList() {
-  if (!this->model)
-    return;
-  if (!this->model->rowCount())
-    return;
+  if (!this->model) return;
+  if (!this->model->rowCount()) return;
 
   QStringList list;
   for (int i = 0; i < this->model->rowCount(); i++) {
@@ -100,43 +104,43 @@ void StatisticsWidget::populateStatistics() {
   int count = ui->minCountSpinBox->value();
 
   QString historyString = QDateTime::currentDateTime()
-    .addDays(-s.value("history").toInt())
-    .toString(Qt::ISODate);
+                              .addDays(-s.value("history").toInt())
+                              .toString(Qt::ISODate);
 
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
 
-  QList<QStringList> rows = DB::getStatisticsData(historyString, cat,
-                                                  count, ord, limit);
-  for (QStringList row : rows) {
+  Database db;
+  QList<QVariantList> rows =
+      db.getStatisticsData(historyString, cat, count, ord, limit);
+  for (QVariantList row : rows) {
     QList<QStandardItem*> items;
     // item: key/trigram/word
-    QString data(row[0]);
-    data.replace(" ",  "␣");  // UNICODE U+2423 'OPEN BOX'
+    QString data(row[0].toString());
+    data.replace(" ", "␣");   // UNICODE U+2423 'OPEN BOX'
     data.replace('\n', "↵");  // UNICODE U+23CE 'RETURN SYMBOL'
     items << new QStandardItem(data);
     items.last()->setFont(font);
     // speed
-    items << new QStandardItem(
-      QString::number(row[1].toDouble(), 'f', 1) + " wpm");
+    items << new QStandardItem(QString::number(row[1].toDouble(), 'f', 1) +
+                               " wpm");
     // accuracy
-    items << new QStandardItem(
-      QString::number(row[2].toDouble(), 'f', 1) + "%");
+    items << new QStandardItem(QString::number(row[2].toDouble(), 'f', 1) +
+                               "%");
     // viscosity
     items << new QStandardItem(QString::number(row[3].toDouble(), 'f', 1));
     // count
-    items << new QStandardItem(row[4]);
+    items << new QStandardItem(row[4].toString());
     // mistakes
-    items << new QStandardItem(row[5]);
+    items << new QStandardItem(row[5].toString());
     // impact
     items << new QStandardItem(QString::number(row[6].toDouble(), 'f', 1));
 
-    for (QStandardItem* item : items)
-      item->setFlags(Qt::ItemIsEnabled);
+    for (QStandardItem* item : items) item->setFlags(Qt::ItemIsEnabled);
     model->appendRow(items);
   }
 
-  ui->tableView->horizontalHeader()->setSectionResizeMode(
-    0, QHeaderView::Stretch);
+  ui->tableView->horizontalHeader()->setSectionResizeMode(0,
+                                                          QHeaderView::Stretch);
   ui->tableView->resizeColumnsToContents();
 }
