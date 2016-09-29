@@ -1,16 +1,19 @@
 #include "analysis/statisticswidget.h"
 
-#include <QStandardItemModel>
-#include <QSettings>
 #include <QDateTime>
+#include <QSettings>
+#include <QStandardItemModel>
 #include <QStringList>
 
-#include <vector>
+
 #include <algorithm>
 #include <string>
+#include <vector>
 
-#include "ui_statisticswidget.h"
+
 #include "database/db.h"
+#include "ui_statisticswidget.h"
+
 
 StatisticsWidget::StatisticsWidget(QWidget* parent)
     : QWidget(parent),
@@ -33,14 +36,7 @@ StatisticsWidget::StatisticsWidget(QWidget* parent)
   connect(ui->generatorButton, &QPushButton::pressed, this,
           &StatisticsWidget::generateList);
 
-  connect(ui->updateButton, &QPushButton::pressed, ui->keyboardMap,
-          &KeyboardMap::updateData);
-  connect(ui->mapComboBox, &QComboBox::currentTextChanged, ui->keyboardMap,
-          &KeyboardMap::setData);
-
   this->populateStatistics();
-
-  ui->keyboardMap->updateData();
 }
 
 StatisticsWidget::~StatisticsWidget() {
@@ -48,14 +44,7 @@ StatisticsWidget::~StatisticsWidget() {
   delete model;
 }
 
-void StatisticsWidget::update() {
-  this->populateStatistics();
-  ui->keyboardMap->updateData();
-}
-
-KeyboardMap* StatisticsWidget::getKeyboardMap() const {
-  return this->ui->keyboardMap;
-}
+void StatisticsWidget::update() { this->populateStatistics(); }
 
 void StatisticsWidget::writeSettings() {
   QSettings s;

@@ -16,7 +16,6 @@ class StatisticsWidget : public QWidget {
 
  public:
   explicit StatisticsWidget(QWidget* parent = 0);
-  KeyboardMap* getKeyboardMap() const;
   ~StatisticsWidget();
 
  private:
