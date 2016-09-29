@@ -41,6 +41,8 @@ MainWindow::MainWindow(QWidget* parent)
           &TextManager::nextText);
   connect(ui->quizzer, &Quizzer::newResult, ui->performanceHistory,
           &PerformanceHistory::refreshPerformance);
+  connect(ui->quizzer, &Quizzer::newResult, this->libraryWidget,
+          &TextManager::refreshSource);
   connect(ui->quizzer, &Quizzer::newStatistics, ui->statisticsWidget,
           &StatisticsWidget::update);
   // Live Plot

@@ -43,7 +43,7 @@ class Quizzer : public QWidget {
   void wantText(const std::shared_ptr<Text> &,
                 Amphetype::SelectionMethod = Amphetype::SelectionMethod::None);
   void colorChanged();
-  void newResult();
+  void newResult(int);
   void newStatistics();
 
   void newWpm(double, double);

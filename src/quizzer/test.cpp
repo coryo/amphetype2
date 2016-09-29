@@ -81,7 +81,7 @@ void Test::finish() {
                  this->finalVIS);
     emit done(this->finalWPM, this->finalACC, this->finalVIS);
     QLOG_DEBUG() << "done result.";
-    emit newResult();
+    emit newResult(text->getSource());
     QLOG_DEBUG() << "Adding statistics to database.";
     this->saveResult(now_str, finalWPM, finalACC, finalVIS);
     emit newStatistics();

@@ -64,7 +64,7 @@ class Test : public QObject {
   void restart();
   void deleteable();
 
-  void newResult();
+  void newResult(int);
   void newStatistics();
 
   void mistake(int);
