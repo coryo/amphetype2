@@ -1,25 +1,25 @@
 #include "database/db.h"
 
-#include <QSettings>
-#include <QPair>
-#include <QMutex>
-#include <QMutexLocker>
+#include <QApplication>
 #include <QDateTime>
 #include <QDir>
-#include <QApplication>
+#include <QMutex>
+#include <QMutexLocker>
+#include <QPair>
+#include <QSettings>
 
-#include <sqlite3pp.h>
 #include <sqlite3.h>
+#include <sqlite3pp.h>
 
-#include <vector>
 #include <algorithm>
-#include <memory>
 #include <cmath>
+#include <memory>
+#include <vector>
 
 #include <QsLog.h>
 
-#include "texts/text.h"
 #include "quizzer/test.h"
+#include "texts/text.h"
 
 static QMutex db_lock;
 
@@ -412,6 +412,23 @@ QList<QVariantList> Database::getSourcesData() {
       "as r on (t.source = r.source) "
       "where s.disabled is null "
       "order by s.name");
+}
+
+QVariantList Database::getTextData(int id) {
+  QVariantList args;
+  args << id << id;
+  return getOneRow(
+      "select t.id, substr(t.text,0,30)||' ...', "
+      "length(t.text), r.count, r.m, t.disabled "
+      "from text as t "
+      "left join ("
+      "  select text_id, count(*) as count,"
+      "  avg(wpm) as m "
+      "  from result "
+      "  where text_id = ?) as r "
+      "on (t.id = r.text_id) "
+      "where t.id is ?",
+      args);
 }
 
 QList<QVariantList> Database::getTextsData(int source, int page, int limit) {

@@ -1,18 +1,18 @@
 #ifndef SRC_DATABASE_DB_H_
 #define SRC_DATABASE_DB_H_
 
-#include <QVariantList>
-#include <QThread>
-#include <QObject>
-#include <QMutex>
 #include <QHash>
+#include <QMutex>
+#include <QObject>
 #include <QString>
+#include <QThread>
+#include <QVariantList>
 
 #include <sqlite3pp.h>
 #include <sqlite3ppext.h>
 
-#include "texts/text.h"
 #include "quizzer/test.h"
+#include "texts/text.h"
 
 class DBConnection {
  public:
@@ -57,6 +57,7 @@ class Database : public QObject {
   QVariantList getSourceData(int source);
   QList<QVariantList> getSourcesData();
   QList<QVariantList> getTextsData(int, int page = 0, int limit = 100);
+  QVariantList getTextData(int);
   int getTextsCount(int source);
   QList<QVariantList> getPerformanceData(int, int, int);
   QList<QVariantList> getSourcesList();
