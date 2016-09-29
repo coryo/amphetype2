@@ -31,6 +31,7 @@ class SettingsWidget : public QWidget {
   void changeDebugLogging(int);
   void changeKeyboardLayout(int);
   void changeKeyboardStandard(int);
+  void changeSelectMethod(int);
 };
 
 #endif  // SRC_SETTINGS_SETTINGSWIDGET_H_

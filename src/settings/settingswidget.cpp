@@ -13,9 +13,11 @@ SettingsWidget::SettingsWidget(QWidget *parent)
     : QWidget(parent), ui(new Ui::SettingsWidget) {
   ui->setupUi(this);
 
+  this->setWindowFlags(Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+
   QSettings s;
 
-  // ui->fontLabel->setFont(qvariant_cast<QFont>(s.value("typer_font")));
+  ui->selectionMethod->setCurrentIndex(s.value("select_method").toInt());
 
   ui->styleSheetComboBox->addItem("Dark Theme", "dark-1");
   ui->styleSheetComboBox->addItem("Basic Theme", "basic");
@@ -61,6 +63,9 @@ SettingsWidget::SettingsWidget(QWidget *parent)
           SLOT(changeKeyboardStandard(int)));
 
   connect(ui->closeButton, &QPushButton::pressed, this, &QWidget::close);
+
+  connect(ui->selectionMethod, SIGNAL(currentIndexChanged(int)), this,
+          SLOT(changeSelectMethod(int)));
 }
 
 SettingsWidget::~SettingsWidget() { delete ui; }
@@ -128,4 +133,9 @@ void SettingsWidget::changeKeyboardStandard(int index) {
   emit newKeyboard(
       static_cast<Amphetype::Layout>(s.value("keyboard_layout", 0).toInt()),
       static_cast<Amphetype::Standard>(index));
+}
+
+void SettingsWidget::changeSelectMethod(int i) {
+  QSettings s;
+  if (s.value("select_method").toInt() != i) s.setValue("select_method", i);
 }
