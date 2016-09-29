@@ -3,13 +3,13 @@
 
 #include <QWidget>
 #include <QModelIndex>
-#include <QStandardItemModel>
 
 #include <memory>
 
 #include "texts/lessonminercontroller.h"
 #include "texts/text.h"
 #include "texts/textmodel.h"
+#include "texts/sourcemodel.h"
 
 #include "defs.h"
 
@@ -26,6 +26,8 @@ class TextManager : public QWidget {
 
  private:
   Ui::TextManager* ui;
+  TextModel* text_model_;
+  SourceModel* source_model_;
   QStringList files;
   LessonMinerController* lmc;
   void textsTableDoubleClickHandler(const QModelIndex&);
@@ -36,7 +38,6 @@ class TextManager : public QWidget {
   void progress(int);
   void gotoTab(int);
   void sourceDeleted(int);
-  void sourceSelected(int);
   void sourcesChanged();
   void sourceChanged(int);
 
@@ -44,15 +45,14 @@ class TextManager : public QWidget {
   void nextText(
       const std::shared_ptr<Text>&,
       Amphetype::SelectionMethod method = Amphetype::SelectionMethod::None);
+  void refreshSource(int);
   void refreshSources();
-  void refreshSource(int source);
-  void ui_deleteSource(int source);
+  void sourceSelectionChanged(const QModelIndex&, const QModelIndex&);
 
  private slots:
   void addFiles();
   void processNextFile();
   void changeSelectMethod(int);
-  void populateTexts(const QModelIndex&);
   void addSource();
   void deleteSource();
   void addText();
