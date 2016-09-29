@@ -41,6 +41,7 @@ set(${PROJECT_NAME}_SOURCES
   texts/lessonminer.cpp
   texts/lessonminercontroller.h
   texts/textmodel.cpp
+  texts/sourcemodel.cpp
 
 	generators/traininggenerator.cpp
 	generators/traininggenwidget.cpp
