@@ -19,30 +19,43 @@
 #ifndef SRC_QUIZZER_TEST_H_
 #define SRC_QUIZZER_TEST_H_
 
-#include <QString>
-#include <QVector>
-#include <QList>
-#include <QSet>
-#include <QHash>
 #include <QDateTime>
 #include <QElapsedTimer>
-#include <QObject>
+#include <QHash>
 #include <QKeyEvent>
+#include <QList>
+#include <QObject>
+#include <QSet>
+#include <QString>
+#include <QThread>
+#include <QVector>
 
 #include <memory>
 
 #include "texts/text.h"
 
+class Test;
+
+class ResultWorker : public QObject {
+  Q_OBJECT
+
+ public:
+  void process(Test*, double, double, double);
+
+ signals:
+  void doneResult(int);
+  void doneStatistic();
+  void done();
+};
+
 class Test : public QObject {
   Q_OBJECT
+
+  friend class ResultWorker;
 
  public:
   explicit Test(const std::shared_ptr<Text>&);
   ~Test();
-  QHash<QPair<QChar, QChar>, int> getMistakes() const;
-  double getFinalWpm() { return this->finalWPM; }
-  double getFinalAccuracy() { return this->finalACC; }
-  double getFinalViscosity() { return this->finalVIS; }
   void start();
   int mistakeCount() const;
   int msElapsed() const;
@@ -50,7 +63,8 @@ class Test : public QObject {
   void handleInput(const QString&, int, Qt::KeyboardModifiers);
 
  private:
-  void saveResult(const QString&, double, double, double);
+  QThread worker_thread_;
+  QHash<QPair<QChar, QChar>, int> getMistakes() const;
   void finish();
   void addMistake(int, const QChar&, const QChar&);
   std::shared_ptr<Text> text;
@@ -71,9 +85,6 @@ class Test : public QObject {
   QElapsedTimer timer;
   QElapsedTimer intervalTimer;
   int apmWindow;
-  double finalWPM;
-  double finalACC;
-  double finalVIS;
 
  signals:
   void testStarted(int);
@@ -81,6 +92,7 @@ class Test : public QObject {
   void cancel();
   void restart();
   void deleteable();
+  void saveResult(Test*, double, double, double);
 
   void newResult(int);
   void newStatistics();
