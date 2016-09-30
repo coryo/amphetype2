@@ -34,6 +34,7 @@
 #include "config.h"
 #include "database/db.h"
 #include "mainwindow/mainwindow.h"
+#include "util/RunGuard.h"
 
 void logHandler(QtMsgType type, const QMessageLogContext &context,
                 const QString &msg) {
@@ -104,6 +105,9 @@ void loadSettings() {
 }
 
 int main(int argc, char *argv[]) {
+  RunGuard guard("amphetype2");
+  if (!guard.tryToRun()) return 0;
+
   auto dest = QsLogging::DestinationFactory::MakeFileDestination(
       "amphetype2.log", QsLogging::LogRotationOption::EnableLogRotationOnOpen,
       QsLogging::MaxSizeBytes(1024 * 1024), QsLogging::MaxOldLogCount(1));

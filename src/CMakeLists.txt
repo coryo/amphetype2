@@ -43,6 +43,8 @@ set(${PROJECT_NAME}_SOURCES
   texts/textmodel.cpp
   texts/sourcemodel.cpp
 
+  util/RunGuard.cpp
+
 	generators/traininggenerator.cpp
 	generators/traininggenwidget.cpp
   generators/lessongenwidget.cpp
