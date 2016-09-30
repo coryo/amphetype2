@@ -16,7 +16,7 @@
 // along with amphetype2.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "liveplot/liveplot.h"
+#include "mainwindow/liveplot/liveplot.h"
 
 #include <QSettings>
 

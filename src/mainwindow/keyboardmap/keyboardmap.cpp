@@ -16,7 +16,7 @@
 // along with amphetype2.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "analysis/keyboardmap.h"
+#include "mainwindow/keyboardmap/keyboardmap.h"
 
 #include <QBrush>
 #include <QColor>

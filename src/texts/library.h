@@ -16,8 +16,8 @@
 // along with amphetype2.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef SRC_TEXTS_TEXTMANAGER_H_
-#define SRC_TEXTS_TEXTMANAGER_H_
+#ifndef SRC_TEXTS_LIBRARY_H_
+#define SRC_TEXTS_LIBRARY_H_
 
 #include <QModelIndex>
 #include <QResizeEvent>
@@ -34,18 +34,18 @@
 #include "defs.h"
 
 namespace Ui {
-class TextManager;
+class Library;
 }
 
-class TextManager : public QWidget {
+class Library : public QWidget {
   Q_OBJECT
 
  public:
-  explicit TextManager(QWidget* parent = Q_NULLPTR);
-  ~TextManager();
+  explicit Library(QWidget* parent = Q_NULLPTR);
+  ~Library();
 
  private:
-  Ui::TextManager* ui;
+  Ui::Library* ui;
   TextModel* text_model_;
   SourceModel* source_model_;
   QStringList files;
@@ -86,4 +86,4 @@ class TextManager : public QWidget {
   void textsContextMenu(const QPoint& pos);
 };
 
-#endif  // SRC_TEXTS_TEXTMANAGER_H_
+#endif  // SRC_TEXTS_LIBRARY_H_

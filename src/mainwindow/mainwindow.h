@@ -26,7 +26,7 @@
 #include <QString>
 #include "texts/text.h"
 #include "settings/settingswidget.h"
-#include "texts/textmanager.h"
+#include "texts/library.h"
 
 namespace Ui {
 class MainWindow;
@@ -45,7 +45,7 @@ class MainWindow : public QMainWindow {
  private:
   Ui::MainWindow* ui;
   SettingsWidget* settingsWidget;
-  TextManager* libraryWidget;
+  Library* libraryWidget;
 
  private slots:
   void gotoTab(int);

@@ -16,7 +16,7 @@
 // along with amphetype2.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "texts/textmanager.h"
+#include "texts/library.h"
 
 #include <QAction>
 #include <QCursor>
@@ -38,11 +38,11 @@
 #include "texts/sourcemodel.h"
 #include "texts/text.h"
 #include "texts/textmodel.h"
-#include "ui_textmanager.h"
+#include "ui_library.h"
 
-TextManager::TextManager(QWidget* parent)
+Library::Library(QWidget* parent)
     : QWidget(parent),
-      ui(new Ui::TextManager),
+      ui(new Ui::Library),
       text_model_(new TextModel),
       source_model_(new SourceModel) {
   ui->setupUi(this);
@@ -74,56 +74,56 @@ TextManager::TextManager(QWidget* parent)
   connect(ui->addTextButton, SIGNAL(clicked()), this, SLOT(addText()));
 
   connect(ui->textsTable, &QTableView::clicked, this,
-          &TextManager::textsTableClickHandler);
+          &Library::textsTableClickHandler);
 
   connect(ui->textsTable, &QTableView::doubleClicked, this,
-          &TextManager::textsTableDoubleClickHandler);
+          &Library::textsTableDoubleClickHandler);
 
   connect(ui->sourcesTable, &QWidget::customContextMenuRequested, this,
-          &TextManager::sourcesContextMenu);
+          &Library::sourcesContextMenu);
 
   connect(ui->textsTable, &QWidget::customContextMenuRequested, this,
-          &TextManager::textsContextMenu);
+          &Library::textsContextMenu);
 
   connect(ui->sourcesTable->selectionModel(),
           &QItemSelectionModel::currentRowChanged, this,
-          &TextManager::sourceSelectionChanged);
+          &Library::sourceSelectionChanged);
 
   source_model_->refresh();
 }
 
-TextManager::~TextManager() {
+Library::~Library() {
   delete ui;
   delete text_model_;
   delete source_model_;
 }
 
-void TextManager::sourceSelectionChanged(const QModelIndex& current,
+void Library::sourceSelectionChanged(const QModelIndex& current,
                                          const QModelIndex& previous) {
   int source = current.data(Qt::UserRole).toInt();
   text_model_->setSource(source);
 }
 
-void TextManager::sourcesContextMenu(const QPoint& pos) {
+void Library::sourcesContextMenu(const QPoint& pos) {
   QMenu menu(this);
 
   auto selectedRows = ui->sourcesTable->selectionModel()->selectedRows();
   int selectedCount = selectedRows.size();
 
   QAction* deleteAction = menu.addAction("delete");
-  connect(deleteAction, &QAction::triggered, this, &TextManager::deleteSource);
+  connect(deleteAction, &QAction::triggered, this, &Library::deleteSource);
 
   QAction* enableAction = menu.addAction("enable");
-  connect(enableAction, &QAction::triggered, this, &TextManager::enableSource);
+  connect(enableAction, &QAction::triggered, this, &Library::enableSource);
 
   QAction* disableAction = menu.addAction("disable");
   connect(disableAction, &QAction::triggered, this,
-          &TextManager::disableSource);
+          &Library::disableSource);
 
   menu.exec(QCursor::pos());
 }
 
-void TextManager::textsContextMenu(const QPoint& pos) {
+void Library::textsContextMenu(const QPoint& pos) {
   QMenu menu(this);
 
   auto selectedRows = ui->textsTable->selectionModel()->selectedRows();
@@ -133,22 +133,22 @@ void TextManager::textsContextMenu(const QPoint& pos) {
     QAction* testAction = menu.addAction("Send to Typer");
     testAction->setData(selectedRows[0].data(Qt::UserRole));
     connect(testAction, &QAction::triggered, this,
-            &TextManager::actionSendToTyper);
+            &Library::actionSendToTyper);
 
     QAction* editAction = menu.addAction("edit");
     // editAction->setData(selectedRows[0].data(Qt::UserRole));
     connect(editAction, &QAction::triggered, this,
-            &TextManager::actionEditText);
+            &Library::actionEditText);
   }
 
   QAction* deleteAction = menu.addAction("delete");
   connect(deleteAction, &QAction::triggered, this,
-          &TextManager::actionDeleteTexts);
+          &Library::actionDeleteTexts);
 
   menu.exec(QCursor::pos());
 }
 
-void TextManager::actionEditText(bool checked) {
+void Library::actionEditText(bool checked) {
   // auto sender = reinterpret_cast<QAction*>(this->sender());
   auto indexes = ui->textsTable->selectionModel()->selectedRows();
   if (!ui->textsTable->selectionModel()->hasSelection() || indexes.size() > 1)
@@ -172,7 +172,7 @@ void TextManager::actionEditText(bool checked) {
   }
 }
 
-void TextManager::actionDeleteTexts(bool checked) {
+void Library::actionDeleteTexts(bool checked) {
   if (!ui->textsTable->selectionModel()->hasSelection()) return;
   auto indexes = ui->textsTable->selectionModel()->selectedRows();
 
@@ -190,7 +190,7 @@ void TextManager::actionDeleteTexts(bool checked) {
   text_model_->removeIndexes(indexes);
 }
 
-void TextManager::actionSendToTyper(bool checked) {
+void Library::actionSendToTyper(bool checked) {
   auto sender = reinterpret_cast<QAction*>(this->sender());
   const QVariant& id = sender->data();
 
@@ -203,7 +203,7 @@ void TextManager::actionSendToTyper(bool checked) {
   emit gotoTab(0);
 }
 
-void TextManager::textsTableDoubleClickHandler(const QModelIndex& index) {
+void Library::textsTableDoubleClickHandler(const QModelIndex& index) {
   QVariant text_id = index.data(Qt::UserRole);
   if (!text_id.isValid()) return;
 
@@ -215,21 +215,21 @@ void TextManager::textsTableDoubleClickHandler(const QModelIndex& index) {
   emit gotoTab(0);
 }
 
-void TextManager::textsTableClickHandler(const QModelIndex& index) {
+void Library::textsTableClickHandler(const QModelIndex& index) {
   QLOG_DEBUG() << index.data(Qt::UserRole);
 }
 
-void TextManager::enableSource() {
+void Library::enableSource() {
   auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
   for (const auto& index : indexes) source_model_->enableSource(index);
 }
 
-void TextManager::disableSource() {
+void Library::disableSource() {
   auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
   for (const QModelIndex& index : indexes) source_model_->disableSource(index);
 }
 
-void TextManager::addText() {
+void Library::addText() {
   auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
   if (indexes.isEmpty()) return;
 
@@ -246,7 +246,7 @@ void TextManager::addText() {
   }
 }
 
-void TextManager::addSource() {
+void Library::addSource() {
   bool ok;
   QString sourceName = QInputDialog::getText(
       this, tr("Add Source:"), tr("Source name:"), QLineEdit::Normal, "", &ok);
@@ -256,19 +256,19 @@ void TextManager::addSource() {
   }
 }
 
-void TextManager::deleteSource() {
+void Library::deleteSource() {
   auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
   source_model_->removeIndexes(indexes);
   emit sourcesChanged();
 }
 
-void TextManager::refreshSources() { source_model_->refresh(); }
+void Library::refreshSources() { source_model_->refresh(); }
 
-void TextManager::refreshSource(int source) {
+void Library::refreshSource(int source) {
   source_model_->refreshSource(source);
 }
 
-void TextManager::nextText(const std::shared_ptr<Text>& lastText,
+void Library::nextText(const std::shared_ptr<Text>& lastText,
                            Amphetype::SelectionMethod method) {
   QSettings s;
   Amphetype::SelectionMethod selectMethod;
@@ -282,7 +282,7 @@ void TextManager::nextText(const std::shared_ptr<Text>& lastText,
           s.value("select_method", 0).toInt());
   }
 
-  QLOG_DEBUG() << "TextManager::nextText"
+  QLOG_DEBUG() << "Library::nextText"
                << "select_method =" << static_cast<int>(selectMethod);
 
   std::shared_ptr<Text> nextText;
@@ -311,7 +311,7 @@ void TextManager::nextText(const std::shared_ptr<Text>& lastText,
   }
 }
 
-void TextManager::addFiles() {
+void Library::addFiles() {
   files = QFileDialog::getOpenFileNames(
       this, tr("Import"), ".", tr("UTF-8 text files (*.txt);;All files (*)"));
   if (files.isEmpty()) return;
@@ -327,7 +327,7 @@ void TextManager::addFiles() {
   processNextFile();
 }
 
-void TextManager::processNextFile() {
+void Library::processNextFile() {
   if (files.isEmpty()) {
     refreshSources();
     ui->progressText->hide();

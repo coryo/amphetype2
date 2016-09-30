@@ -21,6 +21,8 @@ set(${PROJECT_NAME}_SOURCES
 	main.cpp
 
 	mainwindow/mainwindow.cpp
+  mainwindow/liveplot/liveplot.cpp
+  mainwindow/keyboardmap/keyboardmap.cpp
 
 	database/db.cpp
 
@@ -29,7 +31,6 @@ set(${PROJECT_NAME}_SOURCES
 	settings/settingswidget.cpp
 
   analysis/statisticswidget.cpp
-  analysis/keyboardmap.cpp
 
 	quizzer/quizzer.cpp
 	quizzer/test.cpp
@@ -37,7 +38,7 @@ set(${PROJECT_NAME}_SOURCES
 	quizzer/typerdisplay.cpp
 
   texts/text.cpp
-	texts/textmanager.cpp
+	texts/library.cpp
   texts/lessonminer.cpp
   texts/lessonminercontroller.h
   texts/textmodel.cpp
@@ -48,8 +49,6 @@ set(${PROJECT_NAME}_SOURCES
 	generators/traininggenerator.cpp
 	generators/traininggenwidget.cpp
   generators/lessongenwidget.cpp
-
-  liveplot/liveplot.cpp
 )
 
 set(MACOSX_BUNDLE_ICON_FILE icon.icns)

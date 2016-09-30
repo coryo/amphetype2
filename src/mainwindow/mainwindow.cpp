@@ -22,17 +22,17 @@
 #include <QSettings>
 #include <QSize>
 
-#include "liveplot/liveplot.h"
+#include "mainwindow/liveplot/liveplot.h"
 #include "quizzer/typer.h"
 #include "texts/text.h"
-#include "texts/textmanager.h"
+#include "texts/library.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       ui(new Ui::MainWindow),
       settingsWidget(new SettingsWidget),
-      libraryWidget(new TextManager) {
+      libraryWidget(new Library) {
   ui->setupUi(this);
 
   QSettings s;
@@ -60,11 +60,11 @@ MainWindow::MainWindow(QWidget* parent)
 
   // Typer
   connect(ui->quizzer, &Quizzer::wantText, this->libraryWidget,
-          &TextManager::nextText);
+          &Library::nextText);
   connect(ui->quizzer, &Quizzer::newResult, ui->performanceHistory,
           &PerformanceHistory::refreshPerformance);
   connect(ui->quizzer, &Quizzer::newResult, this->libraryWidget,
-          &TextManager::refreshSource);
+          &Library::refreshSource);
   connect(ui->quizzer, &Quizzer::newStatistics, ui->statisticsWidget,
           &StatisticsWidget::update);
   connect(ui->quizzer, &Quizzer::newStatistics, ui->keyboardMap,
@@ -77,9 +77,9 @@ MainWindow::MainWindow(QWidget* parent)
   connect(ui->quizzer, &Quizzer::testStarted, ui->plot, &LivePlot::beginTest);
 
   // Library
-  connect(this->libraryWidget, &TextManager::setText, ui->quizzer,
+  connect(this->libraryWidget, &Library::setText, ui->quizzer,
           &Quizzer::setText);
-  connect(this->libraryWidget, &TextManager::sourcesChanged,
+  connect(this->libraryWidget, &Library::sourcesChanged,
           ui->performanceHistory, &PerformanceHistory::refreshPerformance);
 
   // Performance
@@ -98,7 +98,7 @@ MainWindow::MainWindow(QWidget* parent)
 
   // Lesson Generator
   connect(ui->lessonGenWidget, &LessonGenWidget::newLesson, this->libraryWidget,
-          &TextManager::refreshSources);
+          &Library::refreshSources);
   connect(ui->lessonGenWidget, &LessonGenWidget::newLesson, this->libraryWidget,
           &QWidget::show);
   connect(ui->lessonGenWidget, &LessonGenWidget::newLesson, this->libraryWidget,
@@ -106,7 +106,7 @@ MainWindow::MainWindow(QWidget* parent)
 
   // Training Generator
   connect(ui->trainingGenWidget, &TrainingGenWidget::newTraining,
-          this->libraryWidget, &TextManager::refreshSources);
+          this->libraryWidget, &Library::refreshSources);
   connect(ui->trainingGenWidget, &TrainingGenWidget::newTraining,
           this->libraryWidget, &QWidget::show);
   connect(ui->trainingGenWidget, &TrainingGenWidget::newTraining,

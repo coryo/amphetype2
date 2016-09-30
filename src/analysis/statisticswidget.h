@@ -23,7 +23,7 @@
 #include <QStringList>
 #include <QStandardItemModel>
 
-#include "analysis/keyboardmap.h"
+#include "mainwindow/keyboardmap/keyboardmap.h"
 
 namespace Ui {
 class StatisticsWidget;

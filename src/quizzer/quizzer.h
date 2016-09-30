@@ -28,7 +28,7 @@
 
 #include <memory>
 
-#include "texts/textmanager.h"
+#include "texts/library.h"
 #include "texts/text.h"
 #include "quizzer/test.h"
 #include "quizzer/typer.h"
