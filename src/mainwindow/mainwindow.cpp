@@ -126,7 +126,7 @@ MainWindow::MainWindow(QWidget* parent)
 
   this->restoreState(s.value("mainWindow/windowState").toByteArray());
   this->restoreGeometry(s.value("mainWindow/windowGeometry").toByteArray());
-  ui->quizzer->wantText(0, Amphetype::SelectionMethod::Random);
+  ui->quizzer->wantText(0);
 }
 
 MainWindow::~MainWindow() {

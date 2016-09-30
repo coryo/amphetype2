@@ -279,7 +279,7 @@ void TextManager::nextText(const std::shared_ptr<Text>& lastText,
       selectMethod = Amphetype::SelectionMethod::InOrder;
     else
       selectMethod = static_cast<Amphetype::SelectionMethod>(
-          s.value("select_method").toInt());
+          s.value("select_method", 0).toInt());
   }
 
   QLOG_DEBUG() << "TextManager::nextText"
