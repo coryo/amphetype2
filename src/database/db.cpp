@@ -364,7 +364,7 @@ void Database::addStatistics(const QMultiHash<QStringRef, double>& stats,
   }
 }
 
-void Database::addMistakes(const Test* test) {
+void Database::addMistakes(const QHash<QPair<QChar, QChar>, int>& mistakes) {
   QString now = QDateTime::currentDateTime().toString(Qt::ISODate);
   try {
     sqlite3pp::database& db = conn_->db();
@@ -373,13 +373,9 @@ void Database::addMistakes(const Test* test) {
       sqlite3pp::command cmd(db,
                              "insert into mistake (w,target,mistake,count) "
                              "values (?, ?, ?, ?)");
-      auto mistakes = test->getMistakes();
-      QHashIterator<QPair<QChar, QChar>, int> it(mistakes);
-      while (it.hasNext()) {
-        it.next();
+      for (auto it = mistakes.constBegin(); it != mistakes.constEnd(); ++it) {
         QVariantList items;
-        items << now << QString(it.key().first) << QString(it.key().second)
-              << it.value();
+        items << now << it.key().first << it.key().second << it.value();
         bindAndRun(&cmd, items);
       }
     }

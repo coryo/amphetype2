@@ -59,7 +59,7 @@ class Database : public QObject {
   void addStatistics(const QMultiHash<QStringRef, double>&,
                      const QMultiHash<QStringRef, double>&,
                      const QMultiHash<QStringRef, int>&);
-  void addMistakes(const Test*);
+  void addMistakes(const QHash<QPair<QChar, QChar>, int>& mistakes);
 
   // removal/modification
   void deleteSource(const QList<int>& sources);
