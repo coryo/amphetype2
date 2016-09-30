@@ -17,22 +17,23 @@
 //
 
 #include <QApplication>
-#include <QSettings>
-#include <QFont>
-#include <QDir>
-#include <QString>
-#include <QFile>
-#include <QDateTime>
-#include <QTextStream>
-#include <QDebug>
 #include <QByteArray>
+#include <QDateTime>
+#include <QDebug>
+#include <QDir>
+#include <QFile>
+#include <QFont>
+#include <QFontDatabase>
+#include <QSettings>
+#include <QString>
+#include <QTextStream>
 
 #include <QsLog.h>
 #include <QsLogDest.h>
 
+#include "config.h"
 #include "database/db.h"
 #include "mainwindow/mainwindow.h"
-#include "config.h"
 
 void logHandler(QtMsgType type, const QMessageLogContext &context,
                 const QString &msg) {
@@ -68,7 +69,8 @@ void loadSettings() {
   QSettings s;
   if (!s.contains("typer_font")) {
     // no settings found, write defaults
-    QFont defaultFont("Consolas", 12);
+    QFont defaultFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    defaultFont.setPointSize(12);
     defaultFont.setStyleHint(QFont::Monospace);
     s.setValue("typer_font", defaultFont);
     s.setValue("history", 30.0);
