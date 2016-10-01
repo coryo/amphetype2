@@ -62,6 +62,7 @@ class Library : public QMainWindow {
   void sourceChanged(int);
 
  public slots:
+  void reload();
   void nextText(
       const std::shared_ptr<Text>&,
       Amphetype::SelectionMethod method = Amphetype::SelectionMethod::None);

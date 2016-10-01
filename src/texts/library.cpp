@@ -93,6 +93,21 @@ Library::~Library() {
   delete source_model_;
 }
 
+void Library::reload() {
+  delete text_model_;
+  delete source_model_;
+  text_model_ = new TextModel;
+  source_model_ = new SourceModel;
+
+  ui->sourcesTable->setModel(source_model_);
+  ui->textsTable->setModel(text_model_);
+
+  connect(ui->sourcesTable->selectionModel(),
+          &QItemSelectionModel::currentRowChanged, this,
+          &Library::sourceSelectionChanged);
+  source_model_->refresh();
+}
+
 void Library::sourceSelectionChanged(const QModelIndex& current,
                                      const QModelIndex& previous) {
   int source = current.data(Qt::UserRole).toInt();
@@ -320,6 +335,7 @@ void Library::addFiles() {
 void Library::processNextFile() {
   if (files.isEmpty()) {
     refreshSources();
+    emit sourcesChanged();
     delete progress_;
     delete lmc;
     return;

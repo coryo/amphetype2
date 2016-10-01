@@ -101,8 +101,14 @@
     <addaction name="separator"/>
     <addaction name="action_Quit"/>
    </widget>
+   <widget class="QMenu" name="menuProfiles">
+    <property name="title">
+     <string>Profiles</string>
+    </property>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuView"/>
+   <addaction name="menuProfiles"/>
   </widget>
   <widget class="QDockWidget" name="plotDock">
    <property name="sizePolicy">

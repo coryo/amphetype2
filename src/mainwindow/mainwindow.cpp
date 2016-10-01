@@ -19,9 +19,13 @@
 #include "mainwindow/mainwindow.h"
 
 #include <QApplication>
+#include <QDirIterator>
 #include <QSettings>
 #include <QSize>
 
+#include <QsLog.h>
+
+#include "database/db.h"
 #include "mainwindow/liveplot/liveplot.h"
 #include "quizzer/typer.h"
 #include "texts/library.h"
@@ -35,6 +39,9 @@ MainWindow::MainWindow(QWidget* parent)
       libraryWidget(new Library),
       performanceWidget(new PerformanceHistory) {
   ui->setupUi(this);
+
+  this->populateProfiles();
+  this->updateWindowTitle();
 
   QSettings s;
 
@@ -127,6 +134,25 @@ MainWindow::MainWindow(QWidget* parent)
   connect(settingsWidget, &SettingsWidget::newKeyboard, ui->keyboardMap,
           &KeyboardMap::setKeyboard);
 
+  connect(ui->menuProfiles, &QMenu::triggered, this,
+          &MainWindow::changeProfile);
+
+  // Profile Changed
+  connect(this, &MainWindow::profileChanged, this->libraryWidget,
+          &Library::reload);
+  connect(this, &MainWindow::profileChanged, this->performanceWidget,
+          &PerformanceHistory::refreshPerformance);
+  connect(this, &MainWindow::profileChanged, this->performanceWidget,
+          &PerformanceHistory::refreshSources);
+  connect(this, &MainWindow::profileChanged, ui->statisticsWidget,
+          &StatisticsWidget::update);
+  connect(this, &MainWindow::profileChanged, ui->keyboardMap,
+          &KeyboardMap::updateData);
+  connect(this, &MainWindow::profileChanged, this,
+          &MainWindow::updateWindowTitle);
+  connect(this, &MainWindow::profileChanged, this,
+          &MainWindow::populateProfiles);
+
   this->restoreState(s.value("mainWindow/windowState").toByteArray());
   this->restoreGeometry(s.value("mainWindow/windowGeometry").toByteArray());
   performanceWidget->restoreState(
@@ -147,6 +173,58 @@ MainWindow::~MainWindow() {
   delete this->settingsWidget;
   delete this->libraryWidget;
   delete this->performanceWidget;
+}
+
+void MainWindow::populateProfiles() {
+  ui->menuProfiles->clear();
+  QAction* create = new QAction("Create New Profile", this);
+  create->setData(true);
+  ui->menuProfiles->addAction(create);
+  ui->menuProfiles->addSeparator();
+  QDirIterator it(qApp->applicationDirPath());
+  while (it.hasNext()) {
+    it.next();
+    QString file(it.fileName());
+    if (file.endsWith(".profile")) {
+      QAction* profile = new QAction(file.split(".profile")[0], this);
+      ui->menuProfiles->addAction(profile);
+    }
+  }
+}
+
+void MainWindow::updateWindowTitle() {
+  QSettings s;
+  this->setWindowTitle(
+      QString("amphetype2 - %1").arg(s.value("profile", "default").toString()));
+}
+
+void MainWindow::changeProfile(QAction* action) {
+  QString name;
+  if (!action->data().isNull()) {
+    QLOG_DEBUG() << "new profile";
+    bool ok;
+    QString newName = QInputDialog::getText(
+        this, tr("Create Profile"), tr("Name:"), QLineEdit::Normal, "", &ok);
+
+    if (ok && !newName.isEmpty()) {
+      name = newName;
+    } else {
+      return;
+    }
+  } else {
+    name = action->text();
+  }
+
+  QLOG_DEBUG() << "changeProfile" << name;
+  QSettings s;
+  if (s.value("profile", "default").toString() == name) return;
+  s.setValue("profile", name);
+  Database db(name);
+  db.initDB();
+  emit profileChanged(name);
+
+  ui->quizzer->wantText(0, static_cast<Amphetype::SelectionMethod>(
+                               s.value("select_method", 0).toInt()));
 }
 
 void MainWindow::gotoTab(int i) { ui->tabWidget->setCurrentIndex(i); }

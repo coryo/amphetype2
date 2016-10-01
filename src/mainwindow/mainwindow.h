@@ -19,15 +19,15 @@
 #ifndef SRC_MAINWINDOW_MAINWINDOW_H_
 #define SRC_MAINWINDOW_MAINWINDOW_H_
 
-#include <QMainWindow>
 #include <QCloseEvent>
 #include <QEvent>
+#include <QMainWindow>
 
 #include <QString>
-#include "texts/text.h"
+#include "performance/performancehistory.h"
 #include "settings/settingswidget.h"
 #include "texts/library.h"
-#include "performance/performancehistory.h"
+#include "texts/text.h"
 
 namespace Ui {
 class MainWindow;
@@ -41,18 +41,23 @@ class MainWindow : public QMainWindow {
   ~MainWindow();
 
  protected:
-  void closeEvent(QCloseEvent *event);
+  void closeEvent(QCloseEvent* event);
 
  private:
   Ui::MainWindow* ui;
   SettingsWidget* settingsWidget;
   PerformanceHistory* performanceWidget;
   Library* libraryWidget;
+  void populateProfiles();
+
+ signals:
+  void profileChanged(QString);
 
  private slots:
   void gotoTab(int);
   void gotoLessonGenTab();
-  // void togglePlot(bool);
+  void changeProfile(QAction*);
+  void updateWindowTitle();
 };
 
 #endif  // SRC_MAINWINDOW_MAINWINDOW_H_

@@ -21,6 +21,7 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QDir>
+#include <QFileInfo>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QPair>
@@ -93,13 +94,27 @@ DBConnection::DBConnection(const QString& path) {
 sqlite3pp::database& DBConnection::db() { return *(db_); }
 
 Database::Database(const QString& name) {
+  QSettings s;
+  QString path(qApp->applicationDirPath() + QDir::separator() +
+               QString("%1.profile"));
   if (name.isNull()) {
-    QSettings s;
-    db_path_ = qApp->applicationDirPath() + QDir::separator() +
-               s.value("db_name", "default").toString() + QString(".profile");
+    QString profile = s.value("profile", "default").toString();
+
+    if (profile != "default") {
+      QFileInfo check(path.arg(profile));
+      if (check.exists() && check.isFile()) {
+        db_path_ = check.absoluteFilePath();
+      } else {
+        s.setValue("profile", "default");
+        db_path_ = path.arg("default");
+      }
+    } else {
+      db_path_ = path.arg(profile);
+    }
   } else {
-    db_path_ = name;
+    db_path_ = path.arg(name);
   }
+
   conn_ = std::make_unique<DBConnection>(db_path_);
 }
 
@@ -522,20 +537,20 @@ QList<QVariantList> Database::getPerformanceData(int w, int source, int limit) {
                  .arg(where);
 
     } else if (g == 2) {
-      sql +=
-          QString(
-              "FROM ( "
-              "    select (select count(*) from result) - "
-              "           ((select count(*) from result as r2 "
-              "            where r2.rowid <= r.rowid) - 1) / %1 as grouping, * "
-              "    FROM result r "
-              "    LEFT JOIN source s ON (s.id = r.source) "
-              "    %2 "
-              "    order by datetime(w) desc "
-              ") as r "
-              "group by grouping ")
-              .arg(s.value("def_group_by").toInt())
-              .arg(where);
+      sql += QString(
+                 "FROM ( "
+                 "    select (select count(*) from result) - "
+                 "           ((select count(*) from result as r2 "
+                 "            where r2.rowid <= r.rowid) - 1) / %1 as "
+                 "grouping, * "
+                 "    FROM result r "
+                 "    LEFT JOIN source s ON (s.id = r.source) "
+                 "    %2 "
+                 "    order by datetime(w) desc "
+                 ") as r "
+                 "group by grouping ")
+                 .arg(s.value("def_group_by").toInt())
+                 .arg(where);
     }
   }
 
@@ -740,7 +755,8 @@ QHash<QChar, QHash<QString, QVariant>> Database::getKeyFrequency() {
       "select data, "
       "agg_median(time) as speed, "
       "sum(count) as total, "
-      "100.0 * (1.0 - (sum(mistakes) / cast(sum(count) as real))) as accuracy, "
+      "100.0 * (1.0 - (sum(mistakes) / cast(sum(count) as real))) as "
+      "accuracy, "
       "sum(mistakes) as mistakes, "
       "agg_median(viscosity) as viscosity,"
       "sum(count) * pow(agg_median(time), 2)"
