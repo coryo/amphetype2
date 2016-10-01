@@ -38,11 +38,6 @@ MainWindow::MainWindow(QWidget* parent)
 
   QSettings s;
 
-  // Set UI state
-  this->settingsWidget->hide();
-  this->libraryWidget->hide();
-  this->performanceWidget->hide();
-
   // Actions
   connect(ui->action_Settings, &QAction::triggered, this->settingsWidget,
           &QWidget::show);
@@ -85,6 +80,8 @@ MainWindow::MainWindow(QWidget* parent)
   // Library
   connect(this->libraryWidget, &Library::setText, ui->quizzer,
           &Quizzer::setText);
+  connect(this->libraryWidget, &Library::sourcesChanged,
+          this->performanceWidget, &PerformanceHistory::refreshSources);
   connect(this->libraryWidget, &Library::sourcesChanged,
           this->performanceWidget, &PerformanceHistory::refreshPerformance);
 
@@ -141,7 +138,8 @@ MainWindow::MainWindow(QWidget* parent)
   libraryWidget->restoreGeometry(
       s.value("libraryWindow/windowGeometry").toByteArray());
 
-  ui->quizzer->wantText(0);
+  ui->quizzer->wantText(0, static_cast<Amphetype::SelectionMethod>(
+                               s.value("select_method", 0).toInt()));
 }
 
 MainWindow::~MainWindow() {
@@ -164,7 +162,5 @@ void MainWindow::closeEvent(QCloseEvent* event) {
              performanceWidget->saveGeometry());
   s.setValue("libraryWindow/windowState", libraryWidget->saveState());
   s.setValue("libraryWindow/windowGeometry", libraryWidget->saveGeometry());
-  // this->performanceWidget->close();
-  // this->libraryWidget->close();
   qApp->quit();
 }

@@ -74,10 +74,10 @@ class PerformanceHistory : public QMainWindow {
  public slots:
   void refreshPerformance();
   void refreshCurrentPlot();
+  void refreshSources();
 
  private slots:
   void deleteResult(bool);
-  void refreshSources();
   void doubleClicked(const QModelIndex&);
   void showPlot(int = 0);
   void writeSettings();

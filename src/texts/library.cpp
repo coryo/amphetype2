@@ -129,7 +129,6 @@ void Library::textsContextMenu(const QPoint& pos) {
     connect(testAction, &QAction::triggered, this, &Library::actionSendToTyper);
 
     QAction* editAction = menu.addAction("edit");
-    // editAction->setData(selectedRows[0].data(Qt::UserRole));
     connect(editAction, &QAction::triggered, this, &Library::actionEditText);
   }
 
@@ -140,12 +139,10 @@ void Library::textsContextMenu(const QPoint& pos) {
 }
 
 void Library::actionEditText(bool checked) {
-  // auto sender = reinterpret_cast<QAction*>(this->sender());
   auto indexes = ui->textsTable->selectionModel()->selectedRows();
   if (!ui->textsTable->selectionModel()->hasSelection() || indexes.size() > 1)
     return;
   int id = indexes[0].data(Qt::UserRole).toInt();
-  // int id = sender->data().toInt();
 
   Database db;
   auto t = db.getText(id);
@@ -244,6 +241,7 @@ void Library::addSource() {
 
   if (ok && !sourceName.isEmpty()) {
     source_model_->addSource(sourceName);
+    emit sourcesChanged();
   }
 }
 
@@ -287,7 +285,7 @@ void Library::nextText(const std::shared_ptr<Text>& lastText,
       break;
     case Amphetype::SelectionMethod::InOrder:
       QLOG_DEBUG() << "nextText: In Order";
-      if (!s.value("perf_logging").toBool() && lastText) {
+      if (lastText) {
         nextText = db.getNextText(lastText);
         emit setText(nextText);
       } else {
