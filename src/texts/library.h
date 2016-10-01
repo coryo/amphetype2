@@ -19,10 +19,9 @@
 #ifndef SRC_TEXTS_LIBRARY_H_
 #define SRC_TEXTS_LIBRARY_H_
 
+#include <QMainWindow>
 #include <QModelIndex>
-#include <QResizeEvent>
-#include <QWidget>
-
+#include <QProgressDialog>
 
 #include <memory>
 
@@ -37,7 +36,7 @@ namespace Ui {
 class Library;
 }
 
-class Library : public QWidget {
+class Library : public QMainWindow {
   Q_OBJECT
 
  public:
@@ -48,6 +47,7 @@ class Library : public QWidget {
   Ui::Library* ui;
   TextModel* text_model_;
   SourceModel* source_model_;
+  QProgressDialog* progress_;
   QStringList files;
   LessonMinerController* lmc;
   void textsTableDoubleClickHandler(const QModelIndex&);

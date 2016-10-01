@@ -24,15 +24,16 @@
 
 #include "mainwindow/liveplot/liveplot.h"
 #include "quizzer/typer.h"
-#include "texts/text.h"
 #include "texts/library.h"
+#include "texts/text.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       ui(new Ui::MainWindow),
       settingsWidget(new SettingsWidget),
-      libraryWidget(new Library) {
+      libraryWidget(new Library),
+      performanceWidget(new PerformanceHistory) {
   ui->setupUi(this);
 
   QSettings s;
@@ -40,6 +41,7 @@ MainWindow::MainWindow(QWidget* parent)
   // Set UI state
   this->settingsWidget->hide();
   this->libraryWidget->hide();
+  this->performanceWidget->hide();
 
   // Actions
   connect(ui->action_Settings, &QAction::triggered, this->settingsWidget,
@@ -49,6 +51,10 @@ MainWindow::MainWindow(QWidget* parent)
   connect(ui->action_Library, &QAction::triggered, this->libraryWidget,
           &QWidget::show);
   connect(ui->action_Library, &QAction::triggered, this->libraryWidget,
+          &QWidget::activateWindow);
+  connect(ui->action_Performance, &QAction::triggered, this->performanceWidget,
+          &QWidget::show);
+  connect(ui->action_Performance, &QAction::triggered, this->performanceWidget,
           &QWidget::activateWindow);
 
   ui->menuView->addAction(ui->plotDock->toggleViewAction());
@@ -61,7 +67,7 @@ MainWindow::MainWindow(QWidget* parent)
   // Typer
   connect(ui->quizzer, &Quizzer::wantText, this->libraryWidget,
           &Library::nextText);
-  connect(ui->quizzer, &Quizzer::newResult, ui->performanceHistory,
+  connect(ui->quizzer, &Quizzer::newResult, this->performanceWidget,
           &PerformanceHistory::refreshPerformance);
   connect(ui->quizzer, &Quizzer::newResult, this->libraryWidget,
           &Library::refreshSource);
@@ -80,14 +86,14 @@ MainWindow::MainWindow(QWidget* parent)
   connect(this->libraryWidget, &Library::setText, ui->quizzer,
           &Quizzer::setText);
   connect(this->libraryWidget, &Library::sourcesChanged,
-          ui->performanceHistory, &PerformanceHistory::refreshPerformance);
+          this->performanceWidget, &PerformanceHistory::refreshPerformance);
 
   // Performance
-  connect(ui->performanceHistory, &PerformanceHistory::setText, ui->quizzer,
+  connect(this->performanceWidget, &PerformanceHistory::setText, ui->quizzer,
           &Quizzer::setText);
-  connect(ui->performanceHistory, &PerformanceHistory::gotoTab, this,
+  connect(this->performanceWidget, &PerformanceHistory::gotoTab, this,
           &MainWindow::gotoTab);
-  connect(ui->performanceHistory, &PerformanceHistory::settingsChanged,
+  connect(this->performanceWidget, &PerformanceHistory::settingsChanged,
           ui->plot, &LivePlot::updatePlotTargetLine);
 
   // Analysis
@@ -120,12 +126,21 @@ MainWindow::MainWindow(QWidget* parent)
   connect(settingsWidget, &SettingsWidget::settingsChanged, ui->quizzer,
           &Quizzer::updateTyperDisplay);
   connect(settingsWidget, &SettingsWidget::settingsChanged,
-          ui->performanceHistory, &PerformanceHistory::refreshCurrentPlot);
+          this->performanceWidget, &PerformanceHistory::refreshCurrentPlot);
   connect(settingsWidget, &SettingsWidget::newKeyboard, ui->keyboardMap,
           &KeyboardMap::setKeyboard);
 
   this->restoreState(s.value("mainWindow/windowState").toByteArray());
   this->restoreGeometry(s.value("mainWindow/windowGeometry").toByteArray());
+  performanceWidget->restoreState(
+      s.value("performanceWindow/windowState").toByteArray());
+  performanceWidget->restoreGeometry(
+      s.value("performanceWindow/windowGeometry").toByteArray());
+  libraryWidget->restoreState(
+      s.value("libraryWindow/windowState").toByteArray());
+  libraryWidget->restoreGeometry(
+      s.value("libraryWindow/windowGeometry").toByteArray());
+
   ui->quizzer->wantText(0);
 }
 
@@ -133,6 +148,7 @@ MainWindow::~MainWindow() {
   delete ui;
   delete this->settingsWidget;
   delete this->libraryWidget;
+  delete this->performanceWidget;
 }
 
 void MainWindow::gotoTab(int i) { ui->tabWidget->setCurrentIndex(i); }
@@ -143,5 +159,12 @@ void MainWindow::closeEvent(QCloseEvent* event) {
   QSize size = this->size();
   s.setValue("mainWindow/windowState", this->saveState());
   s.setValue("mainWindow/windowGeometry", this->saveGeometry());
+  s.setValue("performanceWindow/windowState", performanceWidget->saveState());
+  s.setValue("performanceWindow/windowGeometry",
+             performanceWidget->saveGeometry());
+  s.setValue("libraryWindow/windowState", libraryWidget->saveState());
+  s.setValue("libraryWindow/windowGeometry", libraryWidget->saveGeometry());
+  // this->performanceWidget->close();
+  // this->libraryWidget->close();
   qApp->quit();
 }

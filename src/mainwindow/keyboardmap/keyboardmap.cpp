@@ -57,6 +57,10 @@ KeyboardMap::KeyboardMap(QWidget* parent)
 
 KeyboardMap::~KeyboardMap() { delete this->keyboardScene; }
 
+void KeyboardMap::resizeEvent(QResizeEvent* event) {
+  this->fitInView(this->scene()->sceneRect(), Qt::KeepAspectRatio);
+}
+
 void KeyboardMap::setKeyboard(Amphetype::Layout layout,
                               Amphetype::Standard standard) {
   this->keyboardLayout = layout;
@@ -148,7 +152,7 @@ void KeyboardMap::drawKeyboard(
           key_size = Amphetype::Standards::iso_keys[row][column];
           break;
       }
-      if (key_size == -1) continue;
+      if (key_size <= 0) continue;
 
       QChar key;
       if (column - column_offset >= 0 &&
@@ -162,7 +166,8 @@ void KeyboardMap::drawKeyboard(
       QColor color;
       if (display_key_label) {
         brush.setStyle(Qt::SolidPattern);
-        qreal value = data.isEmpty() ? -1 : data[key][this->dataToMap].toDouble();
+        qreal value =
+            data.isEmpty() ? -1 : data[key][this->dataToMap].toDouble();
 
         // set the brush alpha based on the data
         if (value > 0) {

@@ -19,8 +19,8 @@
 #ifndef SRC_PERFORMANCE_PERFORMANCEHISTORY_H_
 #define SRC_PERFORMANCE_PERFORMANCEHISTORY_H_
 
-#include <QWidget>
 #include <QColor>
+#include <QMainWindow>
 #include <QModelIndex>
 #include <QStandardItemModel>
 
@@ -34,7 +34,7 @@ namespace Ui {
 class PerformanceHistory;
 }
 
-class PerformanceHistory : public QWidget {
+class PerformanceHistory : public QMainWindow {
   Q_OBJECT
   Q_PROPERTY(QColor wpmLineColor MEMBER wpmLineColor NOTIFY colorChanged)
   Q_PROPERTY(QColor accLineColor MEMBER accLineColor NOTIFY colorChanged)

@@ -18,28 +18,32 @@
 
 #include "performance/performancehistory.h"
 
-#include <QVariantList>
-#include <QSettings>
+#include <QAction>
 #include <QByteArray>
-#include <QStandardItemModel>
+#include <QCursor>
 #include <QDateTime>
 #include <QMenu>
-#include <QAction>
-#include <QCursor>
+#include <QSettings>
+#include <QStandardItemModel>
+#include <QVariantList>
+
 
 #include <algorithm>
 
 #include <QsLog.h>
 
-#include "ui_performancehistory.h"
 #include "database/db.h"
 #include "texts/text.h"
+#include "ui_performancehistory.h"
+
 
 PerformanceHistory::PerformanceHistory(QWidget* parent)
-    : QWidget(parent),
+    : QMainWindow(parent),
       ui(new Ui::PerformanceHistory),
       model(new QStandardItemModel) {
   ui->setupUi(this);
+
+  ui->menuView->addAction(ui->plotDock->toggleViewAction());
 
   QSettings s;
 

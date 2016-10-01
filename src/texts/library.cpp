@@ -27,6 +27,7 @@
 #include <QMenu>
 #include <QModelIndex>
 #include <QProgressBar>
+#include <QProgressDialog>
 #include <QSettings>
 #include <QString>
 
@@ -41,7 +42,7 @@
 #include "ui_library.h"
 
 Library::Library(QWidget* parent)
-    : QWidget(parent),
+    : QMainWindow(parent),
       ui(new Ui::Library),
       text_model_(new TextModel),
       source_model_(new SourceModel) {
@@ -62,16 +63,10 @@ Library::Library(QWidget* parent)
   for (int col = 1; col < textHeader->count(); col++)
     textHeader->setSectionResizeMode(col, QHeaderView::ResizeToContents);
 
-  // progress bar/text setup
-  ui->progress->setRange(0, 100);
-  ui->progress->hide();
-  ui->progressText->hide();
-
-  connect(ui->importButton, SIGNAL(clicked()), this, SLOT(addFiles()));
-  // connect(ui->refreshSources, &QPushButton::clicked, source_model_,
-  //         &SourceModel::refresh);
-  connect(ui->addSourceButton, SIGNAL(clicked()), this, SLOT(addSource()));
-  connect(ui->addTextButton, SIGNAL(clicked()), this, SLOT(addText()));
+  connect(ui->actionImport_Texts, &QAction::triggered, this,
+          &Library::addFiles);
+  connect(ui->actionAdd_Source, &QAction::triggered, this, &Library::addSource);
+  connect(ui->actionAdd_Text, &QAction::triggered, this, &Library::addText);
 
   connect(ui->textsTable, &QTableView::clicked, this,
           &Library::textsTableClickHandler);
@@ -99,7 +94,7 @@ Library::~Library() {
 }
 
 void Library::sourceSelectionChanged(const QModelIndex& current,
-                                         const QModelIndex& previous) {
+                                     const QModelIndex& previous) {
   int source = current.data(Qt::UserRole).toInt();
   text_model_->setSource(source);
 }
@@ -117,8 +112,7 @@ void Library::sourcesContextMenu(const QPoint& pos) {
   connect(enableAction, &QAction::triggered, this, &Library::enableSource);
 
   QAction* disableAction = menu.addAction("disable");
-  connect(disableAction, &QAction::triggered, this,
-          &Library::disableSource);
+  connect(disableAction, &QAction::triggered, this, &Library::disableSource);
 
   menu.exec(QCursor::pos());
 }
@@ -132,18 +126,15 @@ void Library::textsContextMenu(const QPoint& pos) {
   if (selectedCount == 1) {
     QAction* testAction = menu.addAction("Send to Typer");
     testAction->setData(selectedRows[0].data(Qt::UserRole));
-    connect(testAction, &QAction::triggered, this,
-            &Library::actionSendToTyper);
+    connect(testAction, &QAction::triggered, this, &Library::actionSendToTyper);
 
     QAction* editAction = menu.addAction("edit");
     // editAction->setData(selectedRows[0].data(Qt::UserRole));
-    connect(editAction, &QAction::triggered, this,
-            &Library::actionEditText);
+    connect(editAction, &QAction::triggered, this, &Library::actionEditText);
   }
 
   QAction* deleteAction = menu.addAction("delete");
-  connect(deleteAction, &QAction::triggered, this,
-          &Library::actionDeleteTexts);
+  connect(deleteAction, &QAction::triggered, this, &Library::actionDeleteTexts);
 
   menu.exec(QCursor::pos());
 }
@@ -269,7 +260,7 @@ void Library::refreshSource(int source) {
 }
 
 void Library::nextText(const std::shared_ptr<Text>& lastText,
-                           Amphetype::SelectionMethod method) {
+                       Amphetype::SelectionMethod method) {
   QSettings s;
   Amphetype::SelectionMethod selectMethod;
   if (method != Amphetype::SelectionMethod::None) {
@@ -316,13 +307,14 @@ void Library::addFiles() {
       this, tr("Import"), ".", tr("UTF-8 text files (*.txt);;All files (*)"));
   if (files.isEmpty()) return;
 
-  ui->progress->show();
-  ui->progressText->show();
   lmc = new LessonMinerController;
-  // lesson miner signals
   connect(lmc, SIGNAL(workDone()), this, SLOT(processNextFile()));
-  connect(lmc, &LessonMinerController::progressUpdate, ui->progress,
-          &QProgressBar::setValue);
+
+  progress_ = new QProgressDialog("Importing...", "Abort", 0, 100);
+  progress_->setMinimumDuration(0);
+  progress_->setAutoClose(false);
+  connect(lmc, &LessonMinerController::progressUpdate, progress_,
+          &QProgressDialog::setValue);
 
   processNextFile();
 }
@@ -330,12 +322,11 @@ void Library::addFiles() {
 void Library::processNextFile() {
   if (files.isEmpty()) {
     refreshSources();
-    ui->progressText->hide();
-    ui->progress->hide();
+    delete progress_;
     delete lmc;
     return;
   }
-  ui->progressText->setText(files.front());
+  progress_->setLabelText(files.front());
   lmc->operate(files.front());
   files.pop_front();
 }

@@ -27,6 +27,7 @@
 #include "texts/text.h"
 #include "settings/settingswidget.h"
 #include "texts/library.h"
+#include "performance/performancehistory.h"
 
 namespace Ui {
 class MainWindow;
@@ -45,6 +46,7 @@ class MainWindow : public QMainWindow {
  private:
   Ui::MainWindow* ui;
   SettingsWidget* settingsWidget;
+  PerformanceHistory* performanceWidget;
   Library* libraryWidget;
 
  private slots:

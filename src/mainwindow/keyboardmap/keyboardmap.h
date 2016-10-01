@@ -19,12 +19,13 @@
 #ifndef SRC_ANALYSIS_KEYBOARDMAP_H_
 #define SRC_ANALYSIS_KEYBOARDMAP_H_
 
-#include <QGraphicsView>
 #include <QGraphicsScene>
+#include <QGraphicsView>
 #include <QList>
-#include <QStringList>
-#include <QSize>
 #include <QMouseEvent>
+#include <QResizeEvent>
+#include <QSize>
+#include <QStringList>
 
 #include "defs.h"
 
@@ -41,8 +42,11 @@ class KeyboardMap : public QGraphicsView {
   void addKeys();
   void drawKeyboard(Amphetype::Modifier modifier = Amphetype::Modifier::None);
   void updateData();
-  QSize sizeHint();
-  QSize minimumSizeHint();
+
+ protected:
+  void resizeEvent(QResizeEvent*);
+  void mousePressEvent(QMouseEvent*);
+  void mouseReleaseEvent(QMouseEvent*);
 
  private:
   QHash<QChar, QHash<QString, QVariant>> statsData;
@@ -53,9 +57,6 @@ class KeyboardMap : public QGraphicsView {
   int keySpacing;
   int keySize;
   QString dataToMap;
-
-  void mousePressEvent(QMouseEvent*);
-  void mouseReleaseEvent(QMouseEvent*);
 
   qreal scaleToRange(qreal, qreal, qreal min = 0, qreal max = 1);
   qreal scaleToRange2(qreal, qreal, qreal min = 0, qreal max = 1,
