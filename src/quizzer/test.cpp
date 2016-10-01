@@ -131,7 +131,6 @@ void Test::handleInput(const QString& currentText, int key,
     this->start();
   }
 
-  QSettings s;
   this->currentPos =
       std::min(currentText.length(), this->text->getText().length());
 
@@ -295,7 +294,8 @@ void ResultWorker::process(Test* test, double wpm, double accuracy,
     }
   }
   // words
-  QRegularExpression re("(\\w|'(?![A-Z]))+(-\\w(\\w|')*)*");
+  QRegularExpression re("(\\w|'(?![A-Z]))+(-\\w(\\w|')*)*",
+                        QRegularExpression::UseUnicodePropertiesOption);
   QRegularExpressionMatchIterator i = re.globalMatch(test->text->getText());
   QRegularExpressionMatch match;
   while (i.hasNext()) {
