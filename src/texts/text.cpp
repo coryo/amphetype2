@@ -34,7 +34,7 @@ Text::Text() : id(-1), source(0), textNumber(-1), type(-1) {
       "text excerpts will be generated for you automatically."
       " There are also some facilities to generate lessons "
       "based on your past statistics! But for now, go to the "
-      "\"Sources\" tab and try adding some texts from the "
+      "\"Library\" window and try adding some texts from the "
       "\"txt\" directory.";
 }
 
