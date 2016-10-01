@@ -177,11 +177,11 @@ void Test::handleInput(const QString& currentText, int key,
 
       emit newWpm(this->currentPos - 1, this->wpm.last());
       emit newApm(this->currentPos - 1, apm);
-    }
 
-    min = std::min(this->minWPM, this->minAPM);
-    max = std::max(this->maxWPM, this->maxAPM);
-    emit characterAdded(max, min);
+      min = std::min(this->minWPM, this->minAPM);
+      max = std::max(this->maxWPM, this->maxAPM);
+      emit characterAdded(max, min);
+    }
   }
 
   if (lcd == QStringRef(&this->text->getText())) {
