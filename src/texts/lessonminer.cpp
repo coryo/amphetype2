@@ -18,15 +18,16 @@
 
 #include "texts/lessonminer.h"
 
+#include <QCryptographicHash>
+#include <QFile>
+#include <QFileInfo>
+#include <QRegularExpression>
+#include <QRegularExpressionMatchIterator>
 #include <QSettings>
 #include <QString>
 #include <QStringRef>
-#include <QFile>
-#include <QFileInfo>
 #include <QTextStream>
-#include <QRegularExpression>
-#include <QRegularExpressionMatchIterator>
-#include <QCryptographicHash>
+
 
 #include <list>
 
@@ -247,7 +248,8 @@ void LessonMiner::fileToParagraphs(QFile* f, QList<QStringList>* paragraphs) {
 QStringList LessonMiner::sentenceSplitter(const QString& text) {
   QRegularExpression re(
       "(?:(?: |^)[^\\w. ]*(?P<pre>\\w+)"
-      "[^ .]*\\.+|[?!]+)['\"]?(?= +(?:[^ a-z]|$))|$");
+      "[^ .]*\\.+|[?!]+)['\"]?(?= +(?:[^ a-z]|$))|$",
+      QRegularExpression::UseUnicodePropertiesOption);
 
   int start = 0;
   QStringList list;
