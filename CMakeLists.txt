@@ -1,6 +1,6 @@
 project(amphetype2)
 set (amphetype2_VERSION_MAJOR 0)
-set (amphetype2_VERSION_MINOR 1)
+set (amphetype2_VERSION_MINOR 2)
 set (amphetype2_VERSION_MICRO 0)
 set (VERSION_STRING "${amphetype2_VERSION_MAJOR}.${amphetype2_VERSION_MINOR}.${amphetype2_VERSION_MICRO}")
 string(TIMESTAMP NOW UTC)

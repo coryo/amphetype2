@@ -66,44 +66,6 @@ void logHandler(QtMsgType type, const QMessageLogContext &context,
   }
 }
 
-void loadSettings() {
-  QSettings s;
-  if (!s.contains("typer_font")) {
-    // no settings found, write defaults
-    QFont defaultFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    defaultFont.setPointSize(12);
-    defaultFont.setStyleHint(QFont::Monospace);
-    s.setValue("typer_font", defaultFont);
-    s.setValue("history", 30.0);
-    s.setValue("min_chars", 220);
-    s.setValue("perf_group_by", 0);
-    s.setValue("perf_items", -1);
-    s.setValue("select_method", 0);
-    s.setValue("num_rand", 50);
-    s.setValue("show_last", true);
-    s.setValue("show_xaxis", false);
-    s.setValue("chrono_x", false);
-    s.setValue("dampen_graph", false);
-    s.setValue("dampen_average", 10);
-    s.setValue("def_group_by", 10);
-    s.setValue("ana_which", 0);
-    s.setValue("ana_what", 0);
-    s.setValue("ana_many", 30);
-    s.setValue("ana_count", 1);
-    s.setValue("typer_cols", 80);
-    s.setValue("stylesheet", "basic");
-    s.setValue("target_wpm", 80);
-    s.setValue("target_acc", 97);
-    s.setValue("target_vis", 1);
-    s.setValue("perf_logging", true);
-    s.setValue("liveplot_visible", true);
-    s.setValue("debug_logging", false);
-    s.setValue("keyboard_layout", 0);
-    s.setValue("keyboard_standard", 0);
-    loadSettings();
-  }
-}
-
 int main(int argc, char *argv[]) {
   RunGuard guard("amphetype2");
   if (!guard.tryToRun()) return 0;
@@ -129,9 +91,8 @@ int main(int argc, char *argv[]) {
   QSettings::setDefaultFormat(QSettings::IniFormat);
 
   QSettings s;
-  loadSettings();
 
-  if (s.value("debug_logging").toBool()) {
+  if (s.value("debug_logging", false).toBool()) {
     QsLogging::Logger::instance().setLoggingLevel(QsLogging::Level::DebugLevel);
     QLOG_INFO() << "Debug Logging enabled.";
     QLOG_DEBUG() << "debug.";
@@ -145,7 +106,7 @@ int main(int argc, char *argv[]) {
   Database db;
   db.initDB();
 
-  QFile file(":/stylesheets/" + s.value("stylesheet").toString() + ".qss");
+  QFile file(":/stylesheets/" + s.value("stylesheet", "basic").toString() + ".qss");
   if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
     a.setStyleSheet(file.readAll());
     file.close();

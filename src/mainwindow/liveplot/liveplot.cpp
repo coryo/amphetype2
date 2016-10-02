@@ -95,8 +95,8 @@ void LivePlot::updatePlotTargetLine() {
   this->clearItems();
   QCPItemStraightLine* line = new QCPItemStraightLine(this);
   line->setPen(QPen(targetLineColor, 2));
-  line->point1->setCoords(0, s.value("target_wpm").toInt());
-  line->point2->setCoords(999, s.value("target_wpm").toInt());
+  line->point1->setCoords(0, s.value("target_wpm", 50).toInt());
+  line->point2->setCoords(999, s.value("target_wpm", 50).toInt());
   this->addItem(line);
   this->replot();
 }

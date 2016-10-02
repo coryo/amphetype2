@@ -19,19 +19,21 @@
 #ifndef SRC_QUIZZER_QUIZZER_H_
 #define SRC_QUIZZER_QUIZZER_H_
 
-#include <QWidget>
-#include <QTimer>
-#include <QTime>
+#include <QFocusEvent>
 #include <QString>
 #include <QThread>
-#include <QFocusEvent>
+#include <QTime>
+#include <QTimer>
+#include <QWidget>
+
 
 #include <memory>
 
-#include "texts/library.h"
-#include "texts/text.h"
 #include "quizzer/test.h"
 #include "quizzer/typer.h"
+#include "texts/library.h"
+#include "texts/text.h"
+
 
 namespace Ui {
 class Quizzer;
@@ -43,7 +45,7 @@ class Quizzer : public QWidget {
   Q_PROPERTY(QString stopColor MEMBER stopColor NOTIFY colorChanged)
 
  public:
-  explicit Quizzer(QWidget *parent = 0);
+  explicit Quizzer(QWidget *parent = Q_NULLPTR);
   ~Quizzer();
   Typer *getTyper() const;
 
@@ -56,6 +58,9 @@ class Quizzer : public QWidget {
   QTime lessonTime;
   QString goColor;
   QString stopColor;
+  int target_wpm_;
+  double target_acc_;
+  double target_vis_;
 
  signals:
   void wantText(const std::shared_ptr<Text> &,
@@ -70,9 +75,11 @@ class Quizzer : public QWidget {
   void testStarted(int);
 
  public slots:
+  void loadSettings();
+  void saveSettings();
   void setText(const std::shared_ptr<Text> &);
-  void setTyperFont();
-  void updateTyperDisplay();
+  void checkSource(QList<int>);
+  void checkText(QList<int>);
 
  private slots:
   void alertText(const char *);

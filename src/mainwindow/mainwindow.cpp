@@ -91,6 +91,10 @@ MainWindow::MainWindow(QWidget* parent)
           this->performanceWidget, &PerformanceHistory::refreshSources);
   connect(this->libraryWidget, &Library::sourcesChanged,
           this->performanceWidget, &PerformanceHistory::refreshPerformance);
+  connect(this->libraryWidget, &Library::sourcesDeleted, ui->quizzer,
+          &Quizzer::checkSource);
+  connect(this->libraryWidget, &Library::textsDeleted, ui->quizzer,
+          &Quizzer::checkText);
 
   // Performance
   connect(this->performanceWidget, &PerformanceHistory::setText, ui->quizzer,
@@ -124,11 +128,9 @@ MainWindow::MainWindow(QWidget* parent)
 
   // Settings
   connect(settingsWidget, &SettingsWidget::settingsChanged, ui->quizzer,
-          &Quizzer::setTyperFont);
+          &Quizzer::loadSettings);
   connect(settingsWidget, &SettingsWidget::settingsChanged, ui->plot,
           &LivePlot::updatePlotTargetLine);
-  connect(settingsWidget, &SettingsWidget::settingsChanged, ui->quizzer,
-          &Quizzer::updateTyperDisplay);
   connect(settingsWidget, &SettingsWidget::settingsChanged,
           this->performanceWidget, &PerformanceHistory::refreshCurrentPlot);
   connect(settingsWidget, &SettingsWidget::newKeyboard, ui->keyboardMap,
@@ -228,7 +230,7 @@ void MainWindow::changeProfile(QAction* action) {
 }
 
 void MainWindow::gotoTab(int i) { ui->tabWidget->setCurrentIndex(i); }
-void MainWindow::gotoLessonGenTab() { ui->tabWidget->setCurrentIndex(3); }
+void MainWindow::gotoLessonGenTab() { ui->tabWidget->setCurrentIndex(2); }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
   QSettings s;

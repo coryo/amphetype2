@@ -65,6 +65,8 @@ class PerformanceHistory : public QMainWindow {
   QColor plotBackgroundColor;
   QColor plotForegroundColor;
 
+  double target_wpm_;
+
  signals:
   void setText(std::shared_ptr<Text>);
   void gotoTab(int);
@@ -75,12 +77,13 @@ class PerformanceHistory : public QMainWindow {
   void refreshPerformance();
   void refreshCurrentPlot();
   void refreshSources();
+  void loadSettings();
+  void saveSettings();
 
  private slots:
   void deleteResult(bool);
   void doubleClicked(const QModelIndex&);
   void showPlot(int = 0);
-  void writeSettings();
   void updateColors();
   void togglePlotLine(int);
 };

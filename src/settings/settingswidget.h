@@ -41,15 +41,17 @@ class SettingsWidget : public QWidget {
   void settingsChanged();
   void newKeyboard(Amphetype::Layout, Amphetype::Standard);
 
+ public slots:
+  void loadSettings();
+  void saveSettings();
+
  private slots:
   void selectFont();
   void changeStyleSheet(int);
-  void changePerfLogging(int);
-  void writeTargets();
-  void changeDebugLogging(int);
+
   void changeKeyboardLayout(int);
   void changeKeyboardStandard(int);
-  void changeSelectMethod(int);
+  // void changeSelectMethod(int);
 };
 
 #endif  // SRC_SETTINGS_SETTINGSWIDGET_H_

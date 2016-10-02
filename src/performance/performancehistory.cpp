@@ -27,7 +27,6 @@
 #include <QStandardItemModel>
 #include <QVariantList>
 
-
 #include <algorithm>
 
 #include <QsLog.h>
@@ -35,7 +34,6 @@
 #include "database/db.h"
 #include "texts/text.h"
 #include "ui_performancehistory.h"
-
 
 PerformanceHistory::PerformanceHistory(QWidget* parent)
     : QMainWindow(parent),
@@ -45,22 +43,7 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
 
   ui->menuView->addAction(ui->plotDock->toggleViewAction());
 
-  QSettings s;
-
-  // set states of checkboxes based on settings file
-  if (s.value("chrono_x", false).toBool())
-    ui->timeScaleCheckBox->setCheckState(Qt::Checked);
-  if (s.value("show_xaxis", false).toBool())
-    ui->fullRangeYCheckBox->setCheckState(Qt::Checked);
-  if (s.value("dampen_graph", false).toBool())
-    ui->dampenCheckBox->setCheckState(Qt::Checked);
-  ui->plotSelector->setCurrentIndex(s.value("visible_plot", 0).toInt());
-  // set default values
-  ui->smaWindowSpinBox->setValue(s.value("dampen_average").toInt());
-  ui->limitNumberSpinBox->setValue(s.value("perf_items").toInt());
-  ui->groupByComboBox->setCurrentIndex(s.value("perf_group_by").toInt());
-  ui->groupByComboBox->setItemText(
-      2, QString("%1 Results").arg(s.value("def_group_by").toInt()));
+  loadSettings();
 
   // populate sources combobox
   this->refreshSources();
@@ -77,52 +60,30 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
   // double clicking an item in the list
   connect(ui->tableView, &QTableView::doubleClicked, this,
           &PerformanceHistory::doubleClicked);
+
   // settings signals
-  // these are setup to the plot data only has to be recalculated when needed
-  // refreshPerformance recalcs the data, refreshCurrentPlot just adjusts
-  // the plot properties
   connect(ui->updateButton, &QPushButton::pressed, this,
           &PerformanceHistory::refreshPerformance);
   connect(ui->sourceComboBox, SIGNAL(currentIndexChanged(int)), this,
-          SLOT(writeSettings()));
-  connect(ui->sourceComboBox, SIGNAL(currentIndexChanged(int)), this,
           SLOT(refreshPerformance()));
   connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this,
-          SLOT(writeSettings()));
-  connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this,
           SLOT(refreshPerformance()));
+
+  // plot settings.
   connect(ui->plotSelector, SIGNAL(currentIndexChanged(int)), this,
           SLOT(showPlot(int)));
-  connect(ui->plotSelector, SIGNAL(currentIndexChanged(int)), this,
-          SLOT(writeSettings()));
-  // plot settings.
-  connect(ui->limitNumberSpinBox, SIGNAL(valueChanged(int)), this,
-          SLOT(writeSettings()));
-  connect(ui->timeScaleCheckBox, SIGNAL(stateChanged(int)), this,
-          SLOT(writeSettings()));
   connect(ui->timeScaleCheckBox, SIGNAL(stateChanged(int)), this,
           SLOT(refreshPerformance()));
   connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this,
-          SLOT(writeSettings()));
-  connect(ui->fullRangeYCheckBox, SIGNAL(stateChanged(int)), this,
           SLOT(refreshCurrentPlot()));
-  connect(ui->dampenCheckBox, SIGNAL(stateChanged(int)), this,
-          SLOT(writeSettings()));
   connect(ui->dampenCheckBox, SIGNAL(stateChanged(int)), this,
           SLOT(refreshCurrentPlot()));
   connect(ui->smaWindowSpinBox, SIGNAL(valueChanged(int)), this,
-          SLOT(writeSettings()));
-  connect(ui->smaWindowSpinBox, SIGNAL(valueChanged(int)), this,
           SLOT(refreshCurrentPlot()));
-  connect(ui->plotCheckBox, SIGNAL(stateChanged(int)), this,
-          SLOT(writeSettings()));
   connect(ui->plotCheckBox, SIGNAL(stateChanged(int)), this,
           SLOT(refreshCurrentPlot()));
   connect(ui->lineCheckBox, &QCheckBox::stateChanged, this,
           &PerformanceHistory::togglePlotLine);
-
-  ui->lineCheckBox->setCheckState(
-      s.value("plot_hide_line", false).toBool() ? Qt::Checked : Qt::Unchecked);
 
   connect(ui->tableView, &QWidget::customContextMenuRequested, this,
           &PerformanceHistory::contextMenu);
@@ -132,8 +93,54 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
 }
 
 PerformanceHistory::~PerformanceHistory() {
+  saveSettings();
   delete ui;
   delete model;
+}
+
+void PerformanceHistory::loadSettings() {
+  QSettings s;
+  ui->timeScaleCheckBox->setCheckState(
+      s.value("Performance/chrono_x", false).toBool() ? Qt::Checked
+                                                      : Qt::Unchecked);
+  ui->fullRangeYCheckBox->setCheckState(
+      s.value("Performance/show_xaxis", false).toBool() ? Qt::Checked
+                                                        : Qt::Unchecked);
+  ui->dampenCheckBox->setCheckState(
+      s.value("Performance/dampen_graph", false).toBool() ? Qt::Checked
+                                                          : Qt::Unchecked);
+  ui->lineCheckBox->setCheckState(
+      s.value("Performance/plot_hide_line", false).toBool() ? Qt::Checked
+                                                            : Qt::Unchecked);
+  ui->plotSelector->setCurrentIndex(
+      s.value("Performance/visible_plot", 0).toInt());
+  ui->smaWindowSpinBox->setValue(
+      s.value("Performance/dampen_average", 10).toInt());
+  ui->limitNumberSpinBox->setValue(
+      s.value("Performance/perf_items", -1).toInt());
+  ui->groupByComboBox->setCurrentIndex(
+      s.value("Performance/perf_group_by", 0).toInt());
+  ui->groupByComboBox->setItemText(
+      2, QString("%1 Results")
+             .arg(s.value("Performance/def_group_by", 10).toInt()));
+
+  target_wpm_ = s.value("target_wpm", 50).toDouble();
+}
+
+void PerformanceHistory::saveSettings() {
+  QSettings s;
+  s.setValue("Performance/perf_items", ui->limitNumberSpinBox->value());
+  s.setValue("Performance/perf_group_by", ui->groupByComboBox->currentIndex());
+  s.setValue("Performance/visible_plot", ui->plotSelector->currentIndex());
+  s.setValue("Performance/dampen_average", ui->smaWindowSpinBox->value());
+  s.setValue("Performance/dampen_graph",
+             ui->dampenCheckBox->checkState() == Qt::Checked);
+  s.setValue("Performance/chrono_x",
+             ui->timeScaleCheckBox->checkState() == Qt::Checked);
+  s.setValue("Performance/show_xaxis",
+             ui->fullRangeYCheckBox->checkState() == Qt::Checked);
+  s.setValue("Performance/plot_hide_line",
+             ui->lineCheckBox->checkState() == Qt::Checked);
 }
 
 void PerformanceHistory::contextMenu(const QPoint& pos) {
@@ -227,13 +234,11 @@ void PerformanceHistory::updateColors() {
 }
 
 void PerformanceHistory::togglePlotLine(int state) {
-  QSettings s;
   auto style =
       state ? QCPGraph::LineStyle::lsNone : QCPGraph::LineStyle::lsLine;
   ui->performancePlot->graph(0)->setLineStyle(style);
   ui->performancePlot->graph(1)->setLineStyle(style);
   ui->performancePlot->graph(2)->setLineStyle(style);
-  s.setValue("plot_hide_line", (state == Qt::Checked) ? true : false);
   this->refreshCurrentPlot();
 }
 
@@ -262,20 +267,6 @@ QCPGraph* PerformanceHistory::dampen(QCPGraph* graph, int n) {
   return newGraph;
 }
 
-void PerformanceHistory::writeSettings() {
-  QSettings s;
-  s.setValue("perf_items", ui->limitNumberSpinBox->value());
-  s.setValue("perf_group_by", ui->groupByComboBox->currentIndex());
-  s.setValue("dampen_average", ui->smaWindowSpinBox->value());
-
-  s.setValue("chrono_x", ui->timeScaleCheckBox->checkState() == Qt::Checked);
-  s.setValue("show_xaxis", ui->fullRangeYCheckBox->checkState() == Qt::Checked);
-  s.setValue("dampen_graph", ui->dampenCheckBox->checkState() == Qt::Checked);
-
-  s.setValue("visible_plot", ui->plotSelector->currentIndex());
-  emit settingsChanged();
-}
-
 void PerformanceHistory::refreshSources() {
   ui->sourceComboBox->clear();
   ui->sourceComboBox->addItem("<ALL>");
@@ -300,10 +291,6 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx) {
 }
 
 void PerformanceHistory::refreshPerformance() {
-  QSettings s;
-
-  ui->tableView->hide();
-
   model->clear();
 
   QStringList headers;
@@ -332,7 +319,8 @@ void PerformanceHistory::refreshPerformance() {
   Database db;
   auto rows = db.getPerformanceData(ui->sourceComboBox->currentIndex(),
                                     ui->sourceComboBox->currentData().toInt(),
-                                    ui->limitNumberSpinBox->value());
+                                    ui->limitNumberSpinBox->value(),
+                                    ui->groupByComboBox->currentIndex());
   double x = -1;
   // iterate through rows
 
@@ -354,7 +342,7 @@ void PerformanceHistory::refreshPerformance() {
     items << new QStandardItem(row[2].toString());
     // add points to each of the plots
     // if chrono x, make the x value seconds since epoch
-    if (s.value("chrono_x", false).toBool()) x = t.toTime_t();
+    if (ui->timeScaleCheckBox->checkState() == Qt::Checked) x = t.toTime_t();
     wpm = row[3].toDouble();
     acc = row[4].toDouble();
     vis = row[5].toDouble();
@@ -386,7 +374,6 @@ void PerformanceHistory::refreshPerformance() {
   ui->tableView->horizontalHeader()->setSectionResizeMode(2,
                                                           QHeaderView::Stretch);
   ui->tableView->resizeColumnsToContents();
-  ui->tableView->show();
 
   this->showPlot(ui->plotSelector->currentIndex());
 }
@@ -402,8 +389,6 @@ void PerformanceHistory::showPlot(int p) {
   auto yAxis = ui->performancePlot->yAxis;
   auto yAxis2 = ui->performancePlot->yAxis2;
 
-  QSettings s;
-
   // hide all the plots
   for (int i = 0; i < ui->performancePlot->graphCount(); i++)
     ui->performancePlot->graph(i)->setVisible(false);
@@ -414,11 +399,11 @@ void PerformanceHistory::showPlot(int p) {
   }
 
   // make a SMA graph out of the current one and show it
-  if (s.value("dampen_graph").toBool()) {
+  if (ui->dampenCheckBox->checkState() == Qt::Checked) {
     for (int i = 0; i < 3; i++) {
       if (i > 0 && i != p) continue;
-      QCPGraph* sma = dampen(ui->performancePlot->graph(i),
-                             s.value("dampen_average").toInt());
+      QCPGraph* sma =
+          dampen(ui->performancePlot->graph(i), ui->smaWindowSpinBox->value());
       if (!sma) continue;
       QColor smaColor;
       switch (i) {
@@ -443,9 +428,8 @@ void PerformanceHistory::showPlot(int p) {
   // set correct y axis label
   // and get the y 'target' value from settings
   yAxis->setLabel("Words per Minute (wpm)");
-  double yTarget = s.value("target_wpm").toDouble();
-  yAxis->setRangeUpper(
-      std::max(s.value("target_wpm").toDouble(), yAxis->range().upper));
+  double yTarget = target_wpm_;
+  yAxis->setRangeUpper(std::max(yTarget, yAxis->range().upper));
   switch (p) {
     case 0:
       yAxis2->setVisible(false);
@@ -469,13 +453,13 @@ void PerformanceHistory::showPlot(int p) {
   }
 
   // set the min or max of the y axis if needed
-  if (s.value("show_xaxis").toBool()) {
+  if (ui->fullRangeYCheckBox->checkState() == Qt::Checked) {
     yAxis->setRangeLower(0);
   }
   yAxis->grid()->setZeroLinePen(Qt::NoPen);
 
   // axis properties dependent on time scaling or not
-  if (s.value("chrono_x").toBool()) {
+  if (ui->timeScaleCheckBox->checkState() == Qt::Checked) {
     xAxis->setTickLabelType(QCPAxis::ltDateTime);
     xAxis->setDateTimeFormat("M/dd\nHH:mm");
     xAxis->setAutoTickStep(true);

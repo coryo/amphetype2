@@ -480,9 +480,7 @@ int Database::getTextsCount(int source) {
       .toInt();
 }
 
-QList<QVariantList> Database::getPerformanceData(int w, int source, int limit) {
-  QSettings s;
-  int g = s.value("perf_group_by").toInt();
+QList<QVariantList> Database::getPerformanceData(int w, int source, int limit, int g, int n) {
   bool grouping = (g == 0) ? false : true;
   QStringList query;
   QVariantList args;
@@ -549,7 +547,7 @@ QList<QVariantList> Database::getPerformanceData(int w, int source, int limit) {
                  "    order by datetime(w) desc "
                  ") as r "
                  "group by grouping ")
-                 .arg(s.value("def_group_by").toInt())
+                 .arg(n)
                  .arg(where);
     }
   }
@@ -625,15 +623,13 @@ std::shared_ptr<Text> Database::getText(int id) {
 }
 
 std::shared_ptr<Text> Database::getRandomText() {
-  QSettings s;
   return getTextWithQuery(
       "SELECT t.id, t.source, t.text, s.name, s.type "
       "FROM ((select id,source,text,rowid from text "
       "where disabled is null order by random() "
-      "limit ?) as t) "
+      "limit 1) as t) "
       "INNER JOIN source as s "
-      "ON (t.source = s.rowid)",
-      s.value("num_rand").toInt());
+      "ON (t.source = s.rowid)");
 }
 
 std::shared_ptr<Text> Database::getNextText() {

@@ -189,8 +189,11 @@ void Library::actionDeleteTexts(bool checked) {
   if (ui->sourcesTable->selectionModel()->hasSelection()) {
     auto sourceIndex = ui->sourcesTable->selectionModel()->selectedRows()[0];
     source_model_->refreshSource(sourceIndex);
+    emit sourceChanged(sourceIndex.data(Qt::UserRole).toInt());
   }
+
   text_model_->removeIndexes(indexes);
+  emit textsDeleted(text_ids);
 }
 
 void Library::actionSendToTyper(bool checked) {
@@ -262,7 +265,11 @@ void Library::addSource() {
 
 void Library::deleteSource() {
   auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
+  QList<int> sources;
+  for (const auto& index : indexes) sources << index.data(Qt::UserRole).toInt();
+
   source_model_->removeIndexes(indexes);
+  emit sourcesDeleted(sources);
   emit sourcesChanged();
 }
 

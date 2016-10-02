@@ -18,30 +18,28 @@
 
 #include "quizzer/quizzer.h"
 
+#include <QFont>
+#include <QFontDatabase>
 #include <QSettings>
 
 #include <QsLog.h>
 
-#include "ui_quizzer.h"
+#include "database/db.h"
+#include "quizzer/test.h"
 #include "quizzer/typer.h"
 #include "texts/text.h"
-#include "quizzer/test.h"
-#include "database/db.h"
+#include "ui_quizzer.h"
 
 Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
   ui->setupUi(this);
 
   this->setFocusPolicy(Qt::StrongFocus);
 
-  QSettings s;
+  loadSettings();
 
   // set defaults for ui stuff
   this->timerLabelReset();
-  this->setTyperFont();
   this->setPreviousResultText(0, 0);
-  ui->result->setVisible(s.value("show_last").toBool());
-
-  ui->typerColsSpinBox->setValue(s.value("typer_cols").toInt());
   this->lessonTimer.setInterval(1000);
 
   connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), ui->typerDisplay,
@@ -50,16 +48,64 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
   connect(&lessonTimer, &QTimer::timeout, this, &Quizzer::timerLabelUpdate);
 }
 
-Quizzer::~Quizzer() { delete ui; }
-
-void Quizzer::focusInEvent(QFocusEvent* event) {
-  QLOG_DEBUG() << "focusIn";
-  ui->typer->grabKeyboard();
+Quizzer::~Quizzer() {
+  saveSettings();
+  delete ui;
 }
 
+void Quizzer::loadSettings() {
+  QSettings s;
+  QFont f;
+
+  target_wpm_ = s.value("target_wpm", 50).toInt();
+  target_acc_ = s.value("target_acc", 97).toDouble();
+  target_vis_ = s.value("target_vis", 2).toDouble();
+
+  ui->result->setVisible(s.value("Quizzer/show_last", true).toBool());
+  ui->typerColsSpinBox->setValue(s.value("Quizzer/typer_cols", 80).toInt());
+
+  auto font_data = s.value("Quizzer/typer_font");
+  if (!font_data.isNull()) {
+    f = qvariant_cast<QFont>(font_data);
+  } else {
+    f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    f.setPointSize(14);
+    f.setStyleHint(QFont::Monospace);
+  }
+  ui->typerDisplay->setCols(ui->typerColsSpinBox->value());
+  ui->typerDisplay->setFont(f);
+  ui->typerDisplay->updateDisplay();
+}
+
+void Quizzer::saveSettings() {
+  QSettings s;
+  s.setValue("Quizzer/typer_cols", ui->typerColsSpinBox->value());
+  // s.setValue("Quizzer/show_last", ui->result->isVisible());
+  s.setValue("Quizzer/typer_font", ui->typerDisplay->currentFont());
+}
+
+void Quizzer::focusInEvent(QFocusEvent* event) { ui->typer->grabKeyboard(); }
+
 void Quizzer::focusOutEvent(QFocusEvent* event) {
-  QLOG_DEBUG() << "focusOut";
   ui->typer->releaseKeyboard();
+}
+
+void Quizzer::checkSource(QList<int> sources) {
+  for (const auto& source : sources) {
+    if (this->text->getSource() == source) {
+      ui->typer->test()->cancel();
+      return;
+    }
+  }
+}
+
+void Quizzer::checkText(QList<int> texts) {
+  for (const auto& text : texts) {
+    if (this->text->getId() == text) {
+      ui->typer->test()->cancel();
+      return;
+    }
+  }
 }
 
 Typer* Quizzer::getTyper() const { return this->ui->typer; }
@@ -76,19 +122,17 @@ void Quizzer::alertText(const char* text) {
 }
 
 void Quizzer::done(double wpm, double acc, double vis) {
-  QSettings s;
-
   // set the previous results label text
   this->setPreviousResultText(wpm, acc);
 
   // repeat if targets not met, otherwise get next text
-  if (acc < s.value("target_acc").toInt() / 100.0) {
+  if (acc < target_acc_ / 100.0) {
     this->alertText("Failed Accuracy Target");
     this->setText(this->text);
-  } else if (wpm < s.value("target_wpm").toInt()) {
+  } else if (wpm < target_wpm_) {
     this->alertText("Failed WPM Target");
     this->setText(this->text);
-  } else if (vis > s.value("target_vis").toDouble()) {
+  } else if (vis > target_vis_) {
     this->alertText("Failed Viscosity Target");
     this->setText(this->text);
   } else {
@@ -102,8 +146,6 @@ void Quizzer::beginTest(int length) {
   this->timerLabelReset();
   this->timerLabelGo();
 }
-
-void Quizzer::updateTyperDisplay() { ui->typerDisplay->updateDisplay(); }
 
 void Quizzer::timerLabelUpdate() {
   lessonTime = lessonTime.addSecs(1);
@@ -127,9 +169,7 @@ void Quizzer::timerLabelReset() {
 }
 
 void Quizzer::setPreviousResultText(double lastWpm, double lastAcc) {
-  QSettings s;
-
-  int n = s.value("def_group_by").toInt();
+  int n = 10;
   QPair<double, double> stats;
   Database db;
   stats = db.getMedianStats(n);
@@ -164,10 +204,4 @@ void Quizzer::setText(const std::shared_ptr<Text>& t) {
   ui->typerDisplay->setTextTarget(text->getText());
   ui->textInfoLabel->setText(QString("%1 #%2").arg(
       text->getSourceName(), QString::number(text->getTextNumber())));
-}
-
-void Quizzer::setTyperFont() {
-  QSettings s;
-  QFont f = qvariant_cast<QFont>(s.value("typer_font"));
-  ui->typerDisplay->setFont(f);
 }

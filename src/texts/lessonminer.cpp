@@ -35,7 +35,7 @@
 
 LessonMiner::LessonMiner(QObject* parent) : QObject(parent) {
   QSettings s;
-  min_chars = s.value("min_chars").toInt();
+  min_chars = s.value("min_chars", 220).toInt();
 
   // things to ignore as sentence enders.
   // ie "Mr. Smith." is shouldn't be 2 sentences

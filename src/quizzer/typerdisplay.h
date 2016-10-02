@@ -19,9 +19,10 @@
 #ifndef SRC_QUIZZER_TYPERDISPLAY_H_
 #define SRC_QUIZZER_TYPERDISPLAY_H_
 
-#include <QTextEdit>
 #include <QString>
 #include <QStringList>
+#include <QTextEdit>
+
 
 #include <utility>
 
@@ -32,7 +33,7 @@ class TyperDisplay : public QTextEdit {
   Q_PROPERTY(QString highlightedTextColor MEMBER highlightedTextColor)
 
  public:
-  explicit TyperDisplay(QWidget* parent = 0);
+  explicit TyperDisplay(QWidget* parent = Q_NULLPTR);
   void setTextTarget(const QString&);
 
  private:
@@ -48,6 +49,7 @@ class TyperDisplay : public QTextEdit {
   std::pair<int, int> posToListPos(int);
 
  public slots:
+  void setCols(int cols);
   void updateDisplay();
   void wordWrap(int);
   void moveCursor(int, int);

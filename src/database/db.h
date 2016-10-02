@@ -77,7 +77,7 @@ class Database : public QObject {
   QList<QVariantList> getTextsData(int, int page = 0, int limit = 100);
   QVariantList getTextData(int);
   int getTextsCount(int source);
-  QList<QVariantList> getPerformanceData(int, int, int);
+  QList<QVariantList> getPerformanceData(int, int, int, int, int = 10);
   QList<QVariantList> getSourcesList();
   QList<QVariantList> getStatisticsData(const QString&, int, int, int, int);
   QHash<QChar, QHash<QString, QVariant>> getKeyFrequency();

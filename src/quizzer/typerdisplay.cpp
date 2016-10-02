@@ -34,16 +34,19 @@ TyperDisplay::TyperDisplay(QWidget* parent)
   this->setReadOnly(true);
 }
 
+void TyperDisplay::setCols(int cols) { this->cols = cols; }
+
 void TyperDisplay::setTextTarget(const QString& t) {
   QSettings s;
   this->testPosition = 0;
   this->cursorPosition = 0;
   this->originalText = t;
-  this->cols = s.value("typer_cols").toInt();
+  // this->cols = s.value("Quizzer/typer_cols", 80).toInt();
   this->wordWrap(this->cols);
 }
 
 void TyperDisplay::moveCursor(int testPosition, int cursorPosition) {
+  if (this->originalText.isEmpty()) return;
   this->testPosition = testPosition;
   this->cursorPosition = cursorPosition;
 
@@ -81,9 +84,7 @@ void TyperDisplay::wordWrap(int w) {
   if (this->originalText.isEmpty()) return;
   this->wrappedText.clear();
 
-  QSettings s;
   int maxWidth = w;
-  s.setValue("typer_cols", maxWidth);
 
   QString original(originalText);
 

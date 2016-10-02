@@ -39,6 +39,7 @@ class StatisticsWidget : public QWidget {
  private:
   Ui::StatisticsWidget* ui;
   QStandardItemModel* model;
+  int history_;
 
  signals:
   void newItems(QStringList&);
@@ -46,9 +47,10 @@ class StatisticsWidget : public QWidget {
  public slots:
   void update();
   void populateStatistics();
+  void loadSettings();
+  void saveSettings();
 
  private slots:
-  void writeSettings();
   void generateList();
 };
 

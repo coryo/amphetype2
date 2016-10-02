@@ -23,15 +23,12 @@
 #include <QStandardItemModel>
 #include <QStringList>
 
-
 #include <algorithm>
 #include <string>
 #include <vector>
 
-
 #include "database/db.h"
 #include "ui_statisticswidget.h"
-
 
 StatisticsWidget::StatisticsWidget(QWidget* parent)
     : QWidget(parent),
@@ -39,39 +36,47 @@ StatisticsWidget::StatisticsWidget(QWidget* parent)
       model(new QStandardItemModel) {
   ui->setupUi(this);
 
-  QSettings s;
-
-  ui->limitSpinBox->setValue(s.value("ana_many").toInt());
-  ui->minCountSpinBox->setValue(s.value("ana_count").toInt());
-  ui->orderComboBox->setCurrentIndex(s.value("ana_which").toInt());
-  ui->typeComboBox->setCurrentIndex(s.value("ana_what").toInt());
+  loadSettings();
 
   connect(ui->orderComboBox, SIGNAL(currentIndexChanged(int)), this,
-          SLOT(writeSettings()));
+          SLOT(populateStatistics()));
   connect(ui->typeComboBox, SIGNAL(currentIndexChanged(int)), this,
-          SLOT(writeSettings()));
-  connect(ui->updateButton, SIGNAL(pressed()), this, SLOT(writeSettings()));
+          SLOT(populateStatistics()));
+  connect(ui->updateButton, &QPushButton::pressed, this,
+          &StatisticsWidget::populateStatistics);
   connect(ui->generatorButton, &QPushButton::pressed, this,
           &StatisticsWidget::generateList);
 
-  this->populateStatistics();
+  populateStatistics();
 }
 
 StatisticsWidget::~StatisticsWidget() {
+  saveSettings();
   delete ui;
   delete model;
 }
 
-void StatisticsWidget::update() { this->populateStatistics(); }
-
-void StatisticsWidget::writeSettings() {
+void StatisticsWidget::loadSettings() {
   QSettings s;
-  s.setValue("ana_which", ui->orderComboBox->currentIndex());
-  s.setValue("ana_what", ui->typeComboBox->currentIndex());
-  s.setValue("ana_many", ui->limitSpinBox->value());
-  s.setValue("ana_count", ui->minCountSpinBox->value());
-  populateStatistics();
+  ui->limitSpinBox->setValue(s.value("statisticsWidget/limit", 30).toInt());
+  ui->minCountSpinBox->setValue(s.value("statisticsWidget/min", 1).toInt());
+  ui->orderComboBox->setCurrentIndex(
+      s.value("statisticsWidget/order", 0).toInt());
+  ui->typeComboBox->setCurrentIndex(
+      s.value("statisticsWidget/type", 0).toInt());
+  history_ = s.value("statisticsWidget/days", 30).toInt();
 }
+
+void StatisticsWidget::saveSettings() {
+  QSettings s;
+  s.setValue("statisticsWidget/order", ui->orderComboBox->currentIndex());
+  s.setValue("statisticsWidget/type", ui->typeComboBox->currentIndex());
+  s.setValue("statisticsWidget/limit", ui->limitSpinBox->value());
+  s.setValue("statisticsWidget/min", ui->minCountSpinBox->value());
+  s.setValue("statisticsWidget/days", history_);
+}
+
+void StatisticsWidget::update() { this->populateStatistics(); }
 
 void StatisticsWidget::generateList() {
   if (!this->model) return;
@@ -86,8 +91,6 @@ void StatisticsWidget::generateList() {
 }
 
 void StatisticsWidget::populateStatistics() {
-  QSettings s;
-
   model->clear();
 
   QStringList headers;
@@ -110,9 +113,8 @@ void StatisticsWidget::populateStatistics() {
   int limit = ui->limitSpinBox->value();
   int count = ui->minCountSpinBox->value();
 
-  QString historyString = QDateTime::currentDateTime()
-                              .addDays(-s.value("history").toInt())
-                              .toString(Qt::ISODate);
+  QString historyString =
+      QDateTime::currentDateTime().addDays(-history_).toString(Qt::ISODate);
 
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);

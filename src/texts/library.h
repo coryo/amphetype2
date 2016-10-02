@@ -60,6 +60,8 @@ class Library : public QMainWindow {
   void sourceDeleted(int);
   void sourcesChanged();
   void sourceChanged(int);
+  void sourcesDeleted(QList<int>);
+  void textsDeleted(QList<int>);
 
  public slots:
   void reload();
