@@ -278,8 +278,5 @@ void KeyboardMap::loadLayout(Amphetype::Layout layout) {
     line_number++;
   }
   output << keys_standard << keys_shift << keys_altgr;
-  QLOG_DEBUG() << output[0];
-  QLOG_DEBUG() << output[1];
-  QLOG_DEBUG() << output[2];
   this->keyboardKeys = output;
 }
