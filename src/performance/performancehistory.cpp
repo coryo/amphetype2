@@ -68,6 +68,8 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
           SLOT(refreshPerformance()));
   connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this,
           SLOT(refreshPerformance()));
+  connect(ui->limitNumberSpinBox, SIGNAL(valueChanged(int)), this,
+          SLOT(refreshPerformance()));
 
   // plot settings.
   connect(ui->plotSelector, SIGNAL(currentIndexChanged(int)), this,
