@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>526</width>
-    <height>299</height>
+    <width>506</width>
+    <height>101</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Training Generator</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
@@ -78,10 +78,8 @@
        <property name="text">
         <string>This will generate a series of lessons to teach you a given keyboard layout.
 
- It will start with just the index fingers on the home row.
-It will then add more fingers, and eventually expand to include the upper and lower row.
-
-Go to the sources tab to find the generated lessons.</string>
+It will start with just the index fingers on the home row.
+It will then add more fingers, and eventually expand to include the upper and lower row.</string>
        </property>
       </widget>
      </item>

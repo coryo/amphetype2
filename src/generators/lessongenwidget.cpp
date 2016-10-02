@@ -82,5 +82,5 @@ void LessonGenWidget::generate() {
   int source = db.getSource(
       QString("Lesson Gen: %1").arg(now.toString("MMM d hh:mm:ss.zzz")), 1, 1);
   db.addTexts(source, lessons);
-  emit newLesson();
+  emit newLesson(source);
 }

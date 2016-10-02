@@ -71,6 +71,7 @@ class Library : public QMainWindow {
   void refreshSource(int);
   void refreshSources();
   void sourceSelectionChanged(const QModelIndex&, const QModelIndex&);
+  void selectSource(int source);
 
  private slots:
   void addFiles();

@@ -38,7 +38,7 @@ class LessonGenWidget : public QWidget {
   void generate();
 
  signals:
-  void newLesson();
+  void newLesson(int);
 
  public slots:
   void addItems(QStringList &);

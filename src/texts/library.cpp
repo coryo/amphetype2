@@ -279,6 +279,16 @@ void Library::refreshSource(int source) {
   source_model_->refreshSource(source);
 }
 
+void Library::selectSource(int source) {
+  for (int i = 0; i < source_model_->rowCount(); i++) {
+    auto index = source_model_->index(i, 0);
+    if (index.data(Qt::UserRole) == source) {
+      ui->sourcesTable->setCurrentIndex(index);
+      return;
+    }
+  }
+}
+
 void Library::nextText(const std::shared_ptr<Text>& lastText,
                        Amphetype::SelectionMethod method) {
   QSettings s;

@@ -22,7 +22,7 @@
   <property name="unifiedTitleAndToolBarOnMac">
    <bool>true</bool>
   </property>
-  <widget class="QWidget" name="centralWidget">
+  <widget class="Quizzer" name="quizzer">
    <layout class="QHBoxLayout" name="horizontalLayout">
     <property name="spacing">
      <number>6</number>
@@ -39,42 +39,6 @@
     <property name="bottomMargin">
      <number>6</number>
     </property>
-    <item>
-     <widget class="QTabWidget" name="tabWidget">
-      <property name="focusPolicy">
-       <enum>Qt::NoFocus</enum>
-      </property>
-      <property name="tabPosition">
-       <enum>QTabWidget::North</enum>
-      </property>
-      <property name="tabShape">
-       <enum>QTabWidget::Rounded</enum>
-      </property>
-      <property name="currentIndex">
-       <number>0</number>
-      </property>
-      <widget class="Quizzer" name="quizzer">
-       <attribute name="title">
-        <string>Typer</string>
-       </attribute>
-      </widget>
-      <widget class="StatisticsWidget" name="statisticsWidget">
-       <attribute name="title">
-        <string>Analysis</string>
-       </attribute>
-      </widget>
-      <widget class="LessonGenWidget" name="lessonGenWidget">
-       <attribute name="title">
-        <string>Lesson Generator</string>
-       </attribute>
-      </widget>
-      <widget class="TrainingGenWidget" name="trainingGenWidget">
-       <attribute name="title">
-        <string>Training Generator</string>
-       </attribute>
-      </widget>
-     </widget>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -90,16 +54,20 @@
     <property name="title">
      <string>View</string>
     </property>
-    <addaction name="action_Library"/>
-    <addaction name="action_Performance"/>
+    <addaction name="actionLibrary"/>
+    <addaction name="actionPerformance"/>
+    <addaction name="actionAnalysis"/>
+    <addaction name="actionLesson_Generator"/>
+    <addaction name="actionTraining_Generator"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menu_File">
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="action_Settings"/>
+    <addaction name="actionSettings"/>
     <addaction name="separator"/>
-    <addaction name="action_Quit"/>
+    <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuProfiles">
     <property name="title">
@@ -261,24 +229,39 @@
     </layout>
    </widget>
   </widget>
-  <action name="action_Settings">
+  <action name="actionSettings">
    <property name="text">
     <string>&amp;Settings</string>
    </property>
   </action>
-  <action name="action_Library">
+  <action name="actionLibrary">
    <property name="text">
     <string>&amp;Library</string>
    </property>
   </action>
-  <action name="action_Quit">
+  <action name="actionQuit">
    <property name="text">
     <string>&amp;Quit</string>
    </property>
   </action>
-  <action name="action_Performance">
+  <action name="actionPerformance">
    <property name="text">
     <string>&amp;Performance</string>
+   </property>
+  </action>
+  <action name="actionLesson_Generator">
+   <property name="text">
+    <string>Lesson Generator</string>
+   </property>
+  </action>
+  <action name="actionTraining_Generator">
+   <property name="text">
+    <string>Training Generator</string>
+   </property>
+  </action>
+  <action name="actionAnalysis">
+   <property name="text">
+    <string>Analysis</string>
    </property>
   </action>
  </widget>
@@ -296,27 +279,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>StatisticsWidget</class>
-   <extends>QWidget</extends>
-   <header>analysis/statisticswidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>TrainingGenWidget</class>
-   <extends>QWidget</extends>
-   <header>generators/traininggenwidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>LivePlot</class>
    <extends>QWidget</extends>
    <header>mainwindow/liveplot/liveplot.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>LessonGenWidget</class>
-   <extends>QWidget</extends>
-   <header>generators/lessongenwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

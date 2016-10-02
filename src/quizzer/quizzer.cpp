@@ -43,7 +43,10 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
   this->lessonTimer.setInterval(1000);
 
   connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), ui->typerDisplay,
-          SLOT(wordWrap(int)));
+          SLOT(setCols(int)));
+  connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), this,
+          SLOT(saveSettings()));
+
   connect(this, &Quizzer::colorChanged, this, &Quizzer::timerLabelStop);
   connect(&lessonTimer, &QTimer::timeout, this, &Quizzer::timerLabelUpdate);
 }
@@ -81,7 +84,7 @@ void Quizzer::saveSettings() {
   QSettings s;
   s.setValue("Quizzer/typer_cols", ui->typerColsSpinBox->value());
   // s.setValue("Quizzer/show_last", ui->result->isVisible());
-  s.setValue("Quizzer/typer_font", ui->typerDisplay->currentFont());
+  // s.setValue("Quizzer/typer_font", ui->typerDisplay->currentFont());
 }
 
 void Quizzer::focusInEvent(QFocusEvent* event) { ui->typer->grabKeyboard(); }

@@ -24,6 +24,9 @@
 #include <QMainWindow>
 
 #include <QString>
+#include "analysis/statisticswidget.h"
+#include "generators/lessongenwidget.h"
+#include "generators/traininggenwidget.h"
 #include "performance/performancehistory.h"
 #include "settings/settingswidget.h"
 #include "texts/library.h"
@@ -46,16 +49,19 @@ class MainWindow : public QMainWindow {
  private:
   Ui::MainWindow* ui;
   SettingsWidget* settingsWidget;
+  StatisticsWidget* statisticsWidget;
   PerformanceHistory* performanceWidget;
   Library* libraryWidget;
+  LessonGenWidget* lessonGenerator;
+  TrainingGenWidget* trainingGenerator;
   void populateProfiles();
 
  signals:
   void profileChanged(QString);
 
  private slots:
-  void gotoTab(int);
-  void gotoLessonGenTab();
+  // void gotoTab(int);
+  // void gotoLessonGenTab();
   void changeProfile(QAction*);
   void updateWindowTitle();
 };

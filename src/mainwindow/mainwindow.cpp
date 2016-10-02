@@ -34,10 +34,13 @@
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
-      ui(new Ui::MainWindow),
       settingsWidget(new SettingsWidget),
+      statisticsWidget(new StatisticsWidget),
       libraryWidget(new Library),
-      performanceWidget(new PerformanceHistory) {
+      performanceWidget(new PerformanceHistory),
+      lessonGenerator(new LessonGenWidget),
+      trainingGenerator(new TrainingGenWidget),
+      ui(new Ui::MainWindow) {
   ui->setupUi(this);
 
   this->populateProfiles();
@@ -46,17 +49,30 @@ MainWindow::MainWindow(QWidget* parent)
   QSettings s;
 
   // Actions
-  connect(ui->action_Settings, &QAction::triggered, this->settingsWidget,
+  connect(ui->actionQuit, &QAction::triggered, this, &QWidget::close);
+  connect(ui->actionSettings, &QAction::triggered, this->settingsWidget,
           &QWidget::show);
-  connect(ui->action_Settings, &QAction::triggered, this->settingsWidget,
+  connect(ui->actionSettings, &QAction::triggered, this->settingsWidget,
           &QWidget::activateWindow);
-  connect(ui->action_Library, &QAction::triggered, this->libraryWidget,
+  connect(ui->actionLibrary, &QAction::triggered, this->libraryWidget,
           &QWidget::show);
-  connect(ui->action_Library, &QAction::triggered, this->libraryWidget,
+  connect(ui->actionLibrary, &QAction::triggered, this->libraryWidget,
           &QWidget::activateWindow);
-  connect(ui->action_Performance, &QAction::triggered, this->performanceWidget,
+  connect(ui->actionPerformance, &QAction::triggered, this->performanceWidget,
           &QWidget::show);
-  connect(ui->action_Performance, &QAction::triggered, this->performanceWidget,
+  connect(ui->actionPerformance, &QAction::triggered, this->performanceWidget,
+          &QWidget::activateWindow);
+  connect(ui->actionLesson_Generator, &QAction::triggered,
+          this->lessonGenerator, &QWidget::show);
+  connect(ui->actionLesson_Generator, &QAction::triggered,
+          this->lessonGenerator, &QWidget::activateWindow);
+  connect(ui->actionTraining_Generator, &QAction::triggered,
+          this->trainingGenerator, &QWidget::show);
+  connect(ui->actionTraining_Generator, &QAction::triggered,
+          this->trainingGenerator, &QWidget::activateWindow);
+  connect(ui->actionAnalysis, &QAction::triggered, this->statisticsWidget,
+          &QWidget::show);
+  connect(ui->actionAnalysis, &QAction::triggered, this->statisticsWidget,
           &QWidget::activateWindow);
 
   ui->menuView->addAction(ui->plotDock->toggleViewAction());
@@ -73,7 +89,7 @@ MainWindow::MainWindow(QWidget* parent)
           &PerformanceHistory::refreshPerformance);
   connect(ui->quizzer, &Quizzer::newResult, this->libraryWidget,
           &Library::refreshSource);
-  connect(ui->quizzer, &Quizzer::newStatistics, ui->statisticsWidget,
+  connect(ui->quizzer, &Quizzer::newStatistics, this->statisticsWidget,
           &StatisticsWidget::update);
   connect(ui->quizzer, &Quizzer::newStatistics, ui->keyboardMap,
           &KeyboardMap::updateData);
@@ -99,32 +115,42 @@ MainWindow::MainWindow(QWidget* parent)
   // Performance
   connect(this->performanceWidget, &PerformanceHistory::setText, ui->quizzer,
           &Quizzer::setText);
-  connect(this->performanceWidget, &PerformanceHistory::gotoTab, this,
-          &MainWindow::gotoTab);
+  // connect(this->performanceWidget, &PerformanceHistory::gotoTab, this,
+  //         &MainWindow::gotoTab);
   connect(this->performanceWidget, &PerformanceHistory::settingsChanged,
           ui->plot, &LivePlot::updatePlotTargetLine);
 
   // Analysis
-  connect(ui->statisticsWidget, &StatisticsWidget::newItems,
-          ui->lessonGenWidget, &LessonGenWidget::addItems);
-  connect(ui->statisticsWidget, &StatisticsWidget::newItems, this,
-          &MainWindow::gotoLessonGenTab);
+  connect(this->statisticsWidget, &StatisticsWidget::newItems,
+          this->lessonGenerator, &LessonGenWidget::addItems);
+  connect(this->statisticsWidget, &StatisticsWidget::newItems,
+          this->lessonGenerator, &QWidget::show);
+  connect(this->statisticsWidget, &StatisticsWidget::newItems,
+          this->lessonGenerator, &QWidget::activateWindow);
 
   // Lesson Generator
-  connect(ui->lessonGenWidget, &LessonGenWidget::newLesson, this->libraryWidget,
-          &Library::refreshSources);
-  connect(ui->lessonGenWidget, &LessonGenWidget::newLesson, this->libraryWidget,
-          &QWidget::show);
-  connect(ui->lessonGenWidget, &LessonGenWidget::newLesson, this->libraryWidget,
-          &QWidget::activateWindow);
+  connect(this->lessonGenerator, &LessonGenWidget::newLesson,
+          this->libraryWidget, &Library::refreshSources);
+  connect(this->lessonGenerator, &LessonGenWidget::newLesson,
+          this->lessonGenerator, &QWidget::close);
+  connect(this->lessonGenerator, &LessonGenWidget::newLesson,
+          this->libraryWidget, &QWidget::show);
+  connect(this->lessonGenerator, &LessonGenWidget::newLesson,
+          this->libraryWidget, &QWidget::activateWindow);
+  connect(this->lessonGenerator, &LessonGenWidget::newLesson,
+          this->libraryWidget, &Library::selectSource);
 
   // Training Generator
-  connect(ui->trainingGenWidget, &TrainingGenWidget::newTraining,
+  connect(this->trainingGenerator, &TrainingGenWidget::newTraining,
           this->libraryWidget, &Library::refreshSources);
-  connect(ui->trainingGenWidget, &TrainingGenWidget::newTraining,
+  connect(this->trainingGenerator, &TrainingGenWidget::newTraining,
           this->libraryWidget, &QWidget::show);
-  connect(ui->trainingGenWidget, &TrainingGenWidget::newTraining,
+  connect(this->trainingGenerator, &TrainingGenWidget::newTraining,
           this->libraryWidget, &QWidget::activateWindow);
+  connect(this->trainingGenerator, &TrainingGenWidget::newTraining,
+          this->trainingGenerator, &QWidget::close);
+  connect(this->trainingGenerator, &TrainingGenWidget::newTraining,
+          this->libraryWidget, &Library::selectSource);
 
   // Settings
   connect(settingsWidget, &SettingsWidget::settingsChanged, ui->quizzer,
@@ -146,7 +172,7 @@ MainWindow::MainWindow(QWidget* parent)
           &PerformanceHistory::refreshPerformance);
   connect(this, &MainWindow::profileChanged, this->performanceWidget,
           &PerformanceHistory::refreshSources);
-  connect(this, &MainWindow::profileChanged, ui->statisticsWidget,
+  connect(this, &MainWindow::profileChanged, this->statisticsWidget,
           &StatisticsWidget::update);
   connect(this, &MainWindow::profileChanged, ui->keyboardMap,
           &KeyboardMap::updateData);
@@ -173,8 +199,13 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow() {
   delete ui;
   delete this->settingsWidget;
+  delete this->statisticsWidget;
   delete this->libraryWidget;
   delete this->performanceWidget;
+  delete this->lessonGenerator;
+  delete this->trainingGenerator;
+  Database db;
+  db.compress();
 }
 
 void MainWindow::populateProfiles() {
@@ -228,9 +259,6 @@ void MainWindow::changeProfile(QAction* action) {
   ui->quizzer->wantText(0, static_cast<Amphetype::SelectionMethod>(
                                s.value("select_method", 0).toInt()));
 }
-
-void MainWindow::gotoTab(int i) { ui->tabWidget->setCurrentIndex(i); }
-void MainWindow::gotoLessonGenTab() { ui->tabWidget->setCurrentIndex(2); }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
   QSettings s;

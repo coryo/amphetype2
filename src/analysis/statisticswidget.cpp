@@ -46,8 +46,8 @@ StatisticsWidget::StatisticsWidget(QWidget* parent)
           this, SLOT(populateStatistics()));
   connect(ui->minCountSpinBox, SIGNAL(valueChanged(int)),
           this, SLOT(populateStatistics()));
-  connect(ui->updateButton, &QPushButton::pressed, this,
-          &StatisticsWidget::populateStatistics);
+  // connect(ui->updateButton, &QPushButton::pressed, this,
+  //         &StatisticsWidget::populateStatistics);
   connect(ui->generatorButton, &QPushButton::pressed, this,
           &StatisticsWidget::generateList);
 

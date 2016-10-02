@@ -99,5 +99,5 @@ void TrainingGenWidget::generate() {
 
   delete x;
   // emit generatedLessons();
-  emit newTraining();
+  emit newTraining(sourceId);
 }

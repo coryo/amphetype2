@@ -57,13 +57,28 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
   ui->performancePlot->addLayer("lineLayer", ui->performancePlot->layer("grid"),
                                 QCustomPlot::limAbove);
 
+  // Model setup
+  ui->tableView->setModel(model);
+  model->setHorizontalHeaderLabels(QStringList() << "id"
+                                                 << "When"
+                                                 << "Source"
+                                                 << "WPM"
+                                                 << "Accuracy"
+                                                 << "Viscosity");
+  ui->tableView->setSortingEnabled(false);
+  ui->tableView->setColumnHidden(0, true);
+  auto header = ui->tableView->horizontalHeader();
+  header->setSectionResizeMode(2, QHeaderView::Stretch);
+  for (int col = 0; col < header->count() && col != 2; col++)
+    header->setSectionResizeMode(col, QHeaderView::ResizeToContents);
+
   // double clicking an item in the list
   connect(ui->tableView, &QTableView::doubleClicked, this,
           &PerformanceHistory::doubleClicked);
 
   // settings signals
-  connect(ui->updateButton, &QPushButton::pressed, this,
-          &PerformanceHistory::refreshPerformance);
+  // connect(ui->updateButton, &QPushButton::pressed, this,
+  //         &PerformanceHistory::refreshPerformance);
   connect(ui->sourceComboBox, SIGNAL(currentIndexChanged(int)), this,
           SLOT(refreshPerformance()));
   connect(ui->groupByComboBox, SIGNAL(currentIndexChanged(int)), this,
@@ -293,21 +308,7 @@ void PerformanceHistory::doubleClicked(const QModelIndex& idx) {
 }
 
 void PerformanceHistory::refreshPerformance() {
-  model->clear();
-
-  QStringList headers;
-  headers << "id"
-          << "When"
-          << "Source"
-          << "WPM"
-          << "Accuracy"
-          << "Viscosity";
-  model->setHorizontalHeaderLabels(headers);
-  ui->tableView->setModel(model);
-  ui->tableView->setSortingEnabled(false);
-  ui->tableView->setColumnHidden(0, true);
-  ui->tableView->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
-  ui->tableView->verticalHeader()->setDefaultSectionSize(24);
+  model->removeRows(0, model->rowCount());
 
   // clear the data in the plots
   for (int i = 0; i < ui->performancePlot->graphCount(); ++i) {
@@ -372,10 +373,6 @@ void PerformanceHistory::refreshPerformance() {
   ui->avgWPM->setText(QString::number(avgWPM, 'f', 1));
   ui->avgACC->setText(QString::number(avgACC, 'f', 1));
   ui->avgVIS->setText(QString::number(avgVIS, 'f', 1));
-
-  ui->tableView->horizontalHeader()->setSectionResizeMode(2,
-                                                          QHeaderView::Stretch);
-  ui->tableView->resizeColumnsToContents();
 
   this->showPlot(ui->plotSelector->currentIndex());
 }

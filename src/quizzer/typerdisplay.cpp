@@ -32,16 +32,20 @@ TyperDisplay::TyperDisplay(QWidget* parent)
       cols(80) {
   this->setFocusPolicy(Qt::NoFocus);
   this->setReadOnly(true);
+  connect(this, &TyperDisplay::colorChanged, this,
+          &TyperDisplay::updateDisplay);
 }
 
-void TyperDisplay::setCols(int cols) { this->cols = cols; }
+void TyperDisplay::setCols(int cols) {
+  this->cols = cols;
+  this->wordWrap(cols);
+}
 
 void TyperDisplay::setTextTarget(const QString& t) {
   QSettings s;
   this->testPosition = 0;
   this->cursorPosition = 0;
   this->originalText = t;
-  // this->cols = s.value("Quizzer/typer_cols", 80).toInt();
   this->wordWrap(this->cols);
 }
 

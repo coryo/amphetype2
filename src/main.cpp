@@ -117,7 +117,5 @@ int main(int argc, char *argv[]) {
 
   auto ret = a.exec();
 
-  db.compress();
-
   return ret;
 }

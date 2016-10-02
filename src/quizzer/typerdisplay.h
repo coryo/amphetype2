@@ -23,14 +23,14 @@
 #include <QStringList>
 #include <QTextEdit>
 
-
 #include <utility>
 
 class TyperDisplay : public QTextEdit {
   Q_OBJECT
-  Q_PROPERTY(QString correctColor MEMBER correctColor)
-  Q_PROPERTY(QString errorColor MEMBER errorColor)
-  Q_PROPERTY(QString highlightedTextColor MEMBER highlightedTextColor)
+  Q_PROPERTY(QString correctColor MEMBER correctColor NOTIFY colorChanged)
+  Q_PROPERTY(QString errorColor MEMBER errorColor NOTIFY colorChanged)
+  Q_PROPERTY(QString highlightedTextColor MEMBER highlightedTextColor NOTIFY
+                 colorChanged)
 
  public:
   explicit TyperDisplay(QWidget* parent = Q_NULLPTR);
@@ -47,6 +47,9 @@ class TyperDisplay : public QTextEdit {
   int testPosition;
   int cols;
   std::pair<int, int> posToListPos(int);
+
+ signals:
+  void colorChanged();
 
  public slots:
   void setCols(int cols);

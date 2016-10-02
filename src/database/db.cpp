@@ -245,19 +245,16 @@ void Database::deleteText(const QList<int>& text_ids) {
 }
 
 void Database::deleteResult(const QString& id, const QString& datetime) {
-  QVariantList args;
-  args << id << datetime;
   bindAndRun(
       "DELETE FROM result WHERE text_id is ? and datetime(w) = datetime(?)",
-      args);
+      QVariantList() << id << datetime);
 }
 
 void Database::addText(int source, const QString& text, int lesson,
                        bool update) {
   int dis = ((lesson == 2) ? 1 : 0);
   QVariantList items;
-  items << source;
-  items << text;
+  items << source << text;
   if (dis == 0)
     items << QVariant();  // null
   else
@@ -275,8 +272,7 @@ void Database::addTexts(int source, const QStringList& lessons, int lesson,
       sqlite3pp::command cmd(db, "INSERT INTO text VALUES (NULL, ?, ?, ?)");
       for (QString text : lessons) {
         QVariantList items;
-        items << source;
-        items << text;
+        items << source << text;
         if (dis == 0)
           items << QVariant();  // null
         else
@@ -301,9 +297,9 @@ void Database::addResult(const QString& time, const std::shared_ptr<Text>& text,
           db,
           "insert into result (w, text_id, source, wpm, accuracy, viscosity) "
           "values (?, ?, ?, ?, ?, ?)");
-      QVariantList items;
-      items << time << text->getId() << text->getSource() << wpm << acc << vis;
-      bindAndRun(&cmd, items);
+      bindAndRun(&cmd, QVariantList() << time << text->getId()
+                                      << text->getSource() << wpm << acc
+                                      << vis);
     }
     QMutexLocker locker(&db_lock);
     resultTransaction.commit();
@@ -389,9 +385,8 @@ void Database::addMistakes(const QHash<QPair<QChar, QChar>, int>& mistakes) {
                              "insert into mistake (w,target,mistake,count) "
                              "values (?, ?, ?, ?)");
       for (auto it = mistakes.constBegin(); it != mistakes.constEnd(); ++it) {
-        QVariantList items;
-        items << now << it.key().first << it.key().second << it.value();
-        bindAndRun(&cmd, items);
+        bindAndRun(&cmd, QVariantList() << now << it.key().first
+                                        << it.key().second << it.value());
       }
     }
     QMutexLocker locker(&db_lock);
@@ -444,8 +439,6 @@ QList<QVariantList> Database::getSourcesData() {
 }
 
 QVariantList Database::getTextData(int id) {
-  QVariantList args;
-  args << id << id;
   return getOneRow(
       "select t.id, substr(t.text,0,30)||' ...', "
       "length(t.text), r.count, r.m, t.disabled "
@@ -457,12 +450,10 @@ QVariantList Database::getTextData(int id) {
       "  where text_id = ?) as r "
       "on (t.id = r.text_id) "
       "where t.id is ?",
-      args);
+      QVariantList() << id << id);
 }
 
 QList<QVariantList> Database::getTextsData(int source, int page, int limit) {
-  QVariantList args;
-  args << source << limit << page * limit;
   return getRows(
       "select t.id, substr(t.text,0,30)||' ...', "
       "length(t.text), r.count, r.m, t.disabled "
@@ -472,7 +463,7 @@ QList<QVariantList> Database::getTextsData(int source, int page, int limit) {
       "as r on (t.id = r.text_id) "
       "where source is ? "
       "order by t.id LIMIT ? OFFSET ?",
-      args);
+      QVariantList() << source << limit << page * limit);
 }
 
 int Database::getTextsCount(int source) {
@@ -480,7 +471,8 @@ int Database::getTextsCount(int source) {
       .toInt();
 }
 
-QList<QVariantList> Database::getPerformanceData(int w, int source, int limit, int g, int n) {
+QList<QVariantList> Database::getPerformanceData(int w, int source, int limit,
+                                                 int g, int n) {
   bool grouping = (g == 0) ? false : true;
   QStringList query;
   QVariantList args;
@@ -552,14 +544,12 @@ QList<QVariantList> Database::getPerformanceData(int w, int source, int limit, i
     }
   }
 
-  args << limit;
-  return getRows(sql, args);
+  return getRows(sql, args << limit);
 }
 
 QList<QVariantList> Database::getStatisticsData(const QString& when, int type,
                                                 int count, int ord, int limit) {
   QString order, dir;
-  QVariantList args;
   switch (ord) {
     case 0:
       order = "wpm asc";
@@ -604,8 +594,7 @@ QList<QVariantList> Database::getStatisticsData(const QString& when, int type,
                     "ORDER BY %1 LIMIT ?")
                     .arg(order);
 
-  args << when << type << count << limit;
-  return getRows(sql, args);
+  return getRows(sql, QVariantList() << when << type << count << limit);
 }
 
 QList<QVariantList> Database::getSourcesList() {
@@ -669,9 +658,8 @@ std::shared_ptr<Text> Database::getNextText(
 }
 
 void Database::updateText(int id, const QString& newText) {
-  QVariantList args;
-  args << newText << id;
-  bindAndRun("UPDATE text SET text = ? WHERE id = ?", args);
+  bindAndRun("UPDATE text SET text = ? WHERE id = ?", QVariantList() << newText
+                                                                     << id);
 }
 
 void Database::compress() {
