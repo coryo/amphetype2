@@ -1,105 +1,116 @@
+// Copyright (C) 2016  Cory Parsons
+//
+// This file is part of amphetype2.
+//
+// amphetype2 is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 2 of the License, or
+// (at your option) any later version.
+//
+// amphetype2 is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with amphetype2.  If not, see <http://www.gnu.org/licenses/>.
+//
+
 #ifndef SRC_DATABASE_DB_H_
 #define SRC_DATABASE_DB_H_
 
-#include <QVariantList>
-#include <QThread>
-#include <QObject>
-#include <QMutex>
 #include <QHash>
+#include <QMutex>
+#include <QObject>
+#include <QString>
+#include <QThread>
+#include <QVariantList>
 
 #include <sqlite3pp.h>
 #include <sqlite3ppext.h>
 
-#include "texts/text.h"
 #include "quizzer/test.h"
-
+#include "texts/text.h"
 
 class DBConnection {
  public:
   explicit DBConnection(const QString&);
-  ~DBConnection();
-  sqlite3pp::database& getDB();
+  sqlite3pp::database& db();
 
  private:
-  sqlite3pp::database* db;
-  sqlite3pp::ext::function* func;
-  sqlite3pp::ext::aggregate* aggr;
+  std::unique_ptr<sqlite3pp::database> db_;
+  std::unique_ptr<sqlite3pp::ext::function> func_;
+  std::unique_ptr<sqlite3pp::ext::aggregate> aggr_;
 };
 
-class DB : public QObject {
+class Database : public QObject {
   Q_OBJECT
 
  public:
-  static void initDB();
-
-  static void setDBPath(const QString&);
+  explicit Database(const QString& name = QString());
+  void initDB();
+  void changeDatabase(const QString& name);
 
   // specific insertion functions
-  static void addText(int, const QString&, int = -1, bool = true);
-  static void addTexts(int, const QStringList&, int = -1, bool = true);
-  static void addResult(const QString&, const Text*, double, double, double);
-  static void addStatistics(const QString&,
-                            const QMultiHash<QStringRef, double>&,
-                            const QMultiHash<QStringRef, double>&,
-                            const QMultiHash<QStringRef, int>&);
-  static void addMistakes(const QString&, const Test*);
+  void addText(int, const QString&, int = -1, bool = true);
+  void addTexts(int, const QStringList&, int = -1, bool = true);
+  void addResult(const QString&, const std::shared_ptr<Text>&, double, double,
+                 double);
+  void addStatistics(const QMultiHash<QStringRef, double>&,
+                     const QMultiHash<QStringRef, double>&,
+                     const QMultiHash<QStringRef, int>&);
+  void addMistakes(const QHash<QPair<QChar, QChar>, int>& mistakes);
 
   // removal/modification
-  static void deleteSource(const QList<int>&);
-  static void deleteText(const QList<int>&);
-  static void deleteResult(const QString&, const QString&);
-  static void disableSource(const QList<int>&);
-  static void enableSource(const QList<int>&);
+  void deleteSource(const QList<int>& sources);
+  void deleteText(const QList<int>& text_ids);
+  void deleteResult(const QString& id, const QString& datetime);
+  void disableSource(const QList<int>& sources);
+  void enableSource(const QList<int>& sources);
+  void updateText(int, const QString&);
 
   // specific query functions
-  static int getSource(const QString&, int lesson = -1, int type = 0);
-  static QPair<double, double> getMedianStats(int);
-  static QList<QStringList> getSourcesData();
-  static QList<QStringList> getTextsData(int);
-  static QList<QStringList> getPerformanceData(int, int, int);
-  static QList<QStringList> getSourcesList();
-  static QList<QStringList> getStatisticsData(const QString&, int, int, int,
-                                              int);
-  static QHash<QChar, QHash<QString, QVariant>> getKeyFrequency();
-  // create a text object
-  static Text* getNextText();  // get the text that follows the last completed text
-  static Text* getNextText(Text*);  // get the text that follows the given text
-  static Text* getRandomText();
-  static Text* getText(int);  // get a text with a given rowid
-  static Text* getText(const QString&);  // get a text with a given hashid
+  int getSource(const QString&, int lesson = -1, int type = 0);
+  QPair<double, double> getMedianStats(int);
+  QVariantList getSourceData(int source);
+  QList<QVariantList> getSourcesData();
+  QList<QVariantList> getTextsData(int, int page = 0, int limit = 100);
+  QVariantList getTextData(int);
+  int getTextsCount(int source);
+  QList<QVariantList> getPerformanceData(int, int, int, int, int = 10);
+  QList<QVariantList> getSourcesList();
+  QList<QVariantList> getStatisticsData(const QString&, int, int, int, int);
+  QHash<QChar, QHash<QString, QVariant>> getKeyFrequency();
 
-  static void updateText(int, const QString&);
-  static void compress();
+  // get the text that follows the last completed text
+  std::shared_ptr<Text> getNextText();
+  // get the text that follows the given text
+  std::shared_ptr<Text> getNextText(const std::shared_ptr<Text>&);
+  std::shared_ptr<Text> getRandomText();
+  // get a text with a given id
+  std::shared_ptr<Text> getText(int);
+
+  void compress();
 
  private:
-  static QMutex db_lock;
-  static QString db_path;
+  QString db_path_;
+  std::unique_ptr<DBConnection> conn_;
 
   // general functions for retrieving data with a given query
-  static QStringList getOneRow(const char *);
-  static QStringList getOneRow(const char *, QVariantList&);
-  static QStringList getOneRow(const char *, QVariant);
-  static QStringList getOneRow(sqlite3pp::database&, const char *);
-  static QStringList getOneRow(sqlite3pp::database&, const char *,
-                               QVariantList&);
-  static QStringList getOneRow(sqlite3pp::database&, const char *, QVariant);
-  // static QList<QStringList> getRows(const QString&);
-  static QList<QStringList> getRows(const char *);
-  static QList<QStringList> getRows(const char *, QVariant);
-  static QList<QStringList> getRows(const char *, QVariantList&);
+  QVariantList getOneRow(const QString&, const QVariant& = QVariant());
+  QVariantList getOneRow(sqlite3pp::database&, const QString&,
+                         const QVariant& = QVariant());
+  QList<QVariantList> getRows(const QString&, const QVariant& = QVariant());
   // general functions for executing commands
-  static void bindAndRun(sqlite3pp::command*, const QVariantList&);
-  static void bindAndRun(sqlite3pp::command*, const QVariant&);
-  static void bindAndRun(const QString&, const QVariantList&);
-  static void bindAndRun(const QString&, const QVariant&);
-  static void binder(sqlite3pp::statement*, const QVariantList&);
+  void bindAndRun(sqlite3pp::command*, const QVariant& = QVariant());
+  void bindAndRun(const QString&, const QVariant& = QVariant());
+  void binder(sqlite3pp::statement*, const QVariant&);
+  void bind_value(sqlite3pp::statement*, int, const QVariant&);
   // create a text object with a given query
-  static Text* getTextWithQuery(const QString&);
-  static void createFunctions(sqlite3pp::database*, sqlite3pp::ext::function*,
-                              sqlite3pp::ext::aggregate*);
-
- signals:
-  void progress(int);
+  std::shared_ptr<Text> getTextWithQuery(const QString&,
+                                         const QVariant& = QVariant());
+  void createFunctions(sqlite3pp::database*, sqlite3pp::ext::function*,
+                       sqlite3pp::ext::aggregate*);
 };
 
 #endif  // SRC_DATABASE_DB_H_

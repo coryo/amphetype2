@@ -26,6 +26,7 @@ IF "%ARCH%" == "32" (
 :build
         if not exist %BUILD_DIR% md %BUILD_DIR%
         cd %BUILD_DIR% || GOTO done
+        del src\ui_*.h
         cmake .. -GNinja -DQTROOT=%QT% || GOTO done
         ninja || GOTO done
 

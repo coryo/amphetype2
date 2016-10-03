@@ -1,79 +1,141 @@
+// Copyright (C) 2016  Cory Parsons
+//
+// This file is part of amphetype2.
+//
+// amphetype2 is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 2 of the License, or
+// (at your option) any later version.
+//
+// amphetype2 is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with amphetype2.  If not, see <http://www.gnu.org/licenses/>.
+//
+
 #include "quizzer/quizzer.h"
 
+#include <QFont>
+#include <QFontDatabase>
 #include <QSettings>
 
 #include <QsLog.h>
 
-#include "ui_quizzer.h"
+#include "database/db.h"
+#include "quizzer/test.h"
 #include "quizzer/typer.h"
 #include "texts/text.h"
-#include "quizzer/test.h"
-#include "database/db.h"
+#include "ui_quizzer.h"
 
-
-Quizzer::Quizzer(QWidget *parent)
-  : QWidget(parent), ui(new Ui::Quizzer), text(0) {
+Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
   ui->setupUi(this);
 
-  this->testThread.start();
+  this->setFocusPolicy(Qt::StrongFocus);
 
-  QSettings s;
+  loadSettings();
 
   // set defaults for ui stuff
   this->timerLabelReset();
-  this->setTyperFont();
   this->setPreviousResultText(0, 0);
-  ui->result->setVisible(s.value("show_last").toBool());
-
-  ui->typerColsSpinBox->setValue(s.value("typer_cols").toInt());
   this->lessonTimer.setInterval(1000);
 
-  connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)),
-          ui->typerDisplay,     SLOT(wordWrap(int)));
-  connect(this,         &Quizzer::colorChanged,
-          this,         &Quizzer::timerLabelStop);
-  connect(&lessonTimer, &QTimer::timeout,
-          this,         &Quizzer::timerLabelUpdate);
+  connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), ui->typerDisplay,
+          SLOT(setCols(int)));
+  connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), this,
+          SLOT(saveSettings()));
+
+  connect(this, &Quizzer::colorChanged, this, &Quizzer::timerLabelStop);
+  connect(&lessonTimer, &QTimer::timeout, this, &Quizzer::timerLabelUpdate);
 }
 
 Quizzer::~Quizzer() {
+  saveSettings();
   delete ui;
-  delete text;
-  this->testThread.quit();
-  this->testThread.wait();
+}
+
+void Quizzer::loadSettings() {
+  QSettings s;
+  QFont f;
+
+  target_wpm_ = s.value("target_wpm", 50).toInt();
+  target_acc_ = s.value("target_acc", 97).toDouble();
+  target_vis_ = s.value("target_vis", 2).toDouble();
+
+  ui->result->setVisible(s.value("Quizzer/show_last", true).toBool());
+  ui->typerColsSpinBox->setValue(s.value("Quizzer/typer_cols", 80).toInt());
+
+  auto font_data = s.value("Quizzer/typer_font");
+  if (!font_data.isNull()) {
+    f = qvariant_cast<QFont>(font_data);
+  } else {
+    f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    f.setPointSize(14);
+    f.setStyleHint(QFont::Monospace);
+  }
+  ui->typerDisplay->setCols(ui->typerColsSpinBox->value());
+  ui->typerDisplay->setFont(f);
+  ui->typerDisplay->updateDisplay();
+}
+
+void Quizzer::saveSettings() {
+  QSettings s;
+  s.setValue("Quizzer/typer_cols", ui->typerColsSpinBox->value());
+  // s.setValue("Quizzer/show_last", ui->result->isVisible());
+  // s.setValue("Quizzer/typer_font", ui->typerDisplay->currentFont());
+}
+
+void Quizzer::focusInEvent(QFocusEvent* event) { ui->typer->grabKeyboard(); }
+
+void Quizzer::focusOutEvent(QFocusEvent* event) {
+  ui->typer->releaseKeyboard();
+}
+
+void Quizzer::checkSource(QList<int> sources) {
+  for (const auto& source : sources) {
+    if (this->text->getSource() == source) {
+      ui->typer->test()->cancel();
+      return;
+    }
+  }
+}
+
+void Quizzer::checkText(QList<int> texts) {
+  for (const auto& text : texts) {
+    if (this->text->getId() == text) {
+      ui->typer->test()->cancel();
+      return;
+    }
+  }
 }
 
 Typer* Quizzer::getTyper() const { return this->ui->typer; }
 
-void Quizzer::restart(Test* test) {
-  test->deleteLater();
-  this->setText(this->text);
+void Quizzer::restart() { this->setText(this->text); }
+
+void Quizzer::cancelled() {
+  emit wantText(this->text, Amphetype::SelectionMethod::Random);
 }
 
-void Quizzer::cancelled(Test* test) {
-  test->deleteLater();
-  emit wantText(this->text, SelectionMethod::Random);
-}
-
-void Quizzer::alertText(const char * text) {
+void Quizzer::alertText(const char* text) {
   ui->alertLabel->setText(text);
   ui->alertLabel->show();
 }
 
 void Quizzer::done(double wpm, double acc, double vis) {
-  QSettings s;
-
   // set the previous results label text
   this->setPreviousResultText(wpm, acc);
 
   // repeat if targets not met, otherwise get next text
-  if (acc < s.value("target_acc").toInt() / 100.0) {
+  if (acc < target_acc_ / 100.0) {
     this->alertText("Failed Accuracy Target");
     this->setText(this->text);
-  } else if (wpm < s.value("target_wpm").toInt()) {
+  } else if (wpm < target_wpm_) {
     this->alertText("Failed WPM Target");
     this->setText(this->text);
-  } else if (vis > s.value("target_vis").toDouble()) {
+  } else if (vis > target_vis_) {
     this->alertText("Failed Viscosity Target");
     this->setText(this->text);
   } else {
@@ -88,23 +150,19 @@ void Quizzer::beginTest(int length) {
   this->timerLabelGo();
 }
 
-void Quizzer::updateTyperDisplay() {
-  ui->typerDisplay->updateDisplay();
-}
-
 void Quizzer::timerLabelUpdate() {
   lessonTime = lessonTime.addSecs(1);
   ui->timerLabel->setText(lessonTime.toString("mm:ss"));
 }
 
 void Quizzer::timerLabelGo() {
-  ui->timerLabel->setStyleSheet("QLabel { background-color : " +
-                                goColor + "; }");
+  ui->timerLabel->setStyleSheet("QLabel { background-color : " + goColor +
+                                "; }");
 }
 
 void Quizzer::timerLabelStop() {
-  ui->timerLabel->setStyleSheet("QLabel { background-color : " +
-                                stopColor + "; }");
+  ui->timerLabel->setStyleSheet("QLabel { background-color : " + stopColor +
+                                "; }");
 }
 
 void Quizzer::timerLabelReset() {
@@ -113,59 +171,40 @@ void Quizzer::timerLabelReset() {
   ui->timerLabel->setText(lessonTime.toString("mm:ss"));
 }
 
-void Quizzer::tabActive(int i) {
-  if (i == 0)
-    ui->typer->grabKeyboard();
-  else
-    ui->typer->releaseKeyboard();
-}
-
 void Quizzer::setPreviousResultText(double lastWpm, double lastAcc) {
-  QSettings s;
-
-  int n = s.value("def_group_by").toInt();
+  int n = 10;
   QPair<double, double> stats;
-  stats = DB::getMedianStats(n);
+  Database db;
+  stats = db.getMedianStats(n);
 
-  ui->result->setText(
-    "Last: " + QString::number(lastWpm, 'f', 1) +
-    "wpm ("  + QString::number(lastAcc * 100, 'f', 1) + "%)\n" +
-    "Last "  + QString::number(n) + ": " +
-      QString::number(stats.first, 'f', 1) +
-    "wpm ("  + QString::number(stats.second, 'f', 1)+ "%)");
+  ui->result->setText("Last: " + QString::number(lastWpm, 'f', 1) + "wpm (" +
+                      QString::number(lastAcc * 100, 'f', 1) + "%)\n" +
+                      "Last " + QString::number(n) + ": " +
+                      QString::number(stats.first, 'f', 1) + "wpm (" +
+                      QString::number(stats.second, 'f', 1) + "%)");
 }
 
-void Quizzer::setText(Text* t) {
+void Quizzer::setText(const std::shared_ptr<Text>& t) {
   this->text = t;
-  auto test = new Test(t);
-  test->moveToThread(&(this->testThread));
-  ui->typer->setTextTarget(test);
-
-  connect(test, &Test::newWpm,         this, &Quizzer::newWpm);
-  connect(test, &Test::newApm,         this, &Quizzer::newApm);
+  ui->typer->setTextTarget(t);
+  Test* test = ui->typer->test();
+  connect(test, &Test::newWpm, this, &Quizzer::newWpm);
+  connect(test, &Test::newApm, this, &Quizzer::newApm);
   connect(test, &Test::characterAdded, this, &Quizzer::characterAdded);
-  connect(test, &Test::testStarted,    this, &Quizzer::testStarted);
-  connect(test, &Test::testStarted,    this, &Quizzer::beginTest);
-  connect(test, &Test::done,           this, &Quizzer::done);
-  connect(test, &Test::cancel,         this, &Quizzer::cancelled);
-  connect(test, &Test::restart,        this, &Quizzer::restart);
-  connect(test, &Test::newResult,      this, &Quizzer::newResult);
-  connect(test, &Test::newStatistics,  this, &Quizzer::newStatistics);
-
-  connect(test,             &Test::positionChanged,
-          ui->typerDisplay, &TyperDisplay::moveCursor);
+  connect(test, &Test::testStarted, this, &Quizzer::testStarted);
+  connect(test, &Test::testStarted, this, &Quizzer::beginTest);
+  connect(test, &Test::done, this, &Quizzer::done);
+  connect(test, &Test::cancel, this, &Quizzer::cancelled);
+  connect(test, &Test::restart, this, &Quizzer::restart);
+  connect(test, &Test::newResult, this, &Quizzer::newResult);
+  connect(test, &Test::newStatistics, this, &Quizzer::newStatistics);
+  connect(test, &Test::positionChanged, ui->typerDisplay,
+          &TyperDisplay::moveCursor);
 
   this->timerLabelStop();
   this->lessonTimer.stop();
 
   ui->typerDisplay->setTextTarget(text->getText());
-  ui->textInfoLabel->setText(
-    QString("%1 #%2").arg(text->getSourceName(),
-                          QString::number(text->getTextNumber())));
-}
-
-void Quizzer::setTyperFont() {
-  QSettings s;
-  QFont f = qvariant_cast<QFont>(s.value("typer_font"));
-  ui->typerDisplay->setFont(f);
+  ui->textInfoLabel->setText(QString("%1 #%2").arg(
+      text->getSourceName(), QString::number(text->getTextNumber())));
 }

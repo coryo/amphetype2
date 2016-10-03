@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>575</width>
-    <height>313</height>
+    <width>622</width>
+    <height>450</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,74 +16,29 @@
   <property name="styleSheet">
    <string notr="true"/>
   </property>
-  <property name="unifiedTitleAndToolBarOnMac">
-   <bool>false</bool>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::GroupedDragging</set>
   </property>
-  <widget class="QWidget" name="centralWidget">
-   <layout class="QVBoxLayout" name="verticalLayout_4">
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>true</bool>
+  </property>
+  <widget class="Quizzer" name="quizzer">
+   <layout class="QHBoxLayout" name="horizontalLayout">
     <property name="spacing">
-     <number>0</number>
+     <number>6</number>
     </property>
     <property name="leftMargin">
-     <number>0</number>
+     <number>6</number>
     </property>
     <property name="topMargin">
-     <number>0</number>
+     <number>6</number>
     </property>
     <property name="rightMargin">
-     <number>0</number>
+     <number>6</number>
     </property>
     <property name="bottomMargin">
-     <number>0</number>
+     <number>6</number>
     </property>
-    <item>
-     <widget class="QTabWidget" name="tabWidget">
-      <property name="tabPosition">
-       <enum>QTabWidget::North</enum>
-      </property>
-      <property name="tabShape">
-       <enum>QTabWidget::Rounded</enum>
-      </property>
-      <property name="currentIndex">
-       <number>0</number>
-      </property>
-      <widget class="Quizzer" name="quizzer">
-       <attribute name="title">
-        <string>Typer</string>
-       </attribute>
-      </widget>
-      <widget class="TextManager" name="textManager">
-       <attribute name="title">
-        <string>Sources</string>
-       </attribute>
-      </widget>
-      <widget class="PerformanceHistory" name="performanceHistory">
-       <attribute name="title">
-        <string>Performance</string>
-       </attribute>
-      </widget>
-      <widget class="StatisticsWidget" name="statisticsWidget">
-       <attribute name="title">
-        <string>Analysis</string>
-       </attribute>
-      </widget>
-      <widget class="LessonGenWidget" name="lessonGenWidget">
-       <attribute name="title">
-        <string>Lesson Generator</string>
-       </attribute>
-      </widget>
-      <widget class="TrainingGenWidget" name="trainingGenWidget">
-       <attribute name="title">
-        <string>Training Generator</string>
-       </attribute>
-      </widget>
-      <widget class="SettingsWidget" name="settingsWidget">
-       <attribute name="title">
-        <string>Settings</string>
-       </attribute>
-      </widget>
-     </widget>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -91,7 +46,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>575</width>
+     <width>622</width>
      <height>21</height>
     </rect>
    </property>
@@ -99,9 +54,29 @@
     <property name="title">
      <string>View</string>
     </property>
-    <addaction name="actionPlot"/>
+    <addaction name="actionLibrary"/>
+    <addaction name="actionPerformance"/>
+    <addaction name="actionAnalysis"/>
+    <addaction name="actionLesson_Generator"/>
+    <addaction name="actionTraining_Generator"/>
+    <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="actionSettings"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuProfiles">
+    <property name="title">
+     <string>Profiles</string>
+    </property>
+   </widget>
+   <addaction name="menu_File"/>
    <addaction name="menuView"/>
+   <addaction name="menuProfiles"/>
   </widget>
   <widget class="QDockWidget" name="plotDock">
    <property name="sizePolicy">
@@ -112,32 +87,191 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>38</width>
+     <width>80</width>
      <height>140</height>
     </size>
    </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetVerticalTitleBar</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="windowTitle">
-    <string>plot</string>
+    <string>Plot</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>8</number>
    </attribute>
    <widget class="LivePlot" name="plot"/>
   </widget>
-  <action name="actionPlot">
-   <property name="checkable">
-    <bool>true</bool>
+  <widget class="QDockWidget" name="mapDock">
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
+   <property name="windowTitle">
+    <string>Map</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <layout class="QGridLayout" name="gridLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item row="2" column="0" colspan="2">
+        <widget class="KeyboardMap" name="keyboardMap">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Plain</enum>
+         </property>
+         <property name="verticalScrollBarPolicy">
+          <enum>Qt::ScrollBarAlwaysOff</enum>
+         </property>
+         <property name="horizontalScrollBarPolicy">
+          <enum>Qt::ScrollBarAlwaysOff</enum>
+         </property>
+         <property name="sizeAdjustPolicy">
+          <enum>QAbstractScrollArea::AdjustToContents</enum>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+         </property>
+         <property name="viewportUpdateMode">
+          <enum>QGraphicsView::FullViewportUpdate</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QComboBox" name="mapComboBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
+         <property name="sizeAdjustPolicy">
+          <enum>QComboBox::AdjustToContentsOnFirstShow</enum>
+         </property>
+         <item>
+          <property name="text">
+           <string>frequency</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>accuracy</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>mistakes</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>viscosity</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>speed</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>damage</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <action name="actionSettings">
    <property name="text">
-    <string>&amp;Plot</string>
+    <string>&amp;Settings</string>
+   </property>
+  </action>
+  <action name="actionLibrary">
+   <property name="text">
+    <string>&amp;Library</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+  </action>
+  <action name="actionPerformance">
+   <property name="text">
+    <string>&amp;Performance</string>
+   </property>
+  </action>
+  <action name="actionLesson_Generator">
+   <property name="text">
+    <string>Lesson Generator</string>
+   </property>
+  </action>
+  <action name="actionTraining_Generator">
+   <property name="text">
+    <string>Training Generator</string>
+   </property>
+  </action>
+  <action name="actionAnalysis">
+   <property name="text">
+    <string>Analysis</string>
    </property>
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
+  <customwidget>
+   <class>KeyboardMap</class>
+   <extends>QGraphicsView</extends>
+   <header>mainwindow/keyboardmap/keyboardmap.h</header>
+  </customwidget>
   <customwidget>
    <class>Quizzer</class>
    <extends>QWidget</extends>
@@ -145,45 +279,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>TextManager</class>
-   <extends>QWidget</extends>
-   <header>texts/textmanager.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>PerformanceHistory</class>
-   <extends>QWidget</extends>
-   <header>performance/performancehistory.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>StatisticsWidget</class>
-   <extends>QWidget</extends>
-   <header>analysis/statisticswidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>SettingsWidget</class>
-   <extends>QWidget</extends>
-   <header>settings/settingswidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>TrainingGenWidget</class>
-   <extends>QWidget</extends>
-   <header>generators/traininggenwidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>LivePlot</class>
    <extends>QWidget</extends>
-   <header>liveplot/liveplot.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>LessonGenWidget</class>
-   <extends>QWidget</extends>
-   <header>generators/lessongenwidget.h</header>
+   <header>mainwindow/liveplot/liveplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

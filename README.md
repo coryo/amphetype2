@@ -1,24 +1,25 @@
 # amphetype2
 
-A rewrite of [Amphetype](https://code.google.com/p/amphetype/) in C++.
+# Building
 
-using:
+## Dependencies:
 
-*   Qt 5.7
-*   QCustomPlot 1.3.1
-*   SQLite 3.8.10.2
-*   sqlite3pp
-*   CMake 3.6.2
+* Qt 5.7
+* CMake 3.6.2
 
 
-## Building
+## Windows
 
-### OSX Build
+See `build.bat`.
+
+## OSX
+
+`$QT = /Users/me/Qt/5.7/clang_64`
 
 ```bash
 git clone https://github.com/coryo/amphetype2.git
 cd amphetype2
-mkdir build && cd "$_"
+mkdir build && cd build
 cmake .. -DQTROOT=$QT
 make
 $QT/bin/macdeployqt src/amphetype2.app

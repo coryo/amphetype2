@@ -1,29 +1,56 @@
+// Copyright (C) 2016  Cory Parsons
+//
+// This file is part of amphetype2.
+//
+// amphetype2 is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 2 of the License, or
+// (at your option) any later version.
+//
+// amphetype2 is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with amphetype2.  If not, see <http://www.gnu.org/licenses/>.
+//
+
 #include "quizzer/typerdisplay.h"
 
 #include <QSettings>
 
 #include <utility>
 
+TyperDisplay::TyperDisplay(QWidget* parent)
+    : QTextEdit(parent),
+      testPosition(0),
+      cursorPosition(0),
+      errorColor("#995555"),
+      correctColor("#79B221"),
+      highlightedTextColor("#000000"),
+      cols(80) {
+  this->setFocusPolicy(Qt::NoFocus);
+  this->setReadOnly(true);
+  connect(this, &TyperDisplay::colorChanged, this,
+          &TyperDisplay::updateDisplay);
+}
 
-TyperDisplay::TyperDisplay(QWidget* parent) :
-  QTextEdit(parent),
-  testPosition(0),
-  cursorPosition(0),
-  errorColor("#995555"),
-  correctColor("#79B221"),
-  highlightedTextColor("#000000"),
-  cols(80) {}
+void TyperDisplay::setCols(int cols) {
+  this->cols = cols;
+  this->wordWrap(cols);
+}
 
 void TyperDisplay::setTextTarget(const QString& t) {
   QSettings s;
   this->testPosition = 0;
   this->cursorPosition = 0;
   this->originalText = t;
-  this->cols = s.value("typer_cols").toInt();
   this->wordWrap(this->cols);
 }
 
 void TyperDisplay::moveCursor(int testPosition, int cursorPosition) {
+  if (this->originalText.isEmpty()) return;
   this->testPosition = testPosition;
   this->cursorPosition = cursorPosition;
 
@@ -35,24 +62,21 @@ void TyperDisplay::moveCursor(int testPosition, int cursorPosition) {
     pos = this->posToListPos(testPosition);
     if (cursorPosition >= originalText.length()) {
       int diff = cursorPosition - (originalText.length() - 1);
-      for (int i = 0; i < diff; i++)
-        wrapped.last().append("&nbsp;");
+      for (int i = 0; i < diff; i++) wrapped.last().append("&nbsp;");
       pos2 = {wrapped.size() - 1, wrapped.last().size() - 1};
     } else {
       pos2 = this->posToListPos(cursorPosition);
     }
     wrapped[pos2.first].insert(pos2.second + 1, "</span>");
-    wrapped[pos.first].insert(
-      pos.second,
-      "<span style='color:" + highlightedTextColor +
-      "; background-color:" + errorColor + "'>");
+    wrapped[pos.first].insert(pos.second,
+                              "<span style='color:" + highlightedTextColor +
+                                  "; background-color:" + errorColor + "'>");
   } else {
     pos = this->posToListPos(testPosition);
     wrapped[pos.first].insert(pos.second + 1, "</span>");
-    wrapped[pos.first].insert(
-      pos.second,
-      "<span style='color:" + highlightedTextColor +
-      "; background-color:" + correctColor + "'>");
+    wrapped[pos.first].insert(pos.second,
+                              "<span style='color:" + highlightedTextColor +
+                                  "; background-color:" + correctColor + "'>");
   }
 
   this->setText(wrapped.join("<br>"));
@@ -61,13 +85,10 @@ void TyperDisplay::moveCursor(int testPosition, int cursorPosition) {
 }
 
 void TyperDisplay::wordWrap(int w) {
-  if (this->originalText.isEmpty())
-    return;
+  if (this->originalText.isEmpty()) return;
   this->wrappedText.clear();
 
-  QSettings s;
   int maxWidth = w;
-  s.setValue("typer_cols", maxWidth);
 
   QString original(originalText);
 

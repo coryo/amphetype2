@@ -132,7 +132,7 @@ namespace sqlite3pp
 
     inline void context::result(char const* value, bool fcopy)
     {
-      sqlite3_result_text(ctx_, value, std::strlen(value), fcopy ? SQLITE_TRANSIENT : SQLITE_STATIC);
+      sqlite3_result_text(ctx_, value, (int)std::strlen(value), fcopy ? SQLITE_TRANSIENT : SQLITE_STATIC);
     }
 
     inline void context::result(void const* value, int n, bool fcopy)
@@ -157,7 +157,7 @@ namespace sqlite3pp
 
     inline void context::result_error(char const* msg)
     {
-      sqlite3_result_error(ctx_, msg, std::strlen(msg));
+      sqlite3_result_error(ctx_, msg, (int)std::strlen(msg));
     }
 
     inline void* context::aggregate_data(int size)

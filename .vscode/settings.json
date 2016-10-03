@@ -8,8 +8,14 @@
     "*.log*": true,
     "*.sqlite": true
   },
+  "files.trimTrailingWhitespace": true,
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
-  "editor.rulers": [80]
+  "editor.rulers": [
+    80
+  ],
+  "licenser.license": "GPLv3",
+  "licenser.author": "Cory Parsons",
+  "licenser.projectName": "amphetype2"
 }
