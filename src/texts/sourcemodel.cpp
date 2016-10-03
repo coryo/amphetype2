@@ -128,6 +128,7 @@ void SourceModel::refresh() {
   this->clear();
 
   QList<QVariantList> rows = db_.getSourcesData();
+  if (rows.isEmpty()) return;
   this->beginInsertRows(QModelIndex(), this->rowCount(),
                         this->rowCount() + rows.size() - 1);
   for (const auto& row : rows) {
