@@ -119,8 +119,8 @@ Database::Database(const QString& name) {
 }
 
 void Database::changeDatabase(const QString& name) {
-  db_path_ = QDir(".").absolutePath() + QDir::separator() + name +
-             QString(".profile");
+  db_path_ =
+      QDir(".").absolutePath() + QDir::separator() + name + QString(".profile");
   conn_ = std::make_unique<DBConnection>(db_path_);
   this->initDB();
 }
@@ -577,22 +577,24 @@ QList<QVariantList> Database::getStatisticsData(const QString& when, int type,
       break;
   }
 
-  QString sql = QString(
-                    "SELECT data, 12.0 / time as wpm, "
-                    "100 * (1.0 - misses / cast(total as real)) as accuracy, "
-                    "viscosity, total, misses, "
-                    "total * pow(time, 2) * (1.0 + misses / total) as damage "
-                    "FROM (SELECT data, "
-                    "agg_median(time) as time, "
-                    "agg_median(viscosity) as viscosity, "
-                    "sum(count) as total, "
-                    "sum(mistakes) as misses "
-                    "FROM statistic "
-                    "WHERE datetime(w) >= datetime(?) "
-                    "and type = ? group by data) "
-                    "WHERE total >= ? "
-                    "ORDER BY %1 LIMIT ?")
-                    .arg(order);
+  QString sql =
+      QString(
+          "SELECT data, 12.0 / time as wpm, "
+          "100 * max(0, (1.0 -  misses / (total * cast(length(data) as real)))) as accuracy, "
+          // "100 * max(0, (1.0 - misses / cast(total as real))) as accuracy, "
+          "viscosity, total, misses, "
+          "total * pow(time, 2) * (1.0 + misses / total) as damage "
+          "FROM (SELECT data, "
+          "agg_median(time) as time, "
+          "agg_median(viscosity) as viscosity, "
+          "sum(count) as total, "
+          "sum(mistakes) as misses "
+          "FROM statistic "
+          "WHERE datetime(w) >= datetime(?) "
+          "and type = ? group by data) "
+          "WHERE total >= ? "
+          "ORDER BY %1 LIMIT ?")
+          .arg(order);
 
   return getRows(sql, QVariantList() << when << type << count << limit);
 }
