@@ -1,17 +1,17 @@
 language: cpp
 
-- os: linux
-  env: CMAKE_BUILD_TYPE=Release
-  compiler:
-    - gcc
-    - clang
-  addons:
-    apt:
-      sources:
-        - george-edison55-precise-backports
-      packages:
-        - cmake
-        - cmake-data
+os: linux
+env: CMAKE_BUILD_TYPE=Release
+compiler:
+  - gcc
+  - clang
+addons:
+  apt:
+    sources:
+      - george-edison55-precise-backports
+    packages:
+      - cmake
+      - cmake-data
 
 before_install:
   - yes | sudo add-apt-repository ppa:beineri/opt-qt561
