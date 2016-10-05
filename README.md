@@ -1,16 +1,21 @@
 # amphetype2
 
+[![Build Status](https://travis-ci.org/coryo/amphetype2.svg?branch=master)](https://travis-ci.org/coryo/amphetype2)
+
+
 # Building
+
 
 ## Dependencies:
 
-* Qt 5.7
-* CMake 3.6.2
+* Qt>=5.6.1
+* CMake>=3.2.3
 
 
 ## Windows
 
 See `build.bat`.
+
 
 ## OSX
 
