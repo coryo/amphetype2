@@ -34,7 +34,7 @@ before_deploy:
 - sudo chmod a+x /usr/local/bin/linuxdeployqt
 - linuxdeployqt dist/amphetype2 -appimage -bundle-non-qt-libs -verbose=2
 - mv dist.AppImage amphetype2.AppImage
-- tar -cz f amphetype2-linux-x86_64-AppImage.tar.gz amphetype2.AppImage txt/
+- tar -czf amphetype2-linux-x86_64-AppImage.tar.gz amphetype2.AppImage txt/
 
 deploy:
   skip_cleanup: true
