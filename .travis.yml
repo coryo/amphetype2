@@ -30,7 +30,8 @@ script:
 before_deploy:
 - sudo wget -c "https://github.com/probonopd/linuxdeployqt/releases/download/1/linuxdeployqt-1-x86_64.AppImage" -O /usr/local/bin/linuxdeployqt
 - sudo chmod a+x /usr/local/bin/linuxdeployqt
-- linuxdeployqt src/amphetype2 -appimage
+- rm src/*.cpp src/*.h src/*.cmake src/Makefile
+- linuxdeployqt src/amphetype2 -appimage -bundle-non-qt-libs -verbose=2
 - mv src.AppImage amphetype2.AppImage
 - tar -czf amphetype2-linux-x86_64.tar.gz amphetype2.AppImage txt/
 
