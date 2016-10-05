@@ -1,25 +1,41 @@
 language: cpp
-
 os: linux
 env: COMPILER=g++-4.9 CMAKE_BUILD_TYPE=Release
 compiler: gcc
 addons:
   apt:
     sources:
-      - ubuntu-toolchain-r-test
-      - george-edison55-precise-backports
+    - ubuntu-toolchain-r-test
+    - george-edison55-precise-backports
     packages:
-      - gcc-4.9
-      - g++-4.9
-      - cmake
-      - cmake-data
-
+    - gcc-4.9
+    - g++-4.9
+    - cmake
+    - cmake-data
 before_install:
-  - yes | sudo add-apt-repository ppa:beineri/opt-qt561
-  - sudo apt-get update
-  - sudo apt-get install qt56base qt56tools --force-yes
-  - export QTROOT=/opt/qt56
+- yes | sudo add-apt-repository ppa:beineri/opt-qt561
+- sudo apt-get update
+- sudo apt-get install qt56base qt56tools --force-yes
+- export QTROOT=/opt/qt56
 
 script:
-  - CXX=${COMPILER} cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTROOT} .
-  - make
+- CXX=${COMPILER} cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTROOT} .
+- make
+
+before_deploy:
+- sudo wget -c "https://github.com/probonopd/linuxdeployqt/releases/download/1/linuxdeployqt-1-x86_64.AppImage" -O /usr/local/bin/linuxdeployqt
+- sudo chmod a+x /usr/local/bin/linuxdeployqt
+- linuxdeployqt src/amphetype2 -appimage
+- mv src.AppImage amphetype2.AppImage
+- mv amphetype2.AppImage ../ && cd ..
+- tar -czf amphetype2-linux-x86_64.tar.gz amphetype2.AppImage txt/
+
+deploy:
+  skip_cleanup: true
+  provider: releases
+  api_key:
+    secure: mK5A0dEGqx+15G9d26JqKarMuCioscx4iGZb1TqA//uv+jMvGngxcPejiC7YwhVwyFhDvBjOVPgOoUkAHS18jfdXgEqwdbFMsQY9UZyCWK3Q8GRUMuck7pV+V9FkytuCucR2N/nOymppUpvaXXjfcL56xuUsjk9iLQmvgjfgCtV+uQ7v9xUP/27ZbWcCABRKH5Q4ls9PbCDypo49Ek4ifHiScJPikbUF/osklnC2twPGyfiJL75yoMSRQPXPjUNLJoN4Nrg6wNakwFNVPA1IHwp9LiZ3wrxs+Y58sNZWfEx+zxpVyaNYuTRVFxcFOC2DBvEk8SBtqA4RLHjWU7KsSTLoKLayQK3vSVAmfRFXGbfbw4eXF5BzJoroRBnTDZyTXTh9EOixAhKAl+6nd/yaTxMhl6wgsrUYQuDhkbckCCeIIkx93UMXYWUgpeE8UuzpsO6TFxKwtq+klnDErT2T6ZAzbCylEXw4x7gln3H7vb3DG7TWvOQoALkeTNAia2ICoC+kVHZAo+lcD2e2th+eTu2G5/LiEayNYZ1DGhqMOhGRm1YeibZdqGnPnC8VVGjcpcF9kTMC+f1Uj4i5UsqsNpBCNPTB+fQaPxS3uIxPmywEtD94jM+exjJ0qGQN2NnfyZ0IudSfNnadPWoe1o70RB3+A6zShy/ya0Z2ndz8pzs=
+  file: amphetype2-linux-x86_64.tar.gz
+  on:
+    repo: coryo/amphetype2
+    tags: true
