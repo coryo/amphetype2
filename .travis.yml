@@ -16,10 +16,12 @@ before_install:
 - yes | sudo add-apt-repository ppa:beineri/opt-qt561
 - sudo apt-get update
 - sudo apt-get install qt56base qt56tools --force-yes
-- export QTROOT=/opt/qt56
+- export QTDIR=/opt/qt56
+- export QT_PLUGIN_PATH=/opt/qt56/plugins/
+- export LD_LIBRARY_PATH=/opt/qt56/lib/
 
 script:
-- CXX=${COMPILER} cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTROOT} .
+- CXX=${COMPILER} cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTDIR} .
 - make
 
 before_deploy:
