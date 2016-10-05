@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=amphetype2
+GenericName=Typing Trainer
+Comment=Practice typing
+Exec=AppRun %F
+Icon=icon
+Categories=Education;Office;
