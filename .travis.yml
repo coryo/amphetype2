@@ -27,7 +27,6 @@ before_deploy:
 - sudo chmod a+x /usr/local/bin/linuxdeployqt
 - linuxdeployqt src/amphetype2 -appimage
 - mv src.AppImage amphetype2.AppImage
-- mv amphetype2.AppImage ../ && cd ..
 - tar -czf amphetype2-linux-x86_64.tar.gz amphetype2.AppImage txt/
 
 deploy:
