@@ -1,15 +1,16 @@
 language: cpp
 
 os: linux
-env: CMAKE_BUILD_TYPE=Release
-compiler:
-  - gcc
-  - clang
+env: COMPILER=g++-4.9 CMAKE_BUILD_TYPE=Release
+compiler: gcc
 addons:
   apt:
     sources:
+      - ubuntu-toolchain-r-test
       - george-edison55-precise-backports
     packages:
+      - gcc-4.9
+      - g++-4.9
       - cmake
       - cmake-data
 
@@ -20,5 +21,5 @@ before_install:
   - export QTROOT=/opt/qt56
 
 script:
-  - cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTROOT} .
+  - CXX=${COMPILER} cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTROOT} .
   - make
