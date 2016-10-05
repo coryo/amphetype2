@@ -95,7 +95,7 @@ sqlite3pp::database& DBConnection::db() { return *(db_); }
 
 Database::Database(const QString& name) {
   QSettings s;
-  QString path(qApp->applicationDirPath() + QDir::separator() +
+  QString path(QDir(".").absolutePath() + QDir::separator() +
                QString("%1.profile"));
   if (name.isNull()) {
     QString profile = s.value("profile", "default").toString();
@@ -119,7 +119,7 @@ Database::Database(const QString& name) {
 }
 
 void Database::changeDatabase(const QString& name) {
-  db_path_ = qApp->applicationDirPath() + QDir::separator() + name +
+  db_path_ = QDir(".").absolutePath() + QDir::separator() + name +
              QString(".profile");
   conn_ = std::make_unique<DBConnection>(db_path_);
   this->initDB();
