@@ -110,6 +110,7 @@ Database::Database(const QString& name) {
   CFRelease(appUrlRef);
   CFRelease(macPath);
   app_dir.setPath(osx_path);
+  app_dir.cdUp();
 #endif
   QString path(app_dir.absolutePath() + QDir::separator() +
                QString("%1.profile"));

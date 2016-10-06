@@ -1,7 +1,9 @@
 #!/bin/bash
 
 if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-  ${QTDIR}/bin/macdeployqt src/amphetype2.app
+  curl -L -O https://github.com/MaximAlien/macdeployqt/raw/master/macdeployqt.dmg
+  hdiutil mount macdeployqt.dmg
+  sudo /Volumes/*macdeployqt*/macdeployqt.app/Contents/MacOS/macdeployqt src/amphetype2.app
   mv src/amphetype2.app .
   tar -czf amphetype2-osx.tar.gz amphetype2.app txt/
   export DEPLOYFILE=amphetype2-osx.tar.gz
