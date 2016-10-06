@@ -6,10 +6,9 @@ matrix:
       dist: trusty
       sudo: required
       compiler: gcc
-      env: COMPILER=g++-4.9 CMAKE_BUILD_TYPE=Release
+      env: CMAKE_BUILD_TYPE=Release CXX=g++-4.9
     - os: osx
-      compiler: clang
-      env: COMPILER=clang CMAKE_BUILD_TYPE=Release
+      env: CMAKE_BUILD_TYPE=Release
       osx_image: xcode8
 
 addons:
@@ -33,7 +32,7 @@ install:
 - cmake --version
 
 script:
-- CXX=${COMPILER} cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTDIR} .
+- cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTDIR} .
 - make
 
 before_deploy:
