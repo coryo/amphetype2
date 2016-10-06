@@ -103,7 +103,6 @@ int main(int argc, char *argv[]) {
   }
   qInstallMessageHandler(logHandler);
 
-  QLOG_INFO() << qApp->applicationDirPath();
   QLOG_INFO() << QDir(".").absolutePath();
   Database db;
   db.initDB();

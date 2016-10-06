@@ -27,7 +27,7 @@ IF "%ARCH%" == "32" (
         if not exist %BUILD_DIR% md %BUILD_DIR%
         cd %BUILD_DIR% || GOTO done
         del src\ui_*.h
-        cmake .. -GNinja -DQTROOT=%QT% || GOTO done
+        cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DQTROOT=%QT% || GOTO done
         ninja || GOTO done
 
 :deploy
