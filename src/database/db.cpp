@@ -95,7 +95,19 @@ sqlite3pp::database& DBConnection::db() { return *(db_); }
 
 Database::Database(const QString& name) {
   QSettings s;
-  QString path(QDir(".").absolutePath() + QDir::separator() +
+  QDir app_dir(".");
+#ifdef Q_OS_OSX
+  CFURLRef appUrlRef = CFBundleCopyBundleURL(CFBundleGetMainBundle());
+  CFStringRef macPath =
+      CFURLCopyFileSystemPath(appUrlRef, kCFURLPOSIXPathStyle);
+  const char* pathPtr =
+      CFStringGetCStringPtr(macPath, CFStringGetSystemEncoding());
+  QString osx_path = QString(pathPtr);
+  CFRelease(appUrlRef);
+  CFRelease(macPath);
+  app_dir.setPath(osx_path);
+#endif
+  QString path(app_dir.absolutePath() + QDir::separator() +
                QString("%1.profile"));
   if (name.isNull()) {
     QString profile = s.value("profile", "default").toString();
@@ -119,10 +131,11 @@ Database::Database(const QString& name) {
 }
 
 void Database::changeDatabase(const QString& name) {
-  db_path_ =
-      QDir(".").absolutePath() + QDir::separator() + name + QString(".profile");
-  conn_ = std::make_unique<DBConnection>(db_path_);
-  this->initDB();
+  // db_path_ =
+  //     QDir(".").absolutePath() + QDir::separator() + name +
+  //     QString(".profile");
+  // conn_ = std::make_unique<DBConnection>(db_path_);
+  // this->initDB();
 }
 
 void Database::initDB() {
@@ -580,7 +593,8 @@ QList<QVariantList> Database::getStatisticsData(const QString& when, int type,
   QString sql =
       QString(
           "SELECT data, 12.0 / time as wpm, "
-          "100 * max(0, (1.0 -  misses / (total * cast(length(data) as real)))) as accuracy, "
+          "100 * max(0, (1.0 -  misses / (total * cast(length(data) as "
+          "real)))) as accuracy, "
           // "100 * max(0, (1.0 - misses / cast(total as real))) as accuracy, "
           "viscosity, total, misses, "
           "total * pow(time, 2) * (1.0 + misses / total) as damage "
