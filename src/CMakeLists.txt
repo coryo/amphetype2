@@ -82,6 +82,7 @@ target_link_libraries(amphetype2
 	qslog
 	${CMAKE_THREAD_LIBS_INIT}
 	${CMAKE_DL_LIBS}
+  ${OS_LIBS}
 )
 set_target_properties(amphetype2 PROPERTIES
   MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/bundle/osx/MacOSXBundleInfo.plist.in
