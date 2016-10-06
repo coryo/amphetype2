@@ -27,6 +27,10 @@
 #include <QPair>
 #include <QSettings>
 
+#ifdef Q_OS_OSX
+#include <CoreFoundation/CoreFoundation.h>
+#endif
+
 #include <sqlite3.h>
 #include <sqlite3pp.h>
 
