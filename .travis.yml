@@ -6,7 +6,7 @@ matrix:
       dist: trusty
       sudo: required
       compiler: gcc
-      env: CMAKE_BUILD_TYPE=Release CXX=g++-4.9
+      env: CMAKE_BUILD_TYPE=Release
     - os: osx
       env: CMAKE_BUILD_TYPE=Release
       osx_image: xcode8
@@ -32,11 +32,13 @@ install:
 - cmake --version
 
 script:
-- cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTDIR} .
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then CXX=g++-4.9 cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTDIR} . ; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTDIR} .               ; fi
 - make
 
 before_deploy:
-  - ./.travis/deploy.sh
+  - chmod +x ./.travis/deploy.sh
+  - source ./.travis/deploy.sh
 
 deploy:
   skip_cleanup: true
