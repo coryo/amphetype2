@@ -7,16 +7,18 @@ matrix:
       sudo: required
       compiler: gcc
       env: COMPILER=g++-4.9 CMAKE_BUILD_TYPE=Release
-      addons:
-      apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - gcc-4.9
-        - g++-4.9
     - os: osx
       compiler: clang
       env: COMPILER=clang CMAKE_BUILD_TYPE=Release
+      osx_image: xcode8
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.9
+    - g++-4.9
 
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update                                                 ; fi
