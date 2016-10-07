@@ -50,7 +50,10 @@ void TyperDisplay::setTextTarget(const QString& t) {
 }
 
 void TyperDisplay::moveCursor(int testPosition, int cursorPosition) {
-  if (this->originalText.isEmpty()) return;
+  if (this->originalText.isEmpty() || testPosition < 0 ||
+      testPosition >= this->originalText.length())
+    return;
+
   this->testPosition = testPosition;
   this->cursorPosition = cursorPosition;
 
