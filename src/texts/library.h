@@ -81,6 +81,8 @@ class Library : public QMainWindow {
   void addText();
   void enableSource();
   void disableSource();
+  void exportSource();
+  void importSource();
 
   void actionDeleteTexts(bool checked);
   void actionEditText(bool checked);

@@ -30,6 +30,8 @@
 #include <QProgressDialog>
 #include <QSettings>
 #include <QString>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 
 #include <QsLog.h>
 
@@ -65,6 +67,9 @@ Library::Library(QWidget* parent)
 
   connect(ui->actionImport_Texts, &QAction::triggered, this,
           &Library::addFiles);
+  connect(ui->actionImport_XML, &QAction::triggered, this,
+          &Library::importSource);
+
   connect(ui->actionAdd_Source, &QAction::triggered, this, &Library::addSource);
   connect(ui->actionAdd_Text, &QAction::triggered, this, &Library::addText);
 
@@ -129,6 +134,9 @@ void Library::sourcesContextMenu(const QPoint& pos) {
   QAction* disableAction = menu.addAction("disable");
   connect(disableAction, &QAction::triggered, this, &Library::disableSource);
 
+  QAction* exportAction = menu.addAction("export as xml...");
+  connect(exportAction, &QAction::triggered, this, &Library::exportSource);
+
   menu.exec(QCursor::pos());
 }
 
@@ -151,6 +159,93 @@ void Library::textsContextMenu(const QPoint& pos) {
   connect(deleteAction, &QAction::triggered, this, &Library::actionDeleteTexts);
 
   menu.exec(QCursor::pos());
+}
+
+void Library::exportSource() {
+  if (!ui->sourcesTable->selectionModel()->hasSelection()) return;
+  auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
+
+  QString fileName = QFileDialog::getSaveFileName(this, tr("Export XML"), ".",
+                                                  tr("XML files (*.xml)"));
+  QLOG_DEBUG() << fileName;
+
+  Database db;
+
+  QFile file(fileName);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
+
+  QXmlStreamWriter stream(&file);
+  stream.setAutoFormatting(true);
+  stream.writeStartDocument();
+  stream.writeStartElement("sources");
+  for (const auto& index : indexes) {
+    int source = index.data(Qt::UserRole).toInt();
+    auto sourceData = db.getSourceData(source);
+    stream.writeStartElement("source");
+    stream.writeAttribute("name", sourceData[1].toString());
+    if (sourceData[6].toInt() == 1) stream.writeAttribute("type", "lesson");
+    QStringList texts = db.getAllTexts(source);
+    for (const QString& text : texts) {
+      stream.writeTextElement("text", text);
+    }
+    stream.writeEndElement();
+  }
+  stream.writeEndElement();
+  stream.writeEndDocument();
+}
+
+void Library::importSource() {
+  QString fileName = QFileDialog::getOpenFileName(
+      this, tr("Import"), ".", tr("amphetype2 source xml (*.xml)"));
+  QFile file(fileName);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    return;
+  }
+
+  Database db;
+  QXmlStreamReader xml(&file);
+  while (!xml.atEnd()) {
+    xml.readNext();
+    if (xml.name() == "source") {
+      if (xml.attributes().value("name").isEmpty()) {
+        continue;
+      }
+
+      QStringList texts;
+      int type = 0;
+      int discount = -1;
+
+      if (xml.attributes().value("type") == "lesson") {
+        type = 1;
+        discount = 1;
+      }
+
+      int source = db.getSource(xml.attributes().value("name").toString(),
+                                discount, type);
+      while (!xml.atEnd()) {
+        xml.readNext();
+        if (xml.isEndElement()) {
+          if (!texts.isEmpty()) {
+            db.addTexts(source, texts);
+          }
+          break;
+        }
+        if (xml.name() == "text") {
+          QString text(xml.readElementText());
+          if (!text.isEmpty()) {
+            texts << text;
+          }
+        }
+      }
+    }
+  }
+
+  if (xml.hasError()) {
+    return;
+  }
+
+  refreshSources();
+  emit sourcesChanged();
 }
 
 void Library::actionEditText(bool checked) {

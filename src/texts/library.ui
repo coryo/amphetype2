@@ -81,6 +81,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionImport_Texts"/>
+   <addaction name="actionImport_XML"/>
    <addaction name="actionAdd_Source"/>
    <addaction name="actionAdd_Text"/>
   </widget>
@@ -97,6 +98,11 @@
   <action name="actionAdd_Text">
    <property name="text">
     <string>Add Text</string>
+   </property>
+  </action>
+  <action name="actionImport_XML">
+   <property name="text">
+    <string>Import XML</string>
    </property>
   </action>
  </widget>
