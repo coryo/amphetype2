@@ -10,7 +10,13 @@
             <xs:element name="text" type="xs:string" maxOccurs="unbounded"/>
           </xs:sequence>
           <xs:attribute name="name" type="xs:string" use="required"/>
-          <xs:attribute name="type" type="xs:string"/>
+          <xs:attribute name="type">
+            <xs:simpleType>
+              <xs:restriction base="xs:string">
+                <xs:enumeration value="lesson"/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:attribute>
         </xs:complexType>
       </xs:element>
     </xs:sequence>
