@@ -158,7 +158,7 @@ MainWindow::MainWindow(QWidget* parent)
   connect(settingsWidget, &SettingsWidget::settingsChanged, ui->plot,
           &LivePlot::updatePlotTargetLine);
   connect(settingsWidget, &SettingsWidget::settingsChanged,
-          this->performanceWidget, &PerformanceHistory::refreshCurrentPlot);
+          this->performanceWidget, &PerformanceHistory::loadSettings);
   connect(settingsWidget, &SettingsWidget::newKeyboard, ui->keyboardMap,
           &KeyboardMap::setKeyboard);
 

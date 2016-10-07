@@ -142,6 +142,7 @@ void PerformanceHistory::loadSettings() {
              .arg(s.value("Performance/def_group_by", 10).toInt()));
 
   target_wpm_ = s.value("target_wpm", 50).toDouble();
+  this->refreshCurrentPlot();
 }
 
 void PerformanceHistory::saveSettings() {
