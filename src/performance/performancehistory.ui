@@ -303,6 +303,12 @@
    </layout>
   </widget>
   <widget class="QDockWidget" name="plotDock">
+   <property name="minimumSize">
+    <size>
+     <width>441</width>
+     <height>150</height>
+    </size>
+   </property>
    <property name="windowTitle">
     <string>Plot</string>
    </property>
