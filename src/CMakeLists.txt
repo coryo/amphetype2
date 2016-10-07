@@ -77,6 +77,7 @@ add_executable(amphetype2 WIN32 MACOSX_BUNDLE
 # Use the Widgets module from Qt 5.
 target_link_libraries(amphetype2
 	Qt5::Widgets
+  Qt5::XmlPatterns
 	sqlite3
 	qcustomplot
 	qslog

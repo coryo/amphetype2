@@ -8,5 +8,6 @@
         <file>keyboard_layouts/azerty.layout</file>
         <file>keyboard_layouts/workman.layout</file>
         <file>keyboard_layouts/dvorak.layout</file>
+        <file>sources.xsd</file>
     </qresource>
 </RCC>

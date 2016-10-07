@@ -30,6 +30,9 @@
 #include <QProgressDialog>
 #include <QSettings>
 #include <QString>
+#include <QUrl>
+#include <QXmlSchema>
+#include <QXmlSchemaValidator>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
@@ -172,7 +175,7 @@ void Library::exportSource() {
   Database db;
 
   QFile file(fileName);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
+  if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) return;
 
   QXmlStreamWriter stream(&file);
   stream.setAutoFormatting(true);
@@ -192,15 +195,17 @@ void Library::exportSource() {
   }
   stream.writeEndElement();
   stream.writeEndDocument();
+
+  this->validateXml(&file);
 }
 
 void Library::importSource() {
   QString fileName = QFileDialog::getOpenFileName(
       this, tr("Import"), ".", tr("amphetype2 source xml (*.xml)"));
   QFile file(fileName);
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    return;
-  }
+
+  if (!this->validateXml(&file)) return;
+  file.open(QIODevice::ReadOnly | QIODevice::Text);
 
   Database db;
   QXmlStreamReader xml(&file);
@@ -455,4 +460,31 @@ void Library::processNextFile() {
   progress_->setLabelText(files.front());
   lmc->operate(files.front());
   files.pop_front();
+}
+
+bool Library::validateXml(QFile* file) {
+  if (file->isOpen()) file->close();
+
+  if (!file->open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QLOG_DEBUG() << "validateXml: can't open file:" << file->fileName();
+    return false;
+  }
+
+  QXmlSchema schema;
+  QFile schemaFile(":/sources.xsd");
+  schemaFile.open(QIODevice::ReadOnly);
+  schema.load(&schemaFile, QUrl::fromLocalFile(schemaFile.fileName()));
+  bool v = false;
+  if (schema.isValid()) {
+    QXmlSchemaValidator validator(schema);
+    v = validator.validate(file, QUrl::fromLocalFile(file->fileName()));
+    if (v)
+      QLOG_DEBUG() << "validateXml: document is valid." << file->fileName();
+    else
+      QLOG_DEBUG() << "validateXml: document is invalid." << file->fileName();
+  } else {
+    QLOG_DEBUG() << "validateXml: schema is invalid." << schemaFile.fileName();
+  }
+  file->close();
+  return v;
 }

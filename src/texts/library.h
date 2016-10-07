@@ -19,6 +19,7 @@
 #ifndef SRC_TEXTS_LIBRARY_H_
 #define SRC_TEXTS_LIBRARY_H_
 
+#include <QFile>
 #include <QMainWindow>
 #include <QModelIndex>
 #include <QProgressDialog>
@@ -52,6 +53,7 @@ class Library : public QMainWindow {
   LessonMinerController* lmc;
   void textsTableDoubleClickHandler(const QModelIndex&);
   void textsTableClickHandler(const QModelIndex&);
+  bool validateXml(QFile* file);
 
  signals:
   void setText(const std::shared_ptr<Text>&);
