@@ -76,6 +76,7 @@ class Database : public QObject {
   QList<QVariantList> getSourcesData();
   QList<QVariantList> getTextsData(int, int page = 0, int limit = 100);
   QVariantList getTextData(int);
+  QStringList getAllTexts(int source);
   int getTextsCount(int source);
   QList<QVariantList> getPerformanceData(int, int, int, int, int = 10);
   QList<QVariantList> getSourcesList();

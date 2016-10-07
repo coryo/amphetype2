@@ -426,7 +426,7 @@ QPair<double, double> Database::getMedianStats(int n) {
 QVariantList Database::getSourceData(int source) {
   return getOneRow(
       "select s.id, s.name, t.count, r.count, r.wpm, "
-      "nullif(t.dis,t.count) "
+      "nullif(t.dis,t.count), s.type "
       "from source as s "
       "left join (select source, count(*) as count, "
       "count(disabled) as dis "
@@ -482,6 +482,14 @@ QList<QVariantList> Database::getTextsData(int source, int page, int limit) {
       "where source is ? "
       "order by t.id LIMIT ? OFFSET ?",
       QVariantList() << source << limit << page * limit);
+}
+
+QStringList Database::getAllTexts(int source) {
+  auto rows = getRows("select text from text where source is ? order by id", source);
+  QStringList texts;
+  for (const auto & row : rows)
+    texts << row[0].toString();
+  return texts;
 }
 
 int Database::getTextsCount(int source) {
