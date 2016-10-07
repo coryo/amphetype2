@@ -20,6 +20,7 @@
 #define SRC_QUIZZER_TYPER_H_
 
 #include <QPlainTextEdit>
+#include <QThread>
 
 #include <memory>
 
@@ -30,15 +31,17 @@ class Typer : public QPlainTextEdit {
 
  public:
   explicit Typer(QWidget* parent = 0);
+  ~Typer();
   void setTextTarget(const std::shared_ptr<Text>&);
   Test* test() { return test_; }
 
  signals:
-  void newInput(const QString&, int, Qt::KeyboardModifiers);
+  void newInput(QString, int, int, Qt::KeyboardModifiers);
 
  private:
   void keyPressEvent(QKeyEvent* e);
   Test* test_;
+  QThread test_thread_;
 };
 
 #endif  // SRC_QUIZZER_TYPER_H_

@@ -60,7 +60,7 @@ class Test : public QObject {
   int mistakeCount() const;
   int msElapsed() const;
   double secondsElapsed() const;
-  void handleInput(const QString&, int, Qt::KeyboardModifiers);
+  void handleInput(QString, int, int, Qt::KeyboardModifiers);
 
  private:
   QThread worker_thread_;

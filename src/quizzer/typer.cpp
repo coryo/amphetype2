@@ -27,10 +27,19 @@ Typer::Typer(QWidget* parent) : QPlainTextEdit(parent) {
   this->hide();
   this->setAcceptDrops(false);
   this->setFocusPolicy(Qt::StrongFocus);
+  test_thread_.start();
+  qRegisterMetaType<Qt::KeyboardModifiers>("Qt::KeyboardModifiers");
+}
+
+Typer::~Typer() {
+  test_thread_.quit();
+  test_thread_.wait();
 }
 
 void Typer::setTextTarget(const std::shared_ptr<Text>& text) {
   test_ = new Test(text);
+  test_->moveToThread(&test_thread_);
+  connect(this, &Typer::newInput, test_, &Test::handleInput);
   if (!this->toPlainText().isEmpty()) {
     this->blockSignals(true);
     this->clear();
@@ -45,9 +54,6 @@ void Typer::keyPressEvent(QKeyEvent* e) {
     e->ignore();
   } else {
     QPlainTextEdit::keyPressEvent(e);
-
-    QString currentText = this->toPlainText();
-
-    test_->handleInput(this->toPlainText(), e->key(), e->modifiers());
+    emit newInput(this->toPlainText(), test_->msElapsed(), e->key(), e->modifiers());
   }
 }

@@ -186,6 +186,7 @@ void Quizzer::setPreviousResultText(double lastWpm, double lastAcc) {
 
 void Quizzer::setText(const std::shared_ptr<Text>& t) {
   this->text = t;
+  ui->typerDisplay->setTextTarget(text->getText());
   ui->typer->setTextTarget(t);
   Test* test = ui->typer->test();
   connect(test, &Test::newWpm, this, &Quizzer::newWpm);
@@ -204,7 +205,6 @@ void Quizzer::setText(const std::shared_ptr<Text>& t) {
   this->timerLabelStop();
   this->lessonTimer.stop();
 
-  ui->typerDisplay->setTextTarget(text->getText());
   ui->textInfoLabel->setText(QString("%1 #%2").arg(
       text->getSourceName(), QString::number(text->getTextNumber())));
 }

@@ -56,7 +56,10 @@ Test::~Test() {
   worker_thread_.wait();
 }
 
-int Test::msElapsed() const { return this->timer.elapsed(); }
+int Test::msElapsed() const {
+  if (!this->timer.isValid()) return 0;
+  return this->timer.elapsed();
+}
 double Test::secondsElapsed() const { return this->msElapsed() / 1000.0; }
 int Test::mistakeCount() const { return this->mistakes.size(); }
 
@@ -107,7 +110,7 @@ void Test::finish() {
   }
 }
 
-void Test::handleInput(const QString& currentText, int key,
+void Test::handleInput(QString currentText, int ms, int key,
                        Qt::KeyboardModifiers modifiers) {
   if (this->text->getText().isEmpty()) return;
 
@@ -146,14 +149,15 @@ void Test::handleInput(const QString& currentText, int key,
     int min, max;
 
     // store when we are at this position
-    this->timeAt[currentPos] = this->msElapsed();
+    this->timeAt[currentPos] = ms;
 
     if (this->currentPos > 1) {
       // store time between keys
       this->msBetween[this->currentPos - 1] =
           this->timeAt[currentPos] - this->timeAt[currentPos - 1];
       // store wpm
-      this->wpm << 12.0 * ((this->currentPos) / this->secondsElapsed());
+      this->wpm << 12.0 *
+                       (this->currentPos / (static_cast<double>(ms) / 1000.0));
       QLOG_TRACE() << "pos:" << this->currentPos - 1 << currentPos
                    << "ms between:" << this->msBetween[this->currentPos - 1]
                    << "wpm:" << this->wpm.last();
