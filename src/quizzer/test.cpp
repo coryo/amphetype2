@@ -145,6 +145,8 @@ void Test::handleInput(QString currentText, int ms, int key,
   }
   QStringRef lcd(&currentText, 0, this->currentPos);
 
+  emit positionChanged(this->currentPos, currentText.length());
+
   if (this->currentPos == currentText.length()) {
     int min, max;
 
@@ -192,8 +194,6 @@ void Test::handleInput(QString currentText, int ms, int key,
     QLOG_DEBUG() << "totalms: " << this->totalMs;
     return;
   }
-
-  emit positionChanged(this->currentPos, currentText.length());
 
   // Mistake handling
   if (this->currentPos < currentText.length() &&
