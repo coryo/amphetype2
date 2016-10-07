@@ -6,7 +6,7 @@
     "dist/": true,
     "**/*VC.DB*": true,
     "*.log*": true,
-    "*.sqlite": true
+    "*.profile": true
   },
   "files.trimTrailingWhitespace": true,
   "editor.tabSize": 2,
