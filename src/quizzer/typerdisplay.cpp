@@ -42,7 +42,6 @@ void TyperDisplay::setCols(int cols) {
 }
 
 void TyperDisplay::setTextTarget(const QString& t) {
-  QSettings s;
   this->testPosition = 0;
   this->cursorPosition = 0;
   this->originalText = t;
@@ -121,16 +120,13 @@ void TyperDisplay::wordWrap(int w) {
 }
 
 std::pair<int, int> TyperDisplay::posToListPos(int pos) {
-  const QStringList& list = wrappedText;
   int offset = 0;
   int row = 0;
-  int col = 0;
-  while (pos - offset >= list.at(row).length()) {
-    offset += list.at(row).length();
+  while (pos - offset >= wrappedText.at(row).length()) {
+    offset += wrappedText.at(row).length();
     row += 1;
   }
-  col = pos - offset;
-  return {row, col};
+  return {row, pos - offset};
 }
 
 void TyperDisplay::updateDisplay() {
