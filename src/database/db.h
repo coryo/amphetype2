@@ -49,7 +49,6 @@ class Database : public QObject {
  public:
   explicit Database(const QString& name = QString());
   void initDB();
-  void changeDatabase(const QString& name);
 
   // specific insertion functions
   void addText(int, const QString&, int = -1, bool = true);
@@ -83,6 +82,12 @@ class Database : public QObject {
   QList<QVariantList> getStatisticsData(const QString&, int, int, int, int);
   QHash<QChar, QHash<QString, QVariant>> getKeyFrequency();
 
+  // general functions for retrieving data with a given query
+  QVariantList getOneRow(const QString&, const QVariant& = QVariant());
+  QVariantList getOneRow(sqlite3pp::database&, const QString&,
+                         const QVariant& = QVariant());
+  QList<QVariantList> getRows(const QString&, const QVariant& = QVariant());
+
   // get the text that follows the last completed text
   std::shared_ptr<Text> getNextText();
   // get the text that follows the given text
@@ -97,11 +102,6 @@ class Database : public QObject {
   QString db_path_;
   std::unique_ptr<DBConnection> conn_;
 
-  // general functions for retrieving data with a given query
-  QVariantList getOneRow(const QString&, const QVariant& = QVariant());
-  QVariantList getOneRow(sqlite3pp::database&, const QString&,
-                         const QVariant& = QVariant());
-  QList<QVariantList> getRows(const QString&, const QVariant& = QVariant());
   // general functions for executing commands
   void bindAndRun(sqlite3pp::command*, const QVariant& = QVariant());
   void bindAndRun(const QString&, const QVariant& = QVariant());

@@ -93,6 +93,7 @@ DBConnection::DBConnection(const QString& path) {
   func_->create<double(double, double)>("pow", &sqlite_extensions::pow);
   aggr_->create<sqlite_extensions::agg_median, double>("agg_median");
   aggr_->create<sqlite_extensions::agg_mean<double>, double, int>("agg_mean");
+  db_->execute("PRAGMA foreign_keys = ON");
 }
 
 sqlite3pp::database& DBConnection::db() { return *(db_); }
@@ -135,14 +136,6 @@ Database::Database(const QString& name) {
   conn_ = std::make_unique<DBConnection>(db_path_);
 }
 
-void Database::changeDatabase(const QString& name) {
-  // db_path_ =
-  //     QDir(".").absolutePath() + QDir::separator() + name +
-  //     QString(".profile");
-  // conn_ = std::make_unique<DBConnection>(db_path_);
-  // this->initDB();
-}
-
 void Database::initDB() {
   QLOG_DEBUG() << "sqlite3_threadsafe() =" << sqlite3_threadsafe();
   try {
@@ -150,23 +143,79 @@ void Database::initDB() {
     sqlite3pp::transaction xct(db);
     {
       db.execute(
-          "CREATE TABLE IF NOT EXISTS source (id INTEGER PRIMARY KEY,"
-          "name text, disabled integer, "
-          "discount integer, type integer)");
+          "CREATE TABLE IF NOT EXISTS source("
+          "id         INTEGER PRIMARY KEY,"
+          "name       TEXT,"
+          "disabled   INTEGER,"
+          "discount   INTEGER,"
+          "type       INTEGER,"
+          "text_count INTEGER)");
       db.execute(
-          "CREATE TABLE IF NOT EXISTS text(id INTEGER PRIMARY KEY,"
-          "source integer, text text, disabled integer)");
+          "CREATE TABLE IF NOT EXISTS text("
+          "id       INTEGER PRIMARY KEY,"
+          "source   INTEGER REFERENCES source(id) ON DELETE CASCADE,"
+          "text     TEXT,"
+          "disabled INTEGER)");
       db.execute(
-          "CREATE TABLE IF NOT EXISTS result (w DATETIME, text_id int, "
-          "source integer, wpm real, accuracy real,"
-          "viscosity real, PRIMARY KEY (w, text_id, source))");
+          "CREATE TABLE IF NOT EXISTS result("
+          "id        INTEGER PRIMARY KEY,"
+          "w         DATETIME,"
+          "text_id   INTEGER REFERENCES text(id) ON DELETE CASCADE,"
+          "source    INTEGER REFERENCES source(id),"
+          "wpm       REAL,"
+          "accuracy  REAL,"
+          "viscosity REAL)");
       db.execute(
-          "CREATE TABLE IF NOT EXISTS statistic (w DATETIME, data text,"
-          "type integer,time real,count integer, mistakes integer,"
-          "viscosity real)");
+          "CREATE TABLE IF NOT EXISTS statistic("
+          "w         DATETIME,"
+          "data      TEXT,"
+          "type      INTEGER,"
+          "time      REAL,"
+          "count     INTEGER,"
+          "mistakes  INTEGER,"
+          "viscosity REAL)");
       db.execute(
-          "CREATE TABLE IF NOT EXISTS mistake (w DATETIME, target text,"
-          "mistake text, count integer)");
+          "CREATE TABLE IF NOT EXISTS mistake("
+          "w       DATETIME,"
+          "target  TEXT,"
+          "mistake TEXT,"
+          "count   INTEGER)");
+
+      db.execute(
+          "DROP VIEW IF EXISTS performanceView; "
+          "CREATE VIEW performanceView as SELECT "
+          "result.id,"
+          "text_id,"
+          "source.id as source_id,"
+          "w as date,"
+          "source.name as source_name,"
+          "source.type,"
+          "wpm,"
+          "100.0 * accuracy as accuracy,"
+          "viscosity "
+          "FROM result "
+          "LEFT JOIN source ON (result.source = source.id)");
+
+      db.execute(
+          "create trigger text_count_add_trigger before insert on text "
+          "for each row "
+          "begin "
+          "update source set text_count = text_count + 1 where id = "
+          "NEW.source; "
+          "end;");
+      db.execute(
+          "create trigger text_count_subtract_trigger before delete on text "
+          "for each row "
+          "begin "
+          "update source set text_count = text_count - 1 where id = "
+          "OLD.source; "
+          "end;");
+      db.execute(
+          "create trigger invalidate_result_trigger after update of text on text "
+          "for each row "
+          "begin "
+          "update result set source = NULL, text_id = NULL where text_id = NEW.id; "
+          "end;");
     }
     QMutexLocker locker(&db_lock);
     xct.commit();
@@ -225,7 +274,7 @@ int Database::getSource(const QString& sourceName, int lesson, int type) {
 
     data << type;
 
-    bindAndRun("insert into source values (NULL, ?, NULL, ?, ?)", data);
+    bindAndRun("insert into source values (NULL, ?, NULL, ?, ?, 0)", data);
     // try again now that it's in the db
     return getSource(sourceName, lesson);
   } catch (const std::exception& e) {
@@ -238,13 +287,9 @@ void Database::deleteSource(const QList<int>& sources) {
   sqlite3pp::database& db = conn_->db();
   sqlite3pp::transaction xct(db);
   {
-    sqlite3pp::command cmd1(db, "DELETE FROM text WHERE source = ?");
-    sqlite3pp::command cmd2(db, "DELETE FROM result WHERE source = ?");
-    sqlite3pp::command cmd3(db, "DELETE FROM source WHERE id = ?");
+    sqlite3pp::command cmd(db, "DELETE FROM source WHERE id = ?");
     for (int source : sources) {
-      bindAndRun(&cmd1, source);
-      bindAndRun(&cmd2, source);
-      bindAndRun(&cmd3, source);
+      bindAndRun(&cmd, source);
     }
   }
   QMutexLocker locker(&db_lock);
@@ -485,10 +530,10 @@ QList<QVariantList> Database::getTextsData(int source, int page, int limit) {
 }
 
 QStringList Database::getAllTexts(int source) {
-  auto rows = getRows("select text from text where source is ? order by id", source);
+  auto rows =
+      getRows("select text from text where source is ? order by id", source);
   QStringList texts;
-  for (const auto & row : rows)
-    texts << row[0].toString();
+  for (const auto& row : rows) texts << row[0].toString();
   return texts;
 }
 
@@ -500,77 +545,62 @@ int Database::getTextsCount(int source) {
 QList<QVariantList> Database::getPerformanceData(int w, int source, int limit,
                                                  int g, int n) {
   bool grouping = (g == 0) ? false : true;
+  QString table("performanceView");
   QStringList query;
-  QVariantList args;
+
   switch (w) {
     case 0:
       break;
     case 1:
-      query << "r.text_id = (select text_id from result order by "
+      query << "text_id = (select text_id from result order by "
                "datetime(w) desc limit 1)";
       break;
     case 2:
-      query << "s.discount is null";
+      query << "type = 0";
       break;
     case 3:
-      query << "s.discount is not null";
+      query << "type = 1";
       break;
     default:
-      query << "r.source = ?";
-      args << source;
+      query << QString("source_id = %1").arg(source);
       break;
   }
   QString where;
   if (query.length() > 0)
-    where = "where " + query.join(" and ");
+    where = "WHERE " + query.join(" and ");
   else
     where = "";
 
-  QString sql;
-  if (!grouping) {
-    sql = QString(
-              "select r.text_id, r.w, s.name, "
-              "r.wpm, 100.0 * r.accuracy, r.viscosity "
-              "from result as r "
-              "left join source as s on(r.source = s.rowid) "
-              "%1 order by datetime(w) DESC limit ?")
-              .arg(where);
-  } else {
-    sql = QString(
-        "SELECT count(*),"
-        "strftime('%Y-%m-%dT%H:%M:%S',avg(julianday(r.w))),"
-        "count(*) || ' result(s)',"
-        "agg_median(r.wpm),"
-        "100.0 * agg_median(r.accuracy),"
-        "agg_median(r.viscosity) ");
-    if (g == 1) {
-      sql += QString(
-                 "FROM result as r "
-                 "LEFT JOIN source s on(r.source = s.id) "
-                 "%1 "
-                 "GROUP BY cast(strftime('%s', r.w) / 86400 as int) "
-                 "ORDER BY datetime(w) DESC limit ?")
-                 .arg(where);
+  QString select, group_by;
 
+  if (!grouping) {
+    select = "text_id, date, source_name, wpm, accuracy, viscosity";
+  } else {
+    select =
+        QString(
+            "count(*),"
+            "strftime('%Y-%m-%dT%H:%M:%S', avg(julianday(date))),"
+            "count(*) || ' result(s)',"
+            "agg_median(wpm), agg_median(accuracy), agg_median(viscosity),"
+            "(select count(*) from result) - ((select count(*) from result "
+            "as r2 where r2.id <= performanceView.id) - 1) / %1 as grouping")
+            .arg(n);
+    if (g == 1) {
+      group_by = "GROUP BY cast(strftime('%s', date) / 86400 as int)";
     } else if (g == 2) {
-      sql += QString(
-                 "FROM ( "
-                 "    select (select count(*) from result) - "
-                 "           ((select count(*) from result as r2 "
-                 "            where r2.rowid <= r.rowid) - 1) / %1 as "
-                 "grouping, * "
-                 "    FROM result r "
-                 "    LEFT JOIN source s ON (s.id = r.source) "
-                 "    %2 "
-                 "    order by datetime(w) desc "
-                 ") as r "
-                 "group by grouping ")
-                 .arg(n)
-                 .arg(where);
+      group_by = "GROUP BY grouping";
     }
   }
 
-  return getRows(sql, args << limit);
+  QString sql = QString("SELECT %1 FROM %2 %3 %4 %5 %6")
+                    .arg(select)
+                    .arg(table)
+                    .arg(where)
+                    .arg(group_by)
+                    .arg("ORDER BY date DESC")
+                    .arg("LIMIT ?");
+
+  return getRows(sql, QVariantList() << limit);
 }
 
 QList<QVariantList> Database::getStatisticsData(const QString& when, int type,
@@ -608,7 +638,6 @@ QList<QVariantList> Database::getStatisticsData(const QString& when, int type,
           "SELECT data, 12.0 / time as wpm, "
           "100 * max(0, (1.0 -  misses / (total * cast(length(data) as "
           "real)))) as accuracy, "
-          // "100 * max(0, (1.0 - misses / cast(total as real))) as accuracy, "
           "viscosity, total, misses, "
           "total * pow(time, 2) * (1.0 + misses / total) as damage "
           "FROM (SELECT data, "
