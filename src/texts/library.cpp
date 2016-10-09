@@ -44,6 +44,7 @@
 #include "texts/sourcemodel.h"
 #include "texts/text.h"
 #include "texts/textmodel.h"
+#include "texts/edittextdialog.h"
 #include "ui_library.h"
 
 Library::Library(QWidget* parent)
@@ -262,16 +263,13 @@ void Library::actionEditText(bool checked) {
   Database db;
   auto t = db.getText(id);
 
-  bool ok;
-  QString text = QInputDialog::getMultiLineText(this, tr("Edit Text:"),
-                                                tr("Text:"), t->getText(), &ok);
+  EditTextDialog dialog(tr("Edit Text:"), t->getText());
 
-  if (ok && !text.isEmpty()) {
-    if (text == t->getText()) {
-      return;
-    }
-    db.updateText(id, text);
+  if (dialog.exec() == QDialog::Accepted) {
+    db.updateText(id, dialog.text());
+    QLOG_DEBUG() << id << dialog.text();
     text_model_->refreshText(indexes[0]);
+    emit textsChanged(QList<int>() << id);
   }
 }
 
