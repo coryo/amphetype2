@@ -63,7 +63,7 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
                                                  << "When"
                                                  << "Source"
                                                  << "WPM"
-                                                 << "Accuracy"
+                                                 << "Accuracy (%)"
                                                  << "Viscosity");
   ui->tableView->setSortingEnabled(false);
   ui->tableView->setColumnHidden(0, true);
@@ -375,7 +375,7 @@ void PerformanceHistory::refreshPerformance() {
   ui->avgACC->setText(QString::number(avgACC, 'f', 1));
   ui->avgVIS->setText(QString::number(avgVIS, 'f', 1));
 
-  this->showPlot(ui->plotSelector->currentIndex());
+  this->refreshCurrentPlot();
 }
 
 void PerformanceHistory::refreshCurrentPlot() {
