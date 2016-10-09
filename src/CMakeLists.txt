@@ -43,6 +43,7 @@ set(${PROJECT_NAME}_SOURCES
   texts/lessonminercontroller.h
   texts/textmodel.cpp
   texts/sourcemodel.cpp
+  texts/edittextdialog.cpp
 
   util/RunGuard.cpp
 
