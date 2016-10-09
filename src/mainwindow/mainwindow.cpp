@@ -111,6 +111,8 @@ MainWindow::MainWindow(QWidget* parent)
           &Quizzer::checkSource);
   connect(this->libraryWidget, &Library::textsDeleted, ui->quizzer,
           &Quizzer::checkText);
+  connect(this->libraryWidget, &Library::textsChanged, ui->quizzer,
+          &Quizzer::checkText);
 
   // Performance
   connect(this->performanceWidget, &PerformanceHistory::setText, ui->quizzer,
