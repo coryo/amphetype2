@@ -80,6 +80,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionClose"/>
    <addaction name="actionImport_Texts"/>
    <addaction name="actionImport_XML"/>
    <addaction name="actionAdd_Source"/>
@@ -103,6 +104,14 @@
   <action name="actionImport_XML">
    <property name="text">
     <string>Import XML</string>
+   </property>
+  </action>
+  <action name="actionClose">
+   <property name="text">
+    <string>Close</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
    </property>
   </action>
  </widget>
