@@ -24,6 +24,7 @@
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QInputDialog>
+#include <QItemSelectionModel>
 #include <QMenu>
 #include <QModelIndex>
 #include <QProgressBar>
@@ -55,6 +56,8 @@ Library::Library(QWidget* parent)
   ui->setupUi(this);
 
   QSettings s;
+
+  ui->actionAdd_Text->setEnabled(false);
 
   ui->sourcesTable->setModel(source_model_);
   ui->textsTable->setModel(text_model_);
@@ -89,8 +92,10 @@ Library::Library(QWidget* parent)
   connect(ui->textsTable, &QWidget::customContextMenuRequested, this,
           &Library::textsContextMenu);
 
+  connect(ui->actionClose, &QAction::triggered, this, &QWidget::close);
+
   connect(ui->sourcesTable->selectionModel(),
-          &QItemSelectionModel::currentRowChanged, this,
+          &QItemSelectionModel::selectionChanged, this,
           &Library::sourceSelectionChanged);
 
   source_model_->refresh();
@@ -102,25 +107,34 @@ Library::~Library() {
   delete source_model_;
 }
 
-void Library::reload() {
-  delete text_model_;
-  delete source_model_;
-  text_model_ = new TextModel;
-  source_model_ = new SourceModel;
-
-  ui->sourcesTable->setModel(source_model_);
-  ui->textsTable->setModel(text_model_);
-
-  connect(ui->sourcesTable->selectionModel(),
-          &QItemSelectionModel::currentRowChanged, this,
-          &Library::sourceSelectionChanged);
-  source_model_->refresh();
+void Library::sourceSelectionChanged(const QItemSelection& a,
+                                     const QItemSelection& b) {
+  if (!ui->sourcesTable->selectionModel()->hasSelection()) {
+    ui->actionAdd_Text->setEnabled(false);
+    TextModel* old = text_model_;
+    text_model_ = new TextModel;
+    ui->textsTable->setModel(text_model_);
+    delete old;
+  } else {
+    ui->actionAdd_Text->setEnabled(true);
+    auto indexes = a.indexes();
+    if (indexes.isEmpty()) return;
+    int source = indexes[0].data(Qt::UserRole).toInt();
+    text_model_->setSource(source);
+  }
 }
 
-void Library::sourceSelectionChanged(const QModelIndex& current,
-                                     const QModelIndex& previous) {
-  int source = current.data(Qt::UserRole).toInt();
-  text_model_->setSource(source);
+void Library::reload() {
+  TextModel* old_tm = text_model_;
+  SourceModel* old_sm = source_model_;
+  text_model_ = new TextModel;
+  source_model_ = new SourceModel;
+  ui->sourcesTable->setModel(source_model_);
+  ui->textsTable->setModel(text_model_);
+  delete old_tm;
+  delete old_sm;
+
+  source_model_->refresh();
 }
 
 void Library::sourcesContextMenu(const QPoint& pos) {

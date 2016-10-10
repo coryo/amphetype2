@@ -23,6 +23,7 @@
 #include <QMainWindow>
 #include <QModelIndex>
 #include <QProgressDialog>
+#include <QItemSelection>
 
 #include <memory>
 
@@ -73,8 +74,8 @@ class Library : public QMainWindow {
       Amphetype::SelectionMethod method = Amphetype::SelectionMethod::None);
   void refreshSource(int);
   void refreshSources();
-  void sourceSelectionChanged(const QModelIndex&, const QModelIndex&);
   void selectSource(int source);
+  void sourceSelectionChanged(const QItemSelection&, const QItemSelection&);
 
  private slots:
   void addFiles();
