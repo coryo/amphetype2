@@ -197,27 +197,27 @@ void Database::initDB() {
           "LEFT JOIN source ON (result.source = source.id)");
 
       db.execute(
-          "create trigger text_count_add_trigger before insert on text "
-          "for each row "
-          "begin "
-          "update source set text_count = text_count + 1 where id = "
-          "NEW.source; "
-          "end;");
+          "CREATE TRIGGER text_count_add_trigger BEFORE INSERT ON text "
+          "FOR EACH ROW "
+          "BEGIN "
+          "  UPDATE source set text_count = text_count + 1 where id = "
+          "  NEW.source; "
+          "END;");
       db.execute(
-          "create trigger text_count_subtract_trigger before delete on text "
-          "for each row "
-          "begin "
-          "  update source set text_count = text_count - 1 where id = "
+          "CREATE TRIGGER text_count_subtract_trigger BEFORE DELETE ON text "
+          "FOR EACH ROW "
+          "BEGIN "
+          "  UPDATE source set text_count = text_count - 1 where id = "
           "  OLD.source; "
-          "end;");
+          "END;");
       db.execute(
-          "create trigger invalidate_result_trigger after update of text on "
+          "CREATE TRIGGER invalidate_result_trigger AFTER UPDATE OF text ON "
           "text "
-          "for each row "
-          "begin "
-          "  update result set source = NULL, text_id = NULL where text_id = "
+          "FOR EACH ROW "
+          "BEGIN "
+          "  UPDATE result set source = NULL, text_id = NULL where text_id = "
           "  NEW.id; "
-          "end;");
+          "END;");
     }
     QMutexLocker locker(&db_lock);
     xct.commit();
