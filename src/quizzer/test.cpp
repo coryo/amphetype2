@@ -148,8 +148,6 @@ void Test::handleInput(QString currentText, int ms, int key,
   emit positionChanged(this->currentPos, currentText.length());
 
   if (this->currentPos == currentText.length()) {
-    int min, max;
-
     // store when we are at this position
     this->timeAt[currentPos] = ms;
 
@@ -183,8 +181,8 @@ void Test::handleInput(QString currentText, int ms, int key,
       emit newWpm(this->currentPos - 1, this->wpm.last());
       emit newApm(this->currentPos - 1, apm);
 
-      min = std::min(this->minWPM, this->minAPM);
-      max = std::max(this->maxWPM, this->maxAPM);
+      int min = std::min(this->minWPM, this->minAPM);
+      int max = std::max(this->maxWPM, this->maxAPM);
       emit characterAdded(max, min);
     }
   }
