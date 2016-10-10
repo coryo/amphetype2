@@ -41,7 +41,7 @@
    </property>
    <widget class="QMenu" name="menuView">
     <property name="title">
-     <string>View</string>
+     <string>&amp;View</string>
     </property>
     <addaction name="actionLibrary"/>
     <addaction name="actionPerformance"/>
@@ -60,7 +60,7 @@
    </widget>
    <widget class="QMenu" name="menuProfiles">
     <property name="title">
-     <string>Profiles</string>
+     <string>&amp;Profiles</string>
     </property>
    </widget>
    <addaction name="menu_File"/>
@@ -240,17 +240,17 @@
   </action>
   <action name="actionLesson_Generator">
    <property name="text">
-    <string>Lesson Generator</string>
+    <string>Le&amp;sson Generator</string>
    </property>
   </action>
   <action name="actionTraining_Generator">
    <property name="text">
-    <string>Training Generator</string>
+    <string>&amp;Training Generator</string>
    </property>
   </action>
   <action name="actionAnalysis">
    <property name="text">
-    <string>Analysis</string>
+    <string>&amp;Analysis</string>
    </property>
   </action>
  </widget>
