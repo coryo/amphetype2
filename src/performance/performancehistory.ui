@@ -494,8 +494,23 @@
      <string>View</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="actionClose_Window"/>
+   </widget>
+   <addaction name="menu_File"/>
    <addaction name="menuView"/>
   </widget>
+  <action name="actionClose_Window">
+   <property name="text">
+    <string>Close Window</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>

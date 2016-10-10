@@ -107,6 +107,8 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
 
   connect(this, &PerformanceHistory::colorChanged, this,
           &PerformanceHistory::updateColors);
+
+  connect(ui->actionClose_Window, &QAction::triggered, this, &QWidget::close);
 }
 
 PerformanceHistory::~PerformanceHistory() {
