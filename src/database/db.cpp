@@ -207,14 +207,16 @@ void Database::initDB() {
           "create trigger text_count_subtract_trigger before delete on text "
           "for each row "
           "begin "
-          "update source set text_count = text_count - 1 where id = "
-          "OLD.source; "
+          "  update source set text_count = text_count - 1 where id = "
+          "  OLD.source; "
           "end;");
       db.execute(
-          "create trigger invalidate_result_trigger after update of text on text "
+          "create trigger invalidate_result_trigger after update of text on "
+          "text "
           "for each row "
           "begin "
-          "update result set source = NULL, text_id = NULL where text_id = NEW.id; "
+          "  update result set source = NULL, text_id = NULL where text_id = "
+          "  NEW.id; "
           "end;");
     }
     QMutexLocker locker(&db_lock);
@@ -461,71 +463,52 @@ void Database::addMistakes(const QHash<QPair<QChar, QChar>, int>& mistakes) {
 
 QPair<double, double> Database::getMedianStats(int n) {
   QVariantList cols = getOneRow(
-      "select agg_median(wpm), agg_median(acc) "
-      "from (select wpm,100.0*accuracy as acc from result "
-      "order by datetime(w) desc limit ?)",
+      "SELECT agg_median(wpm), 100.0 * agg_median(accuracy) "
+      "FROM result ORDER BY w DESC LIMIT ?",
       n);
-  return QPair<double, double>(cols[0].toDouble(), cols[1].toDouble());
+   return QPair<double, double>(cols[0].toDouble(), cols[1].toDouble());
 }
 
 QVariantList Database::getSourceData(int source) {
   return getOneRow(
-      "select s.id, s.name, t.count, r.count, r.wpm, "
-      "nullif(t.dis,t.count), s.type "
-      "from source as s "
-      "left join (select source, count(*) as count, "
-      "count(disabled) as dis "
-      "from text group by source) as t "
-      "on (s.id = t.source) "
-      "left join (select source,count(*) as count, "
-      "avg(wpm) as wpm from result group by source) "
-      "as r on (t.source = r.source) "
-      "where s.disabled is null and s.id = ? "
-      "order by s.name",
+      "SELECT source.id, name, text_count, count(wpm), avg(wpm), NULL, type "
+      "FROM source "
+      "LEFT JOIN result ON (source.id = result.source) "
+      "WHERE source.id = ? "
+      "GROUP BY source.id "
+      "ORDER BY name",
       source);
 }
 
 QList<QVariantList> Database::getSourcesData() {
   return getRows(
-      "select s.id, s.name, t.count, r.count, r.wpm, "
-      "nullif(t.dis,t.count) "
-      "from source as s "
-      "left join (select source,count(*) as count, "
-      "count(disabled) as dis "
-      "from text group by source) as t "
-      "on (s.id = t.source) "
-      "left join (select source,count(*) as count, "
-      "avg(wpm) as wpm from result group by source) "
-      "as r on (t.source = r.source) "
-      "where s.disabled is null "
-      "order by s.name");
+      "SELECT source.id, name, text_count, count(wpm), avg(wpm), NULL, type "
+      "FROM source "
+      "LEFT JOIN result ON (source.id = result.source) "
+      "GROUP BY source.id "
+      "ORDER BY name");
 }
 
 QVariantList Database::getTextData(int id) {
   return getOneRow(
-      "select t.id, substr(t.text,0,30)||' ...', "
-      "length(t.text), r.count, r.m, t.disabled "
-      "from text as t "
-      "left join ("
-      "  select text_id, count(*) as count,"
-      "  avg(wpm) as m "
-      "  from result "
-      "  where text_id = ?) as r "
-      "on (t.id = r.text_id) "
-      "where t.id is ?",
+      "SELECT text.id, substr(text, 0, 30) || ' ...', "
+      "  length(text), count(wpm), avg(wpm), disabled "
+      "FROM text "
+      "LEFT JOIN result ON (text.id = result.text_id) "
+      "WHERE text.id IS ? "
+      "GROUP BY text.id",
       QVariantList() << id << id);
 }
 
 QList<QVariantList> Database::getTextsData(int source, int page, int limit) {
   return getRows(
-      "select t.id, substr(t.text,0,30)||' ...', "
-      "length(t.text), r.count, r.m, t.disabled "
-      "from text as t "
-      "left join (select text_id,count(*) as count, agg_median(wpm) "
-      "as m from result group by text_id) "
-      "as r on (t.id = r.text_id) "
-      "where source is ? "
-      "order by t.id LIMIT ? OFFSET ?",
+      "SELECT text.id, substr(text, 0, 30) || ' ...', "
+      "  length(text), count(wpm), avg(wpm), disabled "
+      "FROM text "
+      "LEFT JOIN result ON (text.id = result.text_id) "
+      "WHERE text.source IS ? "
+      "GROUP BY text.id "
+      "ORDER BY text.id LIMIT ? OFFSET ?",
       QVariantList() << source << limit << page * limit);
 }
 
@@ -633,24 +616,22 @@ QList<QVariantList> Database::getStatisticsData(const QString& when, int type,
       break;
   }
 
-  QString sql =
-      QString(
-          "SELECT data, 12.0 / time as wpm, "
-          "100 * max(0, (1.0 -  misses / (total * cast(length(data) as "
-          "real)))) as accuracy, "
-          "viscosity, total, misses, "
-          "total * pow(time, 2) * (1.0 + misses / total) as damage "
-          "FROM (SELECT data, "
-          "agg_median(time) as time, "
-          "agg_median(viscosity) as viscosity, "
-          "sum(count) as total, "
-          "sum(mistakes) as misses "
-          "FROM statistic "
-          "WHERE datetime(w) >= datetime(?) "
-          "and type = ? group by data) "
-          "WHERE total >= ? "
-          "ORDER BY %1 LIMIT ?")
-          .arg(order);
+  QString sql = QString(
+                    "SELECT data,"
+                    " 12.0 / agg_median(time) as wpm,"
+                    " 100 * max(0, (1.0 - sum(mistakes) / "
+                    "   (sum(count)*cast(length(data) as real)))) as accuracy,"
+                    " agg_median(viscosity) as viscosity,"
+                    " sum(count) as total,"
+                    " sum(mistakes) as mistakes,"
+                    " sum(count) * pow(agg_median(time), 2) "
+                    "   * (1.0 + sum(mistakes) / sum(count)) as damage "
+                    "FROM statistic "
+                    "WHERE w >= datetime(?) AND type = ? "
+                    "GROUP by data "
+                    "HAVING total > ? "
+                    "ORDER BY %1 LIMIT ?")
+                    .arg(order);
 
   return getRows(sql, QVariantList() << when << type << count << limit);
 }
@@ -671,12 +652,13 @@ std::shared_ptr<Text> Database::getText(int id) {
 
 std::shared_ptr<Text> Database::getRandomText() {
   return getTextWithQuery(
-      "SELECT t.id, t.source, t.text, s.name, s.type "
-      "FROM ((select id,source,text,rowid from text "
-      "where disabled is null order by random() "
-      "limit 1) as t) "
-      "INNER JOIN source as s "
-      "ON (t.source = s.rowid)");
+      "SELECT text.id, source, text, name, type "
+      "FROM text "
+      "LEFT JOIN source ON (text.source = source.id) "
+      "WHERE text.disabled IS NULL "
+      "LIMIT 1 "
+      "OFFSET abs(random()) % max((SELECT COUNT(*) FROM text where "
+      "                            text.disabled is NULL), 1)");
 }
 
 std::shared_ptr<Text> Database::getNextText() {
