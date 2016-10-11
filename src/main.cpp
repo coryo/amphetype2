@@ -89,9 +89,8 @@ int main(int argc, char *argv[]) {
 
   // QSettings
   QSettings::setDefaultFormat(QSettings::IniFormat);
-  QSettings::setPath(
-      QSettings::IniFormat, QSettings::UserScope,
-      QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+  QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                     appData.absolutePath());
 
   // Logging
   auto dest = QsLogging::DestinationFactory::MakeFileDestination(
@@ -103,21 +102,17 @@ int main(int argc, char *argv[]) {
 
   qInstallMessageHandler(logHandler);
 
-  QLOG_INFO() << QStandardPaths::writableLocation(
-      QStandardPaths::AppDataLocation);
-
   QLOG_INFO() << "Starting." << QCoreApplication::applicationVersion();
+  QLOG_INFO() << "Application Data:" << appData.absolutePath();
 
   QSettings s;
 
   if (s.value("debug_logging", false).toBool()) {
     QsLogging::Logger::instance().setLoggingLevel(QsLogging::Level::DebugLevel);
     QLOG_INFO() << "Debug Logging enabled.";
-    QLOG_DEBUG() << "debug.";
   } else {
     QsLogging::Logger::instance().setLoggingLevel(QsLogging::Level::InfoLevel);
     QLOG_INFO() << "Debug Logging disabled.";
-    QLOG_DEBUG() << "debug.";
   }
 
   Database db;
