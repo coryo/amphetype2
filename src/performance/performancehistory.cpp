@@ -120,9 +120,9 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
   connect(ui->plotCheckBox, SIGNAL(stateChanged(int)), this,
           SLOT(saveSettings()));
   connect(ui->lineCheckBox, &QCheckBox::stateChanged, this,
-          &PerformanceHistory::togglePlotLine);
-  connect(ui->lineCheckBox, &QCheckBox::stateChanged, this,
           &PerformanceHistory::saveSettings);
+  connect(ui->lineCheckBox, &QCheckBox::stateChanged, this,
+          &PerformanceHistory::togglePlotLine);
 
   connect(ui->tableView, &QWidget::customContextMenuRequested, this,
           &PerformanceHistory::contextMenu);
@@ -481,7 +481,8 @@ void PerformanceHistory::showPlot(int p) {
     QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
     xAxis->setTicker(fixedTicker);
     fixedTicker->setTickStep(1.0);  // tick step shall be 1.0
-    fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssNone);
+    fixedTicker->setTickStepStrategy(QCPAxisTicker::tssReadability);
+    fixedTicker->setScaleStrategy(QCPAxisTickerFixed::ssMultiples);
   }
 
   // add some padding to the axes ranges so points at edges aren't cut off
