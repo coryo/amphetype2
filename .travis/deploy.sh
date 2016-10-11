@@ -3,10 +3,10 @@
 if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
   curl -L -O https://github.com/MaximAlien/macdeployqt/raw/master/macdeployqt.dmg
   hdiutil mount macdeployqt.dmg
-  sudo /Volumes/*macdeployqt*/macdeployqt.app/Contents/MacOS/macdeployqt src/amphetype2.app
-  mv src/amphetype2.app .
+  sudo /Volumes/*macdeployqt*/macdeployqt.app/Contents/MacOS/macdeployqt src/amphetype2.app -dmg
+  mv src/amphetype2.dmg .
   # tar -czf amphetype2-osx.tar.gz amphetype2.app txt/
-  export DEPLOYFILE=amphetype2.app
+  export DEPLOYFILE=amphetype2.dmg
 else
   mkdir dist
   cp bundle/linux/* dist/
