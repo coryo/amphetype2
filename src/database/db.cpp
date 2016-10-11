@@ -26,10 +26,7 @@
 #include <QMutexLocker>
 #include <QPair>
 #include <QSettings>
-
-#ifdef Q_OS_OSX
-#include <CoreFoundation/CoreFoundation.h>
-#endif
+#include <QStandardPaths>
 
 #include <sqlite3.h>
 #include <sqlite3pp.h>
@@ -100,19 +97,9 @@ sqlite3pp::database& DBConnection::db() { return *(db_); }
 
 Database::Database(const QString& name) {
   QSettings s;
-  QDir app_dir(".");
-#ifdef Q_OS_OSX
-  CFURLRef appUrlRef = CFBundleCopyBundleURL(CFBundleGetMainBundle());
-  CFStringRef macPath =
-      CFURLCopyFileSystemPath(appUrlRef, kCFURLPOSIXPathStyle);
-  const char* pathPtr =
-      CFStringGetCStringPtr(macPath, CFStringGetSystemEncoding());
-  QString osx_path = QString(pathPtr);
-  CFRelease(appUrlRef);
-  CFRelease(macPath);
-  app_dir.setPath(osx_path);
-  app_dir.cdUp();
-#endif
+  QDir app_dir(
+      QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+
   QString path(app_dir.absolutePath() + QDir::separator() +
                QString("%1.profile"));
   if (name.isNull()) {
@@ -466,7 +453,7 @@ QPair<double, double> Database::getMedianStats(int n) {
       "SELECT agg_median(wpm), 100.0 * agg_median(accuracy) "
       "FROM result ORDER BY w DESC LIMIT ?",
       n);
-   return QPair<double, double>(cols[0].toDouble(), cols[1].toDouble());
+  return QPair<double, double>(cols[0].toDouble(), cols[1].toDouble());
 }
 
 QVariantList Database::getSourceData(int source) {

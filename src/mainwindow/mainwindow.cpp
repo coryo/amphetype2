@@ -22,6 +22,7 @@
 #include <QDirIterator>
 #include <QSettings>
 #include <QSize>
+#include <QStandardPaths>
 
 #include <QsLog.h>
 
@@ -216,7 +217,8 @@ void MainWindow::populateProfiles() {
   create->setData(true);
   ui->menuProfiles->addAction(create);
   ui->menuProfiles->addSeparator();
-  QDirIterator it(qApp->applicationDirPath());
+  QDirIterator it(
+      QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
   while (it.hasNext()) {
     it.next();
     QString file(it.fileName());

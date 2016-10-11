@@ -25,6 +25,7 @@
 #include <QFont>
 #include <QFontDatabase>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QString>
 #include <QTextStream>
 
@@ -70,25 +71,42 @@ int main(int argc, char *argv[]) {
   RunGuard guard("amphetype2");
   if (!guard.tryToRun()) return 0;
 
+  QApplication a(argc, argv);
+
+  // Application Setup
+  QCoreApplication::setOrganizationName("coryo");
+  QCoreApplication::setApplicationName("amphetype2");
+  QCoreApplication::setApplicationVersion(QString("v%1.%2.%3 build %4")
+                                              .arg(amphetype2_VERSION_MAJOR)
+                                              .arg(amphetype2_VERSION_MINOR)
+                                              .arg(amphetype2_VERSION_MICRO)
+                                              .arg(amphetype2_VERSION_BUILD));
+
+  QDir appData(
+      QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+  appData.mkpath(
+      QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+
+  // QSettings
+  QSettings::setDefaultFormat(QSettings::IniFormat);
+  QSettings::setPath(
+      QSettings::IniFormat, QSettings::UserScope,
+      QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+
+  // Logging
   auto dest = QsLogging::DestinationFactory::MakeFileDestination(
-      "amphetype2.log", QsLogging::LogRotationOption::EnableLogRotationOnOpen,
+      appData.absolutePath() + "/amphetype2.log",
+      QsLogging::LogRotationOption::EnableLogRotationOnOpen,
       QsLogging::MaxSizeBytes(1024 * 1024), QsLogging::MaxOldLogCount(1));
 
   QsLogging::Logger::instance().addDestination(dest);
 
-  QLOG_INFO() << "Starting."
-              << QString("v%1.%2.%3 build %4")
-                     .arg(amphetype2_VERSION_MAJOR)
-                     .arg(amphetype2_VERSION_MINOR)
-                     .arg(amphetype2_VERSION_MICRO)
-                     .arg(amphetype2_VERSION_BUILD);
+  qInstallMessageHandler(logHandler);
 
-  QApplication a(argc, argv);
+  QLOG_INFO() << QStandardPaths::writableLocation(
+      QStandardPaths::AppDataLocation);
 
-  QCoreApplication::setOrganizationName("coryo");
-  QCoreApplication::setOrganizationDomain("coryo.com");
-  QCoreApplication::setApplicationName("amphetype2");
-  QSettings::setDefaultFormat(QSettings::IniFormat);
+  QLOG_INFO() << "Starting." << QCoreApplication::applicationVersion();
 
   QSettings s;
 
@@ -101,13 +119,12 @@ int main(int argc, char *argv[]) {
     QLOG_INFO() << "Debug Logging disabled.";
     QLOG_DEBUG() << "debug.";
   }
-  qInstallMessageHandler(logHandler);
 
-  QLOG_INFO() << QDir(".").absolutePath();
   Database db;
   db.initDB();
 
-  QFile file(":/stylesheets/" + s.value("stylesheet", "basic").toString() + ".qss");
+  QFile file(":/stylesheets/" + s.value("stylesheet", "basic").toString() +
+             ".qss");
   if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
     a.setStyleSheet(file.readAll());
     file.close();
