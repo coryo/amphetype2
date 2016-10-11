@@ -274,5 +274,9 @@ void MainWindow::closeEvent(QCloseEvent* event) {
              performanceWidget->saveGeometry());
   s.setValue("libraryWindow/windowState", libraryWidget->saveState());
   s.setValue("libraryWindow/windowGeometry", libraryWidget->saveGeometry());
+  settingsWidget->saveSettings();
+  ui->quizzer->saveSettings();
+  performanceWidget->saveSettings();
+  statisticsWidget->saveSettings();
   qApp->quit();
 }

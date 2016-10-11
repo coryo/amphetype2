@@ -66,7 +66,6 @@ SettingsWidget::SettingsWidget(QWidget *parent)
 }
 
 SettingsWidget::~SettingsWidget() {
-  saveSettings();
   delete ui;
 }
 

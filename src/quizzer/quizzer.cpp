@@ -51,10 +51,7 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
   connect(&lessonTimer, &QTimer::timeout, this, &Quizzer::timerLabelUpdate);
 }
 
-Quizzer::~Quizzer() {
-  saveSettings();
-  delete ui;
-}
+Quizzer::~Quizzer() { delete ui; }
 
 void Quizzer::loadSettings() {
   QSettings s;

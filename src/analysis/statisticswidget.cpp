@@ -55,7 +55,6 @@ StatisticsWidget::StatisticsWidget(QWidget* parent)
 }
 
 StatisticsWidget::~StatisticsWidget() {
-  saveSettings();
   delete ui;
   delete model;
 }
