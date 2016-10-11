@@ -649,39 +649,36 @@ std::shared_ptr<Text> Database::getRandomText() {
 }
 
 std::shared_ptr<Text> Database::getNextText() {
-  // in order
   QVariantList row = getOneRow(
-      "SELECT r.text_id from result as r "
-      "left join source as s on (r.source = s.id) "
-      "where (s.discount is null) or (s.discount = 1) "
-      "order by r.w desc limit 1");
+      "SELECT text_id FROM result "
+      "LEFT JOIN source ON (result.source = source.id) "
+      "WHERE source.discount IS NULL OR source.discount = 1 "
+      "ORDER BY result.w DESC limit 1");
 
   if (row.isEmpty()) return std::make_shared<Text>();
 
   QVariantList row2 =
-      getOneRow("select id from text where id = ?", row[0].toInt());
+      getOneRow("SELECT id FROM text WHERE id = ?", row[0].toInt());
 
   if (row2.isEmpty()) return std::make_shared<Text>();
 
-  return getTextWithQuery(
-      "select t.id, t.source, t.text, s.name, s.type "
-      "from text as t "
-      "LEFT JOIN source as s "
-      "ON (t.source = s.id) "
-      "WHERE t.id > ? and t.disabled is null "
-      "ORDER BY t.id ASC LIMIT 1",
-      row2[0].toInt());
+  return getNextText(row2[0].toInt());
 }
 
 std::shared_ptr<Text> Database::getNextText(
     const std::shared_ptr<Text>& lastText) {
+  return getNextText(lastText->getId());
+}
+
+std::shared_ptr<Text> Database::getNextText(int text_id) {
   return getTextWithQuery(
-      "select t.id, t.source, t.text, s.name, s.type "
-      "from text as t "
-      "inner join source as s "
-      "on (t.source = s.id) "
-      "where t.id = (select id + 1 from text where id = ?)",
-      lastText->getId());
+      "SELECT text.id, text.source, text.text, source.name, source.type "
+      "FROM text "
+      "LEFT JOIN source ON (text.source = source.id) "
+      "WHERE text.id > ? AND text.disabled IS NULL "
+      "ORDER BY text.id ASC "
+      "LIMIT 1",
+      text_id);
 }
 
 void Database::updateText(int id, const QString& newText) {
