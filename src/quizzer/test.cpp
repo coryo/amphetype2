@@ -112,7 +112,7 @@ void Test::finish() {
 
 void Test::handleInput(QString currentText, int ms, int key,
                        Qt::KeyboardModifiers modifiers) {
-  if (this->text->getText().isEmpty()) return;
+  if (this->text->getText().isEmpty() || this->finished) return;
 
   if (key == Qt::Key_Escape) {
     emit restart();
@@ -332,7 +332,7 @@ void ResultWorker::process(Test* test, double wpm, double accuracy,
     visc.insert(word, visco);
   }
 
-  // // add stuff to the database
+  // add stuff to the database
   QLOG_DEBUG() << "Adding statistics,";
   db.addStatistics(stats, visc, mistakeCount);
   emit doneStatistic();
