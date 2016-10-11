@@ -52,7 +52,7 @@ class PerformanceHistory : public QMainWindow {
 
  private:
   void contextMenu(const QPoint&);
-  QCPGraph* dampen(QCPGraph*, int n = 10);
+  void dampen(QCPGraph*, int n, QCPGraph* out);
 
   Ui::PerformanceHistory* ui;
   QStandardItemModel* model;

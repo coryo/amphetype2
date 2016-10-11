@@ -58,8 +58,8 @@ void LivePlot::updatePlotRangeX(int max, int min) {
 }
 
 void LivePlot::clearPlotData() {
-  this->graph(WPM_PLOT)->clearData();
-  this->graph(APM_PLOT)->clearData();
+  this->graph(WPM_PLOT)->data()->clear();
+  this->graph(APM_PLOT)->data()->clear();
 }
 
 void LivePlot::addWpm(double x, double y) {
@@ -97,6 +97,5 @@ void LivePlot::updatePlotTargetLine() {
   line->setPen(QPen(targetLineColor, 2));
   line->point1->setCoords(0, s.value("target_wpm", 50).toInt());
   line->point2->setCoords(999, s.value("target_wpm", 50).toInt());
-  this->addItem(line);
   this->replot();
 }
