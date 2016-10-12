@@ -72,6 +72,7 @@ endif()
 add_executable(amphetype2 WIN32 MACOSX_BUNDLE
 	${${PROJECT_NAME}_SOURCES}
 	${CMAKE_SOURCE_DIR}/resources/resources.qrc
+  ${CMAKE_SOURCE_DIR}/resources/stylesheets/style.qrc
   ${RESOURCE_FILES}
 )
 
