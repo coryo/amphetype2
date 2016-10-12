@@ -74,6 +74,7 @@ void SettingsWidget::loadSettings() {
   ui->selectionMethod->setCurrentIndex(s.value("select_method", 0).toInt());
   ui->styleSheetComboBox->addItem("Dark Theme", "dark-1");
   ui->styleSheetComboBox->addItem("Basic Theme", "basic");
+  ui->styleSheetComboBox->addItem("QDarkstyle", "qdarkstyle");
   ui->styleSheetComboBox->setCurrentIndex(ui->styleSheetComboBox->findData(
       s.value("stylesheet", "basic").toString()));
 
