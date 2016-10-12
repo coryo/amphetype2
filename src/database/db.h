@@ -20,7 +20,6 @@
 #define SRC_DATABASE_DB_H_
 
 #include <QHash>
-#include <QMutex>
 #include <QObject>
 #include <QString>
 #include <QThread>
