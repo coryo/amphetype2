@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file>stylesheets/dark-1.qss</file>
         <file>stylesheets/basic.qss</file>
+        <file>stylesheets/qdarkstyle.qss</file>
         <file>keyboard_layouts/qwerty.layout</file>
         <file>keyboard_layouts/colemak.layout</file>
         <file>keyboard_layouts/qwertz.layout</file>
