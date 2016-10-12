@@ -262,3 +262,9 @@ PerformanceHistory {
         qproperty-plotBackgroundColor: rgb(51, 51, 51);
         qproperty-plotForegroundColor: rgb(255, 255, 255);
 }
+
+KeyboardMap {
+  qproperty-foregroundColor: #FFFFFF;
+  qproperty-deadKeyColor: rgb(166, 208, 162);
+  qproperty-mapColor: rgb(174, 86, 238);
+}

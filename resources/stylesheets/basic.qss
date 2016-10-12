@@ -1,3 +1,9 @@
+KeyboardMap {
+  qproperty-foregroundColor: #000000;
+  qproperty-deadKeyColor: rgb(166, 208, 162);
+  qproperty-mapColor: rgb(174, 86, 238);
+}
+
 TyperDisplay {
         color: #000000;
         qproperty-correctColor: #ADFF2F;/*#79B221;*/

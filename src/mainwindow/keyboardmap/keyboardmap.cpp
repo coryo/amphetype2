@@ -43,7 +43,7 @@ KeyboardMap::KeyboardMap(QWidget* parent)
     : QGraphicsView(parent),
       keySpacing(3),
       keySize(24),
-      dataToMap("frequency"),
+      dataToMap("accuracy"),
       keyboardScene(new QGraphicsScene) {
   QSettings s;
   this->setKeyboard(
@@ -52,6 +52,7 @@ KeyboardMap::KeyboardMap(QWidget* parent)
           s.value("keyboard_standard", 0).toInt()));
   this->setScene(this->keyboardScene);
   connect(this, &KeyboardMap::dataChanged, this, &KeyboardMap::addKeys);
+  connect(this, &KeyboardMap::colorChanged, this, &KeyboardMap::addKeys);
   this->setRenderHints(QPainter::Antialiasing);
 }
 
@@ -163,7 +164,7 @@ void KeyboardMap::drawKeyboard(
 
       QBrush brush;
       QPen pen(brush, 0);
-      QColor color;
+      QColor color(mapColor);
       if (display_key_label) {
         brush.setStyle(Qt::SolidPattern);
         qreal value =
@@ -171,7 +172,6 @@ void KeyboardMap::drawKeyboard(
 
         // set the brush alpha based on the data
         if (value > 0) {
-          color.setRgb(174, 86, 238);
           qreal alpha;
           if (this->dataToMap == "accuracy") {
             alpha =
@@ -183,12 +183,12 @@ void KeyboardMap::drawKeyboard(
           }
           color.setAlpha(alpha);
         } else {
-          color.setRgb(255, 255, 255);
+          color.setAlpha(0);
         }
         brush.setColor(color);
       } else {
         pen = QPen(QBrush(), 0);
-        brush.setColor(QColor(166, 208, 162));
+        brush.setColor(deadKeyColor);
         brush.setStyle(Qt::SolidPattern);
       }
 
@@ -212,6 +212,7 @@ void KeyboardMap::drawKeyboard(
         // add the text on the key
         QString display = (key == QChar::Space) ? "space" : QString(key);
         QGraphicsTextItem* textItem = this->keyboardScene->addText(display);
+        textItem->setDefaultTextColor(foregroundColor);
         textItem->setPos(keyRect->boundingRect().center() -
                          QPointF(textItem->boundingRect().width() / 2,
                                  textItem->boundingRect().height() / 2));

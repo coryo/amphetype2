@@ -26,11 +26,15 @@
 #include <QResizeEvent>
 #include <QSize>
 #include <QStringList>
+#include <QColor>
 
 #include "defs.h"
 
 class KeyboardMap : public QGraphicsView {
   Q_OBJECT
+  Q_PROPERTY(QColor foregroundColor MEMBER foregroundColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor deadKeyColor MEMBER deadKeyColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor mapColor MEMBER mapColor NOTIFY colorChanged)
 
  public:
   explicit KeyboardMap(QWidget* parent = Q_NULLPTR);
@@ -49,6 +53,15 @@ class KeyboardMap : public QGraphicsView {
   void mouseReleaseEvent(QMouseEvent*);
 
  private:
+  qreal scaleToRange(qreal, qreal, qreal min = 0, qreal max = 1);
+  qreal scaleToRange2(qreal, qreal, qreal min = 0, qreal max = 1,
+                      qreal factor = 10);
+  void drawKeyboard(const QHash<QChar, QHash<QString, QVariant>>&,
+                    Amphetype::Modifier modifier, qreal min = 0.0,
+                    qreal max = 100.0, qreal x = 0, qreal y = 0);
+  void loadLayout(Amphetype::Layout);
+
+ private:
   QHash<QChar, QHash<QString, QVariant>> statsData;
   QGraphicsScene* keyboardScene;
   Amphetype::Layout keyboardLayout;
@@ -57,19 +70,13 @@ class KeyboardMap : public QGraphicsView {
   int keySpacing;
   int keySize;
   QString dataToMap;
-
-  qreal scaleToRange(qreal, qreal, qreal min = 0, qreal max = 1);
-  qreal scaleToRange2(qreal, qreal, qreal min = 0, qreal max = 1,
-                      qreal factor = 10);
-
-  void drawKeyboard(const QHash<QChar, QHash<QString, QVariant>>&,
-                    Amphetype::Modifier modifier, qreal min = 0.0,
-                    qreal max = 100.0, qreal x = 0, qreal y = 0);
-
-  void loadLayout(Amphetype::Layout);
+  QColor foregroundColor;
+  QColor deadKeyColor;
+  QColor mapColor;
 
  signals:
   void dataChanged();
+  void colorChanged();
 };
 
 #endif  // SRC_ANALYSIS_KEYBOARDMAP_H_
