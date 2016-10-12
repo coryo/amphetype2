@@ -170,12 +170,12 @@
          </property>
          <item>
           <property name="text">
-           <string>frequency</string>
+           <string>accuracy</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>accuracy</string>
+           <string>frequency</string>
           </property>
          </item>
          <item>
