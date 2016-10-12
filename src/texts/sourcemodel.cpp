@@ -114,9 +114,9 @@ QVariant SourceModel::data(const QModelIndex& index, int role) const {
       case 2:
         return item->results_;
       case 3:
-        return item->wpm_;
+        return item->wpm_ ? QString::number(item->wpm_, 'f', 1) : QVariant();
       case 4:
-        return item->disabled_;
+        return item->disabled_ ? "yes" : QVariant();
     }
   } else if (role == Qt::UserRole) {
     return item->id_;
