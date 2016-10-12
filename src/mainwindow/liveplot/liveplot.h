@@ -49,9 +49,8 @@ class LivePlot : public QCustomPlot {
 
  public slots:
   void beginTest(int);
-  void newKeyPress(int, int);
-  void updatePlotRangeY(int = 0, int = 0);
-  void updatePlotRangeX(int = 0, int = 0);
+  void newKeyPress();
+  void updatePlotRangeY();
   void addWpm(double, double);
   void addApm(double, double);
   void clearPlotData();

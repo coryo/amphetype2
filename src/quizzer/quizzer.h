@@ -71,7 +71,7 @@ class Quizzer : public QWidget {
 
   void newWpm(double, double);
   void newApm(double, double);
-  void characterAdded(int = 0, int = 0);
+  void characterAdded();
   void testStarted(int);
 
  public slots:

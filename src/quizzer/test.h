@@ -78,10 +78,6 @@ class Test : public QObject {
   QVector<double> wpm;
   QSet<int> mistakes;
   QList<QPair<QChar, QChar>> mistakeList;
-  double minWPM;
-  double minAPM;
-  double maxWPM;
-  double maxAPM;
   QElapsedTimer timer;
   QElapsedTimer intervalTimer;
   int apmWindow;
@@ -100,7 +96,7 @@ class Test : public QObject {
   void mistake(int);
   void newWpm(double, double);
   void newApm(double, double);
-  void characterAdded(int = 0, int = 0);
+  void characterAdded();
   void positionChanged(int, int);
 };
 

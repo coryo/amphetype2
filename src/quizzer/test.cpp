@@ -24,7 +24,6 @@
 #include <QtMath>
 
 #include <algorithm>
-#include <limits>
 
 #include <QsLog.h>
 
@@ -36,10 +35,6 @@ Test::Test(const std::shared_ptr<Text>& t)
       started(false),
       finished(false),
       currentPos(0),
-      maxWPM(0),
-      maxAPM(0),
-      minWPM(std::numeric_limits<double>::max()),
-      minAPM(std::numeric_limits<double>::max()),
       apmWindow(5),
       totalMs(0) {
   msBetween.resize(t->getText().length());
@@ -161,10 +156,6 @@ void Test::handleInput(QString currentText, int ms, int key,
       QLOG_TRACE() << "pos:" << this->currentPos - 1 << currentPos
                    << "ms between:" << this->msBetween[this->currentPos - 1]
                    << "wpm:" << this->wpm.last();
-
-      // check for new min/max wpm
-      if (this->wpm.last() > this->maxWPM) this->maxWPM = this->wpm.last();
-      if (this->wpm.last() < this->minWPM) this->minWPM = this->wpm.last();
     }
 
     if (this->currentPos > this->apmWindow) {
@@ -174,16 +165,9 @@ void Test::handleInput(QString currentText, int ms, int key,
 
       double apm = 12.0 * (this->apmWindow / (t / 1000.0));
 
-      // check for new min/max apm
-      if (apm > this->maxAPM) this->maxAPM = apm;
-      if (apm < this->minAPM) this->minAPM = apm;
-
       emit newWpm(this->currentPos - 1, this->wpm.last());
       emit newApm(this->currentPos - 1, apm);
-
-      int min = std::min(this->minWPM, this->minAPM);
-      int max = std::max(this->maxWPM, this->maxAPM);
-      emit characterAdded(max, min);
+      emit characterAdded();
     }
   }
 

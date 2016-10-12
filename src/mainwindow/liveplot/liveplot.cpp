@@ -34,27 +34,24 @@ LivePlot::LivePlot(QWidget* parent)
   this->addGraph();
   this->graph(WPM_PLOT)->setLayer("topLayer");
   this->xAxis->setVisible(false);
-  this->yAxis->setTickLabels(false);
 }
 
 void LivePlot::beginTest(int length) {
   this->clearPlotData();
-  this->updatePlotRangeX(length);
+  this->xAxis->setRange(0, length);
   this->replot();
 }
 
-void LivePlot::newKeyPress(int max, int min) {
-  this->updatePlotRangeY(max, min);
+void LivePlot::newKeyPress() {
+  this->updatePlotRangeY();
   this->replot();
 }
 
-void LivePlot::updatePlotRangeY(int max, int min) {
-  this->yAxis->setTickLabels(true);
-  this->yAxis->setRange(min - 5, max + 5);
-}
-
-void LivePlot::updatePlotRangeX(int max, int min) {
-  this->xAxis->setRange(min - 1, max + 1);
+void LivePlot::updatePlotRangeY() {
+  bool ok;
+  auto range = this->graph(APM_PLOT)->getValueRange(ok);
+  auto range2 = this->graph(WPM_PLOT)->getValueRange(ok);
+  this->yAxis->setRange(range.expanded(range2));
 }
 
 void LivePlot::clearPlotData() {
