@@ -76,11 +76,7 @@ int main(int argc, char *argv[]) {
   // Application Setup
   QCoreApplication::setOrganizationName("coryo");
   QCoreApplication::setApplicationName("amphetype2");
-  QCoreApplication::setApplicationVersion(QString("v%1.%2.%3 build %4")
-                                              .arg(amphetype2_VERSION_MAJOR)
-                                              .arg(amphetype2_VERSION_MINOR)
-                                              .arg(amphetype2_VERSION_MICRO)
-                                              .arg(amphetype2_VERSION_BUILD));
+  QCoreApplication::setApplicationVersion(amphetype2_VERSION_STRING_FULL);
 
   QDir appData(
       QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));

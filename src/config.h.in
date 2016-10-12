@@ -1,5 +1,4 @@
 #define amphetype2_VERSION_MAJOR @amphetype2_VERSION_MAJOR@
 #define amphetype2_VERSION_MINOR @amphetype2_VERSION_MINOR@
-#define amphetype2_VERSION_MICRO @amphetype2_VERSION_MICRO@
-#define amphetype2_VERSION_BUILD "@amphetype2_VERSION_BUILD@"
-
+#define amphetype2_VERSION_PATCH @amphetype2_VERSION_PATCH@
+#define amphetype2_VERSION_STRING_FULL "@amphetype2_VERSION_STRING_FULL@"
