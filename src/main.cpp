@@ -115,8 +115,9 @@ int main(int argc, char *argv[]) {
     QLOG_INFO() << "Debug Logging disabled.";
   }
 
-  Database db;
-  db.initDB();
+  Database* db = new Database;
+  db->initDB();
+  delete db;
 
   QFile file(":/stylesheets/" + s.value("stylesheet", "basic").toString() +
              ".qss");
