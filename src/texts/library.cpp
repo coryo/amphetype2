@@ -134,6 +134,10 @@ void Library::reload() {
   delete old_tm;
   delete old_sm;
 
+  connect(ui->sourcesTable->selectionModel(),
+        &QItemSelectionModel::selectionChanged, this,
+        &Library::sourceSelectionChanged);
+
   source_model_->refresh();
 }
 
