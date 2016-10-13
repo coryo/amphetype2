@@ -39,7 +39,7 @@ void SourceItem::refresh() {
   auto data = db_->getSourceData(id_);
   id_ = data[0].toInt();
   name_ = data[1].toString();
-  disabled_ = data[5].isNull() ? 1 : 0;
+  disabled_ = data[5].isNull() ? 0 : 1;
   discount_ = 0;
   type_ = 0;
   text_count_ = data[2].toInt();
