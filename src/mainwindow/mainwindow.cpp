@@ -19,12 +19,16 @@
 #include "mainwindow/mainwindow.h"
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QDirIterator>
+#include <QMessageBox>
 #include <QSettings>
 #include <QSize>
 #include <QStandardPaths>
 
 #include <QsLog.h>
+
+#include <sqlite3.h>
 
 #include "database/db.h"
 #include "mainwindow/liveplot/liveplot.h"
@@ -32,6 +36,7 @@
 #include "texts/library.h"
 #include "texts/text.h"
 #include "ui_mainwindow.h"
+#include "config.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
@@ -75,6 +80,7 @@ MainWindow::MainWindow(QWidget* parent)
           &QWidget::show);
   connect(ui->actionAnalysis, &QAction::triggered, this->statisticsWidget,
           &QWidget::activateWindow);
+  connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::aboutDialog);
 
   ui->menuView->addAction(ui->plotDock->toggleViewAction());
 
@@ -279,4 +285,12 @@ void MainWindow::closeEvent(QCloseEvent* event) {
   performanceWidget->saveSettings();
   statisticsWidget->saveSettings();
   qApp->quit();
+}
+
+void MainWindow::aboutDialog() {
+  QMessageBox::about(this, QCoreApplication::applicationName(),
+                     QString("Version %1\nQt %2\nSQLite %3")
+                         .arg(amphetype2_VERSION_STRING_FULL)
+                         .arg(QT_VERSION_STR)
+                         .arg(SQLITE_VERSION));
 }

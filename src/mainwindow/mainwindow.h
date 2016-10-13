@@ -22,8 +22,8 @@
 #include <QCloseEvent>
 #include <QEvent>
 #include <QMainWindow>
-
 #include <QString>
+
 #include "analysis/statisticswidget.h"
 #include "generators/lessongenwidget.h"
 #include "generators/traininggenwidget.h"
@@ -60,10 +60,9 @@ class MainWindow : public QMainWindow {
   void profileChanged(QString);
 
  private slots:
-  // void gotoTab(int);
-  // void gotoLessonGenTab();
   void changeProfile(QAction*);
   void updateWindowTitle();
+  void aboutDialog();
 };
 
 #endif  // SRC_MAINWINDOW_MAINWINDOW_H_
