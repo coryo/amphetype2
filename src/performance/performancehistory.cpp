@@ -140,6 +140,9 @@ PerformanceHistory::~PerformanceHistory() {
 
 void PerformanceHistory::loadSettings() {
   QSettings s;
+  ui->plotCheckBox->setCheckState(
+      s.value("Performance/show_plot_points", true).toBool() ? Qt::Unchecked
+                                                             : Qt::Checked);
   ui->timeScaleCheckBox->setCheckState(
       s.value("Performance/chrono_x", false).toBool() ? Qt::Checked
                                                       : Qt::Unchecked);
@@ -171,6 +174,8 @@ void PerformanceHistory::loadSettings() {
 
 void PerformanceHistory::saveSettings() {
   QSettings s;
+  s.setValue("Performance/show_plot_points",
+             ui->plotCheckBox->checkState() == Qt::Unchecked);
   s.setValue("Performance/perf_items", ui->limitNumberSpinBox->value());
   s.setValue("Performance/perf_group_by", ui->groupByComboBox->currentIndex());
   s.setValue("Performance/visible_plot", ui->plotSelector->currentIndex());
@@ -285,17 +290,13 @@ void PerformanceHistory::togglePlotLine(int state) {
 
 // create a new graph that is the simple moving average of the given graph
 void PerformanceHistory::dampen(QCPGraph* graph, int n, QCPGraph* out) {
-  if (n > graph->dataCount()) return;
   double s = 0;
-
-  for (int i = 0; i < n; ++i) {
-    s+= graph->dataMainValue(i);
-    out->addData(graph->dataMainKey(i), s / (i + 1));
-  }
-  double q = 1.0 / n;
-  for (int i = n; i < graph->dataCount(); ++i) {
-    out->addData(graph->dataMainKey(i), s * q);
-    s += graph->dataMainValue(i) - graph->dataMainValue(i - n);
+  for (int i = 0; i < graph->dataCount(); ++i) {
+    if (i >= n)
+      s += graph->dataMainValue(i) - graph->dataMainValue(i - n);
+    else
+      s += graph->dataMainValue(i);
+    out->addData(graph->dataMainKey(i), s / std::min(i + 1, n));
   }
 }
 
