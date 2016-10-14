@@ -40,16 +40,9 @@ Test::Test(const std::shared_ptr<Text>& t)
   msBetween.resize(t->getText().length());
   timeAt.resize(t->getText().length());
   wpm.resize(t->getText().length());
-  connect(this, &Test::deleteable, this, &QObject::deleteLater);
-  connect(this, &Test::cancel, this, &QObject::deleteLater);
-  connect(this, &Test::restart, this, &QObject::deleteLater);
 }
 
-Test::~Test() {
-  QLOG_TRACE() << "deleting test";
-  worker_thread_.quit();
-  worker_thread_.wait();
-}
+Test::~Test() { QLOG_DEBUG() << "deleting test"; }
 
 int Test::msElapsed() const {
   if (!this->timer.isValid()) return 0;
@@ -64,6 +57,23 @@ void Test::start() {
   this->intervalTimer.start();
   this->started = true;
   emit testStarted(this->text->getText().length());
+}
+
+void Test::abort() {
+  if (!this->finished) {
+    this->finished = true;
+    this->deleteLater();
+  }
+}
+
+void Test::cancelTest() {
+  this->abort();
+  emit cancelled();
+}
+
+void Test::restartTest() {
+  this->abort();
+  emit restarted();
 }
 
 void Test::finish() {
@@ -84,45 +94,25 @@ void Test::finish() {
     v << qPow((((this->msBetween.at(i) / 1000.0) - spc) / spc), 2);
   }
   double sum = 0.0;
-  for (double x : v) sum += x;
+  for (const auto& x : v) sum += x;
   double viscosity = sum / this->text->getText().length();
-  this->finished = true;
 
+  this->finished = true;
   emit done(wpm, accuracy, viscosity);
 
   if (s.value("perf_logging").toBool()) {
-    ResultWorker* saver = new ResultWorker;
-    saver->moveToThread(&worker_thread_);
-    connect(this, &Test::saveResult, saver, &ResultWorker::process);
-    connect(saver, &ResultWorker::done, saver, &QObject::deleteLater);
-    connect(saver, &ResultWorker::done, this, &QObject::deleteLater);
-    connect(saver, &ResultWorker::doneResult, this, &Test::newResult);
-    connect(saver, &ResultWorker::doneStatistic, this, &Test::newStatistics);
-    worker_thread_.start();
-    emit saveResult(this, wpm, accuracy, viscosity);
+    ResultWorker saver;
+    connect(&saver, &ResultWorker::done, this, &QObject::deleteLater);
+    connect(&saver, &ResultWorker::doneResult, this, &Test::newResult);
+    connect(&saver, &ResultWorker::doneStatistic, this, &Test::newStatistics);
+    saver.process(this, wpm, accuracy, viscosity);
   } else {
     QLOG_DEBUG() << "Test Complete. Skipping results.";
   }
 }
 
-void Test::handleInput(QString currentText, int ms, int key,
-                       Qt::KeyboardModifiers modifiers) {
+void Test::handleInput(QString currentText, int ms, int direction) {
   if (this->text->getText().isEmpty() || this->finished) return;
-
-  if (key == Qt::Key_Escape) {
-    emit restart();
-    return;
-  } else if (key == Qt::Key_F1 || ((key == Qt::Key_1 || key == Qt::Key_Space) &&
-                                   modifiers == Qt::ControlModifier)) {
-    emit cancel();
-    return;
-  }
-
-  if (key == Qt::Key_Shift || key == Qt::Key_Alt || key == Qt::Key_AltGr ||
-      key == Qt::Key_Control || key == Qt::Key_Meta) {
-    QLOG_TRACE() << "Ignoring key.";
-    return;
-  }
 
   if (!this->started && !this->finished) {
     QLOG_DEBUG() << "Test Starting.";
@@ -180,7 +170,7 @@ void Test::handleInput(QString currentText, int ms, int key,
   // Mistake handling
   if (this->currentPos < currentText.length() &&
       this->currentPos < this->text->getText().length()) {
-    if (key == Qt::Key_Backspace) {
+    if (direction < 0) {
       QLOG_DEBUG() << "ignoring backspace.";
       return;
     }

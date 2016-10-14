@@ -27,7 +27,6 @@
 #include <QObject>
 #include <QSet>
 #include <QString>
-#include <QThread>
 #include <QVector>
 
 #include <memory>
@@ -60,13 +59,17 @@ class Test : public QObject {
   int mistakeCount() const;
   int msElapsed() const;
   double secondsElapsed() const;
-  void handleInput(QString, int, int, Qt::KeyboardModifiers);
+  void handleInput(QString, int, int);
+  void cancelTest();
+  void restartTest();
+  void abort();
 
  private:
-  QThread worker_thread_;
   QHash<QPair<QChar, QChar>, int> getMistakes() const;
   void finish();
   void addMistake(int, const QChar&, const QChar&);
+
+ private:
   std::shared_ptr<Text> text;
   bool started;
   bool finished;
@@ -85,9 +88,8 @@ class Test : public QObject {
  signals:
   void testStarted(int);
   void done(double, double, double);
-  void cancel();
-  void restart();
-  void deleteable();
+  void cancelled();
+  void restarted();
   void saveResult(Test*, double, double, double);
 
   void newResult(int);

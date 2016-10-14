@@ -25,23 +25,37 @@
 #include <memory>
 
 #include "quizzer/test.h"
+#include "quizzer/typerdisplay.h"
 
 class Typer : public QPlainTextEdit {
   Q_OBJECT
 
  public:
-  explicit Typer(QWidget* parent = 0);
+  explicit Typer(QWidget* parent = Q_NULLPTR);
   ~Typer();
   void setTextTarget(const std::shared_ptr<Text>&);
-  Test* test() { return test_; }
+  void cancel();
+  void setDisplay(TyperDisplay*);
 
  signals:
-  void newInput(QString, int, int, Qt::KeyboardModifiers);
+  void newInput(QString, int, int);
+  void cancelled();
+  void restarted();
+
+  void newResult(int);
+  void newStatistics();
+  void newWpm(double, double);
+  void newApm(double, double);
+  void characterAdded();
+  void testStarted(int);
+  void done(double, double, double);
 
  private:
   void keyPressEvent(QKeyEvent* e);
+  void clearTest();
   Test* test_;
   QThread test_thread_;
+  TyperDisplay* display_;
 };
 
 #endif  // SRC_QUIZZER_TYPER_H_

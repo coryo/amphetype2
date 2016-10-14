@@ -37,6 +37,8 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
 
   loadSettings();
 
+  ui->typer->setDisplay(ui->typerDisplay);
+
   // set defaults for ui stuff
   this->timerLabelReset();
   this->setPreviousResultText(0, 0);
@@ -49,6 +51,18 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
 
   connect(this, &Quizzer::colorChanged, this, &Quizzer::timerLabelStop);
   connect(&lessonTimer, &QTimer::timeout, this, &Quizzer::timerLabelUpdate);
+
+  connect(ui->typer, &Typer::cancelled, this, &Quizzer::cancelled);
+  connect(ui->typer, &Typer::restarted, this, &Quizzer::restart);
+
+  connect(ui->typer, &Typer::newWpm, this, &Quizzer::newWpm);
+  connect(ui->typer, &Typer::newApm, this, &Quizzer::newApm);
+  connect(ui->typer, &Typer::characterAdded, this, &Quizzer::characterAdded);
+  connect(ui->typer, &Typer::testStarted, this, &Quizzer::testStarted);
+  connect(ui->typer, &Typer::testStarted, this, &Quizzer::beginTest);
+  connect(ui->typer, &Typer::done, this, &Quizzer::done);
+  connect(ui->typer, &Typer::newResult, this, &Quizzer::newResult);
+  connect(ui->typer, &Typer::newStatistics, this, &Quizzer::newStatistics);
 }
 
 Quizzer::~Quizzer() { delete ui; }
@@ -93,7 +107,7 @@ void Quizzer::focusOutEvent(QFocusEvent* event) {
 void Quizzer::checkSource(QList<int> sources) {
   for (const auto& source : sources) {
     if (this->text->getSource() == source) {
-      ui->typer->test()->cancel();
+      ui->typer->cancel();
       return;
     }
   }
@@ -102,7 +116,7 @@ void Quizzer::checkSource(QList<int> sources) {
 void Quizzer::checkText(QList<int> texts) {
   for (const auto& text : texts) {
     if (this->text->getId() == text) {
-      ui->typer->test()->cancel();
+      ui->typer->cancel();
       return;
     }
   }
@@ -185,19 +199,6 @@ void Quizzer::setText(const std::shared_ptr<Text>& t) {
   this->text = t;
   ui->typerDisplay->setTextTarget(text->getText());
   ui->typer->setTextTarget(t);
-  Test* test = ui->typer->test();
-  connect(test, &Test::newWpm, this, &Quizzer::newWpm);
-  connect(test, &Test::newApm, this, &Quizzer::newApm);
-  connect(test, &Test::characterAdded, this, &Quizzer::characterAdded);
-  connect(test, &Test::testStarted, this, &Quizzer::testStarted);
-  connect(test, &Test::testStarted, this, &Quizzer::beginTest);
-  connect(test, &Test::done, this, &Quizzer::done);
-  connect(test, &Test::cancel, this, &Quizzer::cancelled);
-  connect(test, &Test::restart, this, &Quizzer::restart);
-  connect(test, &Test::newResult, this, &Quizzer::newResult);
-  connect(test, &Test::newStatistics, this, &Quizzer::newStatistics);
-  connect(test, &Test::positionChanged, ui->typerDisplay,
-          &TyperDisplay::moveCursor);
 
   this->timerLabelStop();
   this->lessonTimer.stop();
