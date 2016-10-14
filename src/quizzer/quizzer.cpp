@@ -48,6 +48,10 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
           SLOT(setCols(int)));
   connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), this,
           SLOT(saveSettings()));
+  connect(ui->soundsCheckBox, &QCheckBox::stateChanged, this,
+          &Quizzer::saveSettings);
+  connect(ui->soundsCheckBox, &QCheckBox::stateChanged, ui->typer,
+          &Typer::toggleSounds);
 
   connect(this, &Quizzer::colorChanged, this, &Quizzer::timerLabelStop);
   connect(&lessonTimer, &QTimer::timeout, this, &Quizzer::timerLabelUpdate);
@@ -77,6 +81,9 @@ void Quizzer::loadSettings() {
 
   ui->result->setVisible(s.value("Quizzer/show_last", true).toBool());
   ui->typerColsSpinBox->setValue(s.value("Quizzer/typer_cols", 80).toInt());
+  ui->soundsCheckBox->setCheckState(
+      s.value("Quizzer/play_sounds", true).toBool() ? Qt::Checked
+                                                    : Qt::Unchecked);
 
   auto font_data = s.value("Quizzer/typer_font");
   if (!font_data.isNull()) {
@@ -94,6 +101,8 @@ void Quizzer::loadSettings() {
 void Quizzer::saveSettings() {
   QSettings s;
   s.setValue("Quizzer/typer_cols", ui->typerColsSpinBox->value());
+  s.setValue("Quizzer/play_sounds",
+             ui->soundsCheckBox->checkState() == Qt::Checked);
   // s.setValue("Quizzer/show_last", ui->result->isVisible());
   // s.setValue("Quizzer/typer_font", ui->typerDisplay->currentFont());
 }
@@ -199,6 +208,7 @@ void Quizzer::setText(const std::shared_ptr<Text>& t) {
   this->text = t;
   ui->typerDisplay->setTextTarget(text->getText());
   ui->typer->setTextTarget(t);
+  ui->typer->toggleSounds(ui->soundsCheckBox->checkState());
 
   this->timerLabelStop();
   this->lessonTimer.stop();

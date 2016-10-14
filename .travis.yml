@@ -27,7 +27,7 @@ before_install:
 install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install qt5                                     ; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export QTDIR=/usr/local/Cellar/qt5/5.6.1-1           ; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install qt57base qt57tools qt57xmlpatterns --force-yes; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install qt57base qt57tools qt57xmlpatterns qt57multimedia --force-yes; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then source /opt/qt57/bin/qt57-env.sh                   ; fi
 - cmake --version
 

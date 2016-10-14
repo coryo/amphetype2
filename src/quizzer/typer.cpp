@@ -18,6 +18,8 @@
 
 #include <QApplication>
 #include <QKeyEvent>
+#include <QUrl>
+#include <QSettings>
 
 #include <QsLog.h>
 
@@ -29,6 +31,10 @@ Typer::Typer(QWidget* parent) : QPlainTextEdit(parent), test_(nullptr) {
   this->setAcceptDrops(false);
   this->setFocusPolicy(Qt::StrongFocus);
   test_thread_.start();
+  errorSound.setSource(QUrl::fromLocalFile(":/sounds/error.wav"));
+  errorSound.setVolume(0.25f);
+  successSound.setSource(QUrl::fromLocalFile(":/sounds/success.wav"));
+  successSound.setVolume(0.25f);
 }
 
 Typer::~Typer() {
@@ -36,14 +42,21 @@ Typer::~Typer() {
   test_thread_.wait();
 }
 
+void Typer::toggleSounds(int state) {
+  errorSound.setMuted(state != Qt::Checked);
+  successSound.setMuted(state != Qt::Checked);
+}
+
 void Typer::setDisplay(TyperDisplay* display) { display_ = display; }
 
 void Typer::setTextTarget(const std::shared_ptr<Text>& text) {
+  QSettings s;
   clearTest();
   test_ = new Test(text);
   test_->moveToThread(&test_thread_);
   connect(this, &Typer::newInput, test_, &Test::handleInput);
-  connect(test_, &Test::mistake, qApp, &QApplication::beep);
+  connect(test_, &Test::mistake, &errorSound, &QSoundEffect::play);
+  connect(test_, &Test::done, &successSound, &QSoundEffect::play);
 
   connect(test_, &Test::done, this, &Typer::clearTest);
   connect(test_, &Test::newWpm, this, &Typer::newWpm);

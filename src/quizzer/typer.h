@@ -21,6 +21,7 @@
 
 #include <QPlainTextEdit>
 #include <QThread>
+#include <QSoundEffect>
 
 #include <memory>
 
@@ -36,6 +37,7 @@ class Typer : public QPlainTextEdit {
   void setTextTarget(const std::shared_ptr<Text>&);
   void cancel();
   void setDisplay(TyperDisplay*);
+  void toggleSounds(int state);
 
  signals:
   void newInput(QString, int, int);
@@ -56,6 +58,8 @@ class Typer : public QPlainTextEdit {
   Test* test_;
   QThread test_thread_;
   TyperDisplay* display_;
+  QSoundEffect errorSound;
+  QSoundEffect successSound;
 };
 
 #endif  // SRC_QUIZZER_TYPER_H_

@@ -10,5 +10,7 @@
         <file>keyboard_layouts/workman.layout</file>
         <file>keyboard_layouts/dvorak.layout</file>
         <file>sources.xsd</file>
+        <file>sounds/error.wav</file>
+        <file>sounds/success.wav</file>
     </qresource>
 </RCC>

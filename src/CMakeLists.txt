@@ -80,6 +80,7 @@ add_executable(amphetype2 WIN32 MACOSX_BUNDLE
 target_link_libraries(amphetype2
 	Qt5::Widgets
   Qt5::XmlPatterns
+  Qt5::Multimedia
 	sqlite3
 	qcustomplot
 	qslog
