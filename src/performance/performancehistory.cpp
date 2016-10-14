@@ -227,19 +227,19 @@ void PerformanceHistory::updateColors() {
   // graph colors and point style
   QColor wpmLighterColor(wpmLineColor);
   wpmLighterColor.setAlpha(25);
-  ui->performancePlot->graph(0)->setPen(QPen(wpmLineColor, 2));
+  ui->performancePlot->graph(0)->setPen(QPen(wpmLineColor, 1));
   ui->performancePlot->graph(0)->setScatterStyle(
-      QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black, 1.5),
-                      QBrush(wpmLineColor), 8));
+      QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black, 1),
+                      QBrush(wpmLineColor), 5));
   ui->performancePlot->graph(0)->setBrush(QBrush(wpmLighterColor));
-  ui->performancePlot->graph(1)->setPen(QPen(accLineColor, 2));
+  ui->performancePlot->graph(1)->setPen(QPen(accLineColor, 1));
   ui->performancePlot->graph(1)->setScatterStyle(
       QCPScatterStyle(QCPScatterStyle::ssTriangle, QPen(Qt::black, 1),
-                      QBrush(accLineColor), 8));
-  ui->performancePlot->graph(2)->setPen(QPen(visLineColor, 2));
+                      QBrush(accLineColor), 5));
+  ui->performancePlot->graph(2)->setPen(QPen(visLineColor, 1));
   ui->performancePlot->graph(2)->setScatterStyle(
       QCPScatterStyle(QCPScatterStyle::ssTriangleInverted, QPen(Qt::black, 1),
-                      QBrush(visLineColor), 8));
+                      QBrush(visLineColor), 5));
   // axes
   QColor subGridColor = plotForegroundColor;
   subGridColor.setAlpha(30);
@@ -434,7 +434,7 @@ void PerformanceHistory::showPlot(int p) {
           smaColor = visLineColor;
           break;
       }
-      sma->setPen(QPen(smaColor.lighter(125), 3));
+      sma->setPen(QPen(smaColor.lighter(125), 2));
       sma->setVisible(true);
     }
   }
