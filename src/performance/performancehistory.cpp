@@ -33,6 +33,7 @@
 
 #include "database/db.h"
 #include "texts/text.h"
+#include "util/datetime.h"
 #include "ui_performancehistory.h"
 
 PerformanceHistory::PerformanceHistory(QWidget* parent)
@@ -63,9 +64,11 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
   ui->tableView->setSortingEnabled(false);
   ui->tableView->setColumnHidden(0, true);
   auto header = ui->tableView->horizontalHeader();
+  header->setSectionResizeMode(1, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(2, QHeaderView::Stretch);
-  for (int col = 0; col < header->count() && col != 2; col++)
-    header->setSectionResizeMode(col, QHeaderView::ResizeToContents);
+  header->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+  header->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+  header->setSectionResizeMode(5, QHeaderView::ResizeToContents);
 
   loadSettings();
 
@@ -228,9 +231,8 @@ void PerformanceHistory::updateColors() {
   QColor wpmLighterColor(wpmLineColor);
   wpmLighterColor.setAlpha(25);
   ui->performancePlot->graph(0)->setPen(QPen(wpmLineColor, 1));
-  ui->performancePlot->graph(0)->setScatterStyle(
-      QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black, 1),
-                      QBrush(wpmLineColor), 5));
+  ui->performancePlot->graph(0)->setScatterStyle(QCPScatterStyle(
+      QCPScatterStyle::ssCircle, QPen(Qt::black, 1), QBrush(wpmLineColor), 5));
   ui->performancePlot->graph(0)->setBrush(QBrush(wpmLighterColor));
   ui->performancePlot->graph(1)->setPen(QPen(accLineColor, 1));
   ui->performancePlot->graph(1)->setScatterStyle(
@@ -342,7 +344,7 @@ void PerformanceHistory::refreshPerformance() {
                                     ui->groupByComboBox->currentIndex());
   double x = -1;
   // iterate through rows
-
+  auto now = QDateTime::currentDateTime();
   QDateTime t;
   double avgWPM = 0;
   double avgACC = 0;
@@ -353,8 +355,9 @@ void PerformanceHistory::refreshPerformance() {
     // add hash from db
     items << new QStandardItem(row[0].toString());
     // add time. convert it to nicer display first
-    t = QDateTime::fromString(row[1].toString().toUtf8().data(), Qt::ISODate);
-    auto timeItem = new QStandardItem(t.toString(Qt::SystemLocaleShortDate));
+    t = QDateTime::fromString(row[1].toString(), Qt::ISODate);
+    auto timeItem = new QStandardItem(Util::Date::PrettyTimeDelta(
+        t, now));  // t.toString(Qt::SystemLocaleShortDate));
     timeItem->setData(t);
     items << timeItem;
     // add source
@@ -389,6 +392,26 @@ void PerformanceHistory::refreshPerformance() {
   ui->avgWPM->setText(QString::number(avgWPM, 'f', 1));
   ui->avgACC->setText(QString::number(avgACC, 'f', 1));
   ui->avgVIS->setText(QString::number(avgVIS, 'f', 1));
+
+  auto best =
+      db.getOneRow("select w, wpm from result order by wpm desc limit 1");
+  auto worst =
+      db.getOneRow("select w, wpm from result order by wpm asc limit 1");
+  if (!best.isEmpty() && !worst.isEmpty()) {
+    auto best_time = QDateTime::fromString(best[0].toString(), Qt::ISODate);
+    auto worst_time = QDateTime::fromString(worst[0].toString(), Qt::ISODate);
+    ui->bestLabel->setText(
+        QString("Best: <b>%2</b> wpm on %1 (%5)<br/>Worst: <b>%4</b> wpm on %3 "
+                "(%6)")
+            .arg(best_time.toString("MMM d, yyyy"))
+            .arg(best[1].toDouble())
+            .arg(worst_time.toString("MMM d, yyyy"))
+            .arg(worst[1].toDouble())
+            .arg(Util::Date::PrettyTimeDelta(best_time, now))
+            .arg(Util::Date::PrettyTimeDelta(worst_time, now)));
+  } else {
+    ui->bestLabel->clear();
+  }
 
   this->refreshCurrentPlot();
 }
