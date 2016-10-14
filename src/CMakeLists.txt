@@ -46,6 +46,7 @@ set(${PROJECT_NAME}_SOURCES
   texts/edittextdialog.cpp
 
   util/RunGuard.cpp
+  util/datetime.cpp
 
 	generators/traininggenerator.cpp
 	generators/traininggenwidget.cpp
