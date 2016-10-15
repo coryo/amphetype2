@@ -236,20 +236,32 @@
    <property name="text">
     <string>&amp;Settings</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
   </action>
   <action name="actionLibrary">
    <property name="text">
     <string>&amp;Library</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
    </property>
   </action>
   <action name="actionQuit">
    <property name="text">
     <string>&amp;Quit</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
   </action>
   <action name="actionPerformance">
    <property name="text">
     <string>&amp;Performance</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
   <action name="actionLesson_Generator">
@@ -266,6 +278,9 @@
    <property name="text">
     <string>&amp;Analysis</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
   </action>
   <action name="actionAbout">
    <property name="text">
@@ -275,6 +290,9 @@
   <action name="actionGrindWords">
    <property name="text">
     <string>&amp;Words</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
    </property>
   </action>
  </widget>
