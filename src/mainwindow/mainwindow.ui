@@ -69,8 +69,15 @@
     </property>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menu_Grind">
+    <property name="title">
+     <string>&amp;Grind</string>
+    </property>
+    <addaction name="actionGrindWords"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuView"/>
+   <addaction name="menu_Grind"/>
    <addaction name="menuProfiles"/>
    <addaction name="menu_Help"/>
   </widget>
@@ -263,6 +270,11 @@
   <action name="actionAbout">
    <property name="text">
     <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="actionGrindWords">
+   <property name="text">
+    <string>&amp;Words</string>
    </property>
   </action>
  </widget>

@@ -71,6 +71,10 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
 
 Quizzer::~Quizzer() { delete ui; }
 
+void Quizzer::actionGrindWords() {
+  emit wantText(0, Amphetype::SelectionMethod::GenSlowWords);
+}
+
 void Quizzer::loadSettings() {
   QSettings s;
   QFont f;

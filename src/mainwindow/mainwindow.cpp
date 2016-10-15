@@ -81,6 +81,8 @@ MainWindow::MainWindow(QWidget* parent)
   connect(ui->actionAnalysis, &QAction::triggered, this->statisticsWidget,
           &QWidget::activateWindow);
   connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::aboutDialog);
+  connect(ui->actionGrindWords, &QAction::triggered, ui->quizzer,
+          &Quizzer::actionGrindWords);
 
   ui->menuView->addAction(ui->plotDock->toggleViewAction());
 

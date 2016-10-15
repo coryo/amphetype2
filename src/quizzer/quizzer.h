@@ -80,6 +80,7 @@ class Quizzer : public QWidget {
   void setText(const std::shared_ptr<Text> &);
   void checkSource(QList<int>);
   void checkText(QList<int>);
+  void actionGrindWords();
 
  private slots:
   void alertText(const char *);

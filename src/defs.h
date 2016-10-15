@@ -20,7 +20,9 @@
 #define SRC_DEFS_H_
 
 namespace Amphetype {
-enum class SelectionMethod { None = -1, Random = 0, InOrder, Repeat, Ask };
+enum class SelectionMethod { None = -1, Random = 0, InOrder, Repeat, GenSlowWords };
+
+enum class TextType { Standard = 0, Lesson, Generated };
 
 enum class Layout {
   QWERTY = 0,
@@ -61,6 +63,7 @@ enum class Finger { INDEX_INNER, INDEX, MIDDLE, RING, PINKY, PINKY_EXTRA };
 };
 
 Q_DECLARE_METATYPE(Amphetype::SelectionMethod);
+Q_DECLARE_METATYPE(Amphetype::TextType);
 Q_DECLARE_METATYPE(Amphetype::Layout);
 Q_DECLARE_METATYPE(Amphetype::Standard);
 Q_DECLARE_METATYPE(Amphetype::Modifier);

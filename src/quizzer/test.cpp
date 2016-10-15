@@ -29,6 +29,7 @@
 
 #include "database/db.h"
 #include "texts/text.h"
+#include "defs.h"
 
 Test::Test(const std::shared_ptr<Text>& t)
     : text(t),
@@ -214,8 +215,10 @@ void ResultWorker::process(Test* test, double wpm, double accuracy,
   // positions in the text where a mistake occurred. mistakeCount.count(key)
   // yields the amount of mistakes for a given key
   Database db;
-  db.addResult(now_str, test->text, wpm, accuracy, viscosity);
-  emit doneResult(test->text->getSource());
+  if (test->text->getType() != (int) Amphetype::TextType::Generated) {
+    db.addResult(now_str, test->text, wpm, accuracy, viscosity);
+    emit doneResult(test->text->getSource());
+  }
   int start, end;
   double spc, perch, visco, tspc;
 

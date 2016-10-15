@@ -46,6 +46,7 @@
 #include "texts/text.h"
 #include "texts/textmodel.h"
 #include "texts/edittextdialog.h"
+#include "generators/lessongenwidget.h"
 #include "ui_library.h"
 
 Library::Library(QWidget* parent)
@@ -135,8 +136,8 @@ void Library::reload() {
   delete old_sm;
 
   connect(ui->sourcesTable->selectionModel(),
-        &QItemSelectionModel::selectionChanged, this,
-        &Library::sourceSelectionChanged);
+          &QItemSelectionModel::selectionChanged, this,
+          &Library::sourceSelectionChanged);
 
   source_model_->refresh();
 }
@@ -412,11 +413,19 @@ void Library::nextText(const std::shared_ptr<Text>& lastText,
   if (method != Amphetype::SelectionMethod::None) {
     selectMethod = static_cast<Amphetype::SelectionMethod>(method);
   } else {
-    if (lastText && lastText->getType() > 0)
-      selectMethod = Amphetype::SelectionMethod::InOrder;
-    else
-      selectMethod = static_cast<Amphetype::SelectionMethod>(
-          s.value("select_method", 0).toInt());
+    switch (lastText->getType()) {
+      case Amphetype::TextType::Lesson:
+        selectMethod = Amphetype::SelectionMethod::InOrder;
+        break;
+      case Amphetype::TextType::Generated:
+        selectMethod = Amphetype::SelectionMethod::GenSlowWords;
+        break;
+      default:
+      case Amphetype::TextType::Standard:
+        selectMethod = static_cast<Amphetype::SelectionMethod>(
+            s.value("select_method", 0).toInt());
+        break;
+    }
   }
 
   QLOG_DEBUG() << "Library::nextText"
@@ -426,7 +435,6 @@ void Library::nextText(const std::shared_ptr<Text>& lastText,
   Database db;
   switch (selectMethod) {
     case Amphetype::SelectionMethod::Random:
-    case Amphetype::SelectionMethod::Ask:
       QLOG_DEBUG() << "nextText: Random";
       nextText = db.getRandomText();
       emit setText(nextText);
@@ -444,7 +452,23 @@ void Library::nextText(const std::shared_ptr<Text>& lastText,
     case Amphetype::SelectionMethod::Repeat:
       QLOG_DEBUG() << "nextText: Repeat";
       emit setText(lastText);
-      return;
+      break;
+    case Amphetype::SelectionMethod::GenSlowWords:
+      QLOG_DEBUG() << "nextText:: Generate from slow words";
+      QString historyString =
+          QDateTime::currentDateTime().addDays(-30).toString(Qt::ISODate);
+      QList<QVariantList> rows =
+          db.getStatisticsData(historyString, 2, 0, 0, 10);
+      if (rows.isEmpty()) {
+        emit setText(std::make_shared<Text>());
+        return;
+      }
+      QStringList words;
+      for (const auto& row : rows) words.append(row[0].toString());
+      QString text = LessonGenWidget::generateText(words, 80);
+      emit setText(
+          std::make_shared<Text>(-1, 0, text, "Grind Mode: slow words", -1, 2));
+      break;
   }
 }
 

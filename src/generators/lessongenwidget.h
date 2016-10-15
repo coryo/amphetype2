@@ -32,6 +32,7 @@ class LessonGenWidget : public QWidget {
  public:
   explicit LessonGenWidget(QWidget *parent = 0);
   ~LessonGenWidget();
+  static QString generateText(QStringList &words, int targetLength);
 
  private:
   Ui::LessonGenWidget *ui;
