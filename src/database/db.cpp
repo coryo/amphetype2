@@ -604,7 +604,7 @@ QList<QVariantList> Database::getStatisticsData(const QString& when, int type,
                     "FROM statistic "
                     "WHERE w >= datetime(?) AND type = ? "
                     "GROUP by data "
-                    "HAVING total > ? "
+                    "HAVING total >= ? "
                     "ORDER BY %1 LIMIT ?")
                     .arg(order);
 
