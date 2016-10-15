@@ -31,7 +31,7 @@
 #include "ui_statisticswidget.h"
 
 StatisticsWidget::StatisticsWidget(QWidget* parent)
-    : QWidget(parent),
+    : QMainWindow(parent),
       ui(new Ui::StatisticsWidget),
       model(new QStandardItemModel) {
   ui->setupUi(this);
@@ -42,14 +42,16 @@ StatisticsWidget::StatisticsWidget(QWidget* parent)
           SLOT(populateStatistics()));
   connect(ui->typeComboBox, SIGNAL(currentIndexChanged(int)), this,
           SLOT(populateStatistics()));
-  connect(ui->limitSpinBox, SIGNAL(valueChanged(int)),
-          this, SLOT(populateStatistics()));
-  connect(ui->minCountSpinBox, SIGNAL(valueChanged(int)),
-          this, SLOT(populateStatistics()));
+  connect(ui->limitSpinBox, SIGNAL(valueChanged(int)), this,
+          SLOT(populateStatistics()));
+  connect(ui->minCountSpinBox, SIGNAL(valueChanged(int)), this,
+          SLOT(populateStatistics()));
   // connect(ui->updateButton, &QPushButton::pressed, this,
   //         &StatisticsWidget::populateStatistics);
   connect(ui->generatorButton, &QPushButton::pressed, this,
           &StatisticsWidget::generateList);
+
+  connect(ui->actionCloseWindow, &QAction::triggered, this, &QWidget::close);
 
   populateStatistics();
 }

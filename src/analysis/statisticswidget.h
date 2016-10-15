@@ -19,7 +19,7 @@
 #ifndef SRC_ANALYSIS_STATISTICSWIDGET_H_
 #define SRC_ANALYSIS_STATISTICSWIDGET_H_
 
-#include <QWidget>
+#include <QMainWindow>
 #include <QStringList>
 #include <QStandardItemModel>
 
@@ -29,7 +29,7 @@ namespace Ui {
 class StatisticsWidget;
 }
 
-class StatisticsWidget : public QWidget {
+class StatisticsWidget : public QMainWindow {
   Q_OBJECT
 
  public:
