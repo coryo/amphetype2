@@ -279,7 +279,7 @@
     <string>&amp;Analysis</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+A</string>
+    <string>Ctrl+N</string>
    </property>
   </action>
   <action name="actionAbout">
