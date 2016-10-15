@@ -469,7 +469,7 @@ void Library::nextText(const std::shared_ptr<Text>& lastText,
       for (const auto& row : rows) words.append(row[0].toString());
       emit setText(std::make_shared<Text>(
           -1, 0, LessonGenWidget::generateText(words, 80),
-          "Grind Mode: slow words", -1, 2));
+          "Grind Mode: slow words", -1, Amphetype::TextType::Generated));
       break;
     }
     default:

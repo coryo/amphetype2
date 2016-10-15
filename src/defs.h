@@ -19,8 +19,17 @@
 #ifndef SRC_DEFS_H_
 #define SRC_DEFS_H_
 
+#include <QMetaType>
+
 namespace Amphetype {
-enum class SelectionMethod { None = -1, Random = 0, InOrder, Repeat, GenSlowWords };
+
+enum class SelectionMethod {
+  None = -1,
+  Random = 0,
+  InOrder,
+  Repeat,
+  GenSlowWords
+};
 
 enum class TextType { Standard = 0, Lesson, Generated };
 
@@ -37,6 +46,10 @@ enum class Layout {
 enum class Standard { NONE = -1, ANSI = 0, ISO };
 
 enum class Modifier { None, Shift, AltGr };
+
+enum class KeyboardRow { UPPER, MIDDLE, LOWER };
+
+enum class Finger { INDEX_INNER, INDEX, MIDDLE, RING, PINKY, PINKY_EXTRA };
 
 // The sizes of the key caps in the standard 5x15 area on most keyboards.
 namespace Standards {
@@ -55,12 +68,9 @@ static constexpr const double iso_keys[][15] = {
     {1.25, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2.75, 0, 0},
     {1.25, 1.25, 1.25, 6.25, 1.25, 1.25, 1.25, 1.25, 0, 0, 0, 0, 0, 0, 0}};
 static constexpr const int iso_offset[5] = {0, 1, 1, 1, 3};
-};
 
-enum class KeyboardRow { UPPER, MIDDLE, LOWER };
-
-enum class Finger { INDEX_INNER, INDEX, MIDDLE, RING, PINKY, PINKY_EXTRA };
-};
+}  // Standards
+}  // Amphetype
 
 Q_DECLARE_METATYPE(Amphetype::SelectionMethod);
 Q_DECLARE_METATYPE(Amphetype::TextType);

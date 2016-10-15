@@ -40,6 +40,7 @@
 
 #include "quizzer/test.h"
 #include "texts/text.h"
+#include "defs.h"
 
 static QMutex db_lock;
 
@@ -905,7 +906,8 @@ std::shared_ptr<Text> Database::getTextWithQuery(const QString& query,
 
   int offset = row2.isEmpty() ? 0 : row2[0].toInt() - 1;
 
-  return std::make_shared<Text>(row[0].toInt(), row[1].toInt(),
-                                row[2].toString(), row[3].toString(),
-                                row[0].toInt() - offset, row[4].toInt());
+  return std::make_shared<Text>(
+      row[0].toInt(), row[1].toInt(), row[2].toString(), row[3].toString(),
+      row[0].toInt() - offset,
+      static_cast<Amphetype::TextType>(row[4].toInt()));
 }

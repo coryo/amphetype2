@@ -23,7 +23,8 @@
 
 #include <QsLog.h>
 
-Text::Text() : id(-1), source(0), textNumber(-1), type(-1) {
+Text::Text()
+    : id(-1), source(0), textNumber(-1), type(Amphetype::TextType::Standard) {
   text =
       "Welcome to Amphetype!\nA "
       "typing program that not only measures your speed and "
@@ -46,7 +47,7 @@ Text::Text(Text* other)
       textNumber(other->textNumber),
       type(other->type) {}
 
-Text::Text(int id, int source, const QString& text, int type)
+Text::Text(int id, int source, const QString& text, Amphetype::TextType type)
     : id(id),
       source(source),
       text(text),
@@ -55,7 +56,7 @@ Text::Text(int id, int source, const QString& text, int type)
       type(type) {}
 
 Text::Text(int id, int source, const QString& text, const QString& sName,
-           int tNum, int type)
+           int tNum, Amphetype::TextType type)
     : id(id),
       source(source),
       text(text),
@@ -70,4 +71,4 @@ int Text::getSource() const { return source; }
 const QString& Text::getText() const { return text; }
 const QString& Text::getSourceName() const { return sourceName; }
 int Text::getTextNumber() const { return textNumber; }
-int Text::getType() const { return type; }
+Amphetype::TextType Text::getType() const { return type; }

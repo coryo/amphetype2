@@ -22,12 +22,16 @@
 #include <QByteArray>
 #include <QString>
 
+#include "defs.h"
+
 class Text {
  public:
   Text();
   explicit Text(Text*);
-  Text(int, int, const QString&, int type = 0);
-  Text(int, int, const QString&, const QString&, int, int type = 0);
+  Text(int, int, const QString&,
+       Amphetype::TextType type = Amphetype::TextType::Standard);
+  Text(int, int, const QString&, const QString&, int,
+       Amphetype::TextType type = Amphetype::TextType::Standard);
   ~Text();
 
   int getId() const;
@@ -35,7 +39,7 @@ class Text {
   const QString& getText() const;
   const QString& getSourceName() const;
   int getTextNumber() const;
-  int getType() const;
+  Amphetype::TextType getType() const;
 
  private:
   int id;
@@ -43,7 +47,7 @@ class Text {
   QString text;
   QString sourceName;
   int textNumber;
-  int type;
+  Amphetype::TextType type;
 };
 
 #endif  // SRC_TEXTS_TEXT_H_
