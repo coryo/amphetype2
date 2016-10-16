@@ -336,6 +336,12 @@ void PerformanceHistory::refreshPerformance() {
       ui->performancePlot->graph(i)->data()->clear();
   }
 
+  if (ui->groupByComboBox->currentIndex() > 0) {
+    model->horizontalHeaderItem(3)->setToolTip("Median");
+    model->horizontalHeaderItem(4)->setToolTip("Median");
+    model->horizontalHeaderItem(5)->setToolTip("Median");
+  }
+
   // get rows from db
   Database db;
   auto rows = db.getPerformanceData(ui->sourceComboBox->currentIndex(),
@@ -356,9 +362,9 @@ void PerformanceHistory::refreshPerformance() {
     items << new QStandardItem(row[0].toString());
     // add time. convert it to nicer display first
     t = QDateTime::fromString(row[1].toString(), Qt::ISODate);
-    auto timeItem = new QStandardItem(Util::Date::PrettyTimeDelta(
-        t, now));  // t.toString(Qt::SystemLocaleShortDate));
+    auto timeItem = new QStandardItem(Util::Date::PrettyTimeDelta(t, now));
     timeItem->setData(t);
+    timeItem->setToolTip(t.toString(Qt::SystemLocaleLongDate));
     items << timeItem;
     // add source
     items << new QStandardItem(row[2].toString());

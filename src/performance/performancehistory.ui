@@ -168,7 +168,7 @@
        <enum>Qt::NoPen</enum>
       </property>
       <property name="cornerButtonEnabled">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
      </widget>
     </item>
@@ -234,6 +234,9 @@
           <bold>true</bold>
          </font>
         </property>
+        <property name="toolTip">
+         <string>Average</string>
+        </property>
         <property name="text">
          <string>avgWPM</string>
         </property>
@@ -270,6 +273,9 @@
           <bold>true</bold>
          </font>
         </property>
+        <property name="toolTip">
+         <string>Average</string>
+        </property>
         <property name="text">
          <string>TextLabel</string>
         </property>
@@ -305,6 +311,9 @@
           <weight>75</weight>
           <bold>true</bold>
          </font>
+        </property>
+        <property name="toolTip">
+         <string>Average</string>
         </property>
         <property name="text">
          <string>TextLabel</string>
