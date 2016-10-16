@@ -81,8 +81,15 @@ MainWindow::MainWindow(QWidget* parent)
   connect(ui->actionAnalysis, &QAction::triggered, this->statisticsWidget,
           &QWidget::activateWindow);
   connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::aboutDialog);
+
   connect(ui->actionGrindWords, &QAction::triggered, ui->quizzer,
           &Quizzer::actionGrindWords);
+  connect(ui->actionGrindViscWords, &QAction::triggered, ui->quizzer,
+          &Quizzer::actionGrindViscWords);
+  connect(ui->actionGrindInaccurateWords, &QAction::triggered, ui->quizzer,
+          &Quizzer::actionGrindInaccurateWords);
+  connect(ui->actionGrindDamagingWords, &QAction::triggered, ui->quizzer,
+          &Quizzer::actionGrindDamagingWords);
 
   ui->menuView->addAction(ui->plotDock->toggleViewAction());
 

@@ -79,7 +79,9 @@ class Database : public QObject {
   int getTextsCount(int source);
   QList<QVariantList> getPerformanceData(int, int, int, int, int = 10);
   QList<QVariantList> getSourcesList();
-  QList<QVariantList> getStatisticsData(const QString&, int, int, int, int);
+  QList<QVariantList> getStatisticsData(const QString&,
+                                        Amphetype::Statistics::Type, int,
+                                        Amphetype::Statistics::Order, int);
   QHash<QChar, QHash<QString, QVariant>> getKeyFrequency();
 
   // general functions for retrieving data with a given query
@@ -96,6 +98,7 @@ class Database : public QObject {
   std::shared_ptr<Text> getRandomText();
   // get a text with a given id
   std::shared_ptr<Text> getText(int);
+  std::shared_ptr<Text> textFromStats(Amphetype::Statistics::Order);
 
   void compress();
 

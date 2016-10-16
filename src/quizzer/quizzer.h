@@ -81,6 +81,9 @@ class Quizzer : public QWidget {
   void checkSource(QList<int>);
   void checkText(QList<int>);
   void actionGrindWords();
+  void actionGrindViscWords();
+  void actionGrindInaccurateWords();
+  void actionGrindDamagingWords();
 
  private slots:
   void alertText(const char *);

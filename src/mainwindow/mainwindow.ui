@@ -74,6 +74,9 @@
      <string>&amp;Grind</string>
     </property>
     <addaction name="actionGrindWords"/>
+    <addaction name="actionGrindViscWords"/>
+    <addaction name="actionGrindInaccurateWords"/>
+    <addaction name="actionGrindDamagingWords"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuView"/>
@@ -239,6 +242,9 @@
    <property name="shortcut">
     <string>Ctrl+S</string>
    </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
   </action>
   <action name="actionLibrary">
    <property name="text">
@@ -246,6 +252,9 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="actionQuit">
@@ -255,6 +264,9 @@
    <property name="shortcut">
     <string>Ctrl+Q</string>
    </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
   </action>
   <action name="actionPerformance">
    <property name="text">
@@ -262,6 +274,9 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="actionLesson_Generator">
@@ -281,6 +296,9 @@
    <property name="shortcut">
     <string>Ctrl+N</string>
    </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
   </action>
   <action name="actionAbout">
    <property name="text">
@@ -289,10 +307,34 @@
   </action>
   <action name="actionGrindWords">
    <property name="text">
-    <string>&amp;Words</string>
+    <string>Slow &amp;Words</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+G</string>
+    <string>Ctrl+2</string>
+   </property>
+  </action>
+  <action name="actionGrindViscWords">
+   <property name="text">
+    <string>&amp;Viscous Words</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+3</string>
+   </property>
+  </action>
+  <action name="actionGrindInaccurateWords">
+   <property name="text">
+    <string>&amp;Inaccurate Words</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+4</string>
+   </property>
+  </action>
+  <action name="actionGrindDamagingWords">
+   <property name="text">
+    <string>&amp;Damaging Words</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+5</string>
    </property>
   </action>
  </widget>

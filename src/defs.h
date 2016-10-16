@@ -28,10 +28,32 @@ enum class SelectionMethod {
   Random = 0,
   InOrder,
   Repeat,
-  GenSlowWords
+  SlowWords,
+  FastWords,
+  ViscousWords,
+  FluidWords,
+  InaccurateWords,
+  AccurateWords,
+  DamagingWords
 };
 
-enum class TextType { Standard = 0, Lesson, Generated };
+enum class TextType { Standard = 0, Lesson, GeneratedFromStatistics };
+
+namespace Statistics {
+enum class Order {
+  Slow = 0,
+  Fast,
+  Viscous,
+  Fluid,
+  Inaccurate,
+  Accurate,
+  Mistakes,
+  Total,
+  Damaging
+};
+
+enum class Type { Keys = 0, Trigrams, Words };
+};  // Statistics
 
 enum class Layout {
   QWERTY = 0,
@@ -74,6 +96,8 @@ static constexpr const int iso_offset[5] = {0, 1, 1, 1, 3};
 
 Q_DECLARE_METATYPE(Amphetype::SelectionMethod);
 Q_DECLARE_METATYPE(Amphetype::TextType);
+Q_DECLARE_METATYPE(Amphetype::Statistics::Order);
+Q_DECLARE_METATYPE(Amphetype::Statistics::Type);
 Q_DECLARE_METATYPE(Amphetype::Layout);
 Q_DECLARE_METATYPE(Amphetype::Standard);
 Q_DECLARE_METATYPE(Amphetype::Modifier);

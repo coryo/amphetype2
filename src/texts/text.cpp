@@ -18,25 +18,29 @@
 
 #include "texts/text.h"
 
-#include <QByteArray>
-#include <QString>
+#include <QSettings>
 
 #include <QsLog.h>
 
-Text::Text()
-    : id(-1), source(0), textNumber(-1), type(Amphetype::TextType::Standard) {
-  text =
-      "Welcome to Amphetype!\nA "
-      "typing program that not only measures your speed and "
-      "progress, but also gives you detailed statistics about"
-      " problem keys, words, common mistakes, and so on. This"
-      " is just a default text since your database is empty. "
-      "You might import a novel or text of your choosing and "
-      "text excerpts will be generated for you automatically."
-      " There are also some facilities to generate lessons "
-      "based on your past statistics! But for now, go to the "
-      "\"Library\" window and try adding some texts from the "
-      "\"txt\" directory.";
+Text::Text(int id, int source, const QString& text, const QString& sName,
+           int tNum)
+    : id(id), source(source), sourceName(sName), textNumber(tNum) {
+  if (text.isEmpty() && id == -1 && source == 0) {
+    this->text =
+        "Welcome to Amphetype!\nA "
+        "typing program that not only measures your speed and "
+        "progress, but also gives you detailed statistics about"
+        " problem keys, words, common mistakes, and so on. This"
+        " is just a default text since your database is empty. "
+        "You might import a novel or text of your choosing and "
+        "text excerpts will be generated for you automatically."
+        " There are also some facilities to generate lessons "
+        "based on your past statistics! But for now, go to the "
+        "\"Library\" window and try adding some texts from the "
+        "\"txt\" directory.";
+  } else {
+    this->text = text;
+  }
 }
 
 Text::Text(Text* other)
@@ -44,31 +48,63 @@ Text::Text(Text* other)
       source(other->source),
       text(other->text),
       sourceName(other->sourceName),
-      textNumber(other->textNumber),
-      type(other->type) {}
-
-Text::Text(int id, int source, const QString& text, Amphetype::TextType type)
-    : id(id),
-      source(source),
-      text(text),
-      sourceName(""),
-      textNumber(0),
-      type(type) {}
-
-Text::Text(int id, int source, const QString& text, const QString& sName,
-           int tNum, Amphetype::TextType type)
-    : id(id),
-      source(source),
-      text(text),
-      sourceName(sName),
-      textNumber(tNum),
-      type(type) {}
-
-Text::~Text() {}
+      textNumber(other->textNumber) {}
 
 int Text::getId() const { return id; }
 int Text::getSource() const { return source; }
 const QString& Text::getText() const { return text; }
 const QString& Text::getSourceName() const { return sourceName; }
 int Text::getTextNumber() const { return textNumber; }
-Amphetype::TextType Text::getType() const { return type; }
+
+Amphetype::TextType Text::getType() const {
+  return Amphetype::TextType::Standard;
+}
+
+Amphetype::SelectionMethod Text::nextTextSelectionPreference() const {
+  QSettings s;
+  return static_cast<Amphetype::SelectionMethod>(
+      s.value("select_method", 0).toInt());
+}
+
+Lesson::Lesson(int id, int source, const QString& text, const QString& sName,
+               int tNum)
+    : Text(id, source, text, sName, tNum) {}
+
+Amphetype::TextType Lesson::getType() const {
+  return Amphetype::TextType::Lesson;
+}
+
+Amphetype::SelectionMethod Lesson::nextTextSelectionPreference() const {
+  return Amphetype::SelectionMethod::InOrder;
+}
+
+TextFromStats::TextFromStats(Amphetype::Statistics::Order statsType,
+                             const QString& text)
+    : Text(-1, 0, text, "Text From Stats", -1), stats_type_(statsType) {}
+Amphetype::TextType TextFromStats::getType() const {
+  return Amphetype::TextType::GeneratedFromStatistics;
+}
+
+TextFromStats::TextFromStats(TextFromStats* other)
+    : Text(other), stats_type_(other->stats_type_) {}
+
+Amphetype::SelectionMethod TextFromStats::nextTextSelectionPreference() const {
+  switch (stats_type_) {
+    case Amphetype::Statistics::Order::Slow:
+      return Amphetype::SelectionMethod::SlowWords;
+    case Amphetype::Statistics::Order::Fast:
+      return Amphetype::SelectionMethod::FastWords;
+    case Amphetype::Statistics::Order::Viscous:
+      return Amphetype::SelectionMethod::ViscousWords;
+    case Amphetype::Statistics::Order::Fluid:
+      return Amphetype::SelectionMethod::FluidWords;
+    case Amphetype::Statistics::Order::Inaccurate:
+      return Amphetype::SelectionMethod::InaccurateWords;
+    case Amphetype::Statistics::Order::Accurate:
+      return Amphetype::SelectionMethod::AccurateWords;
+    case Amphetype::Statistics::Order::Damaging:
+      return Amphetype::SelectionMethod::DamagingWords;
+    default:
+      return Amphetype::SelectionMethod::SlowWords;
+  };
+}

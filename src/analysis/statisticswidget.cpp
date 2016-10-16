@@ -149,8 +149,11 @@ void StatisticsWidget::populateStatistics() {
   Database db;
   QList<QVariantList> rows = db.getStatisticsData(
       QDateTime::currentDateTime().addDays(-history_).toString(Qt::ISODate),
-      ui->typeComboBox->currentIndex(), ui->minCountSpinBox->value(),
-      ui->orderComboBox->currentIndex(), ui->limitSpinBox->value());
+      static_cast<Amphetype::Statistics::Type>(
+          ui->typeComboBox->currentIndex()),
+      ui->minCountSpinBox->value(), static_cast<Amphetype::Statistics::Order>(
+                                        ui->orderComboBox->currentIndex()),
+      ui->limitSpinBox->value());
   for (const QVariantList& row : rows) {
     QList<QStandardItem*> items;
     // item: key/trigram/word

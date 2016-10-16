@@ -72,7 +72,19 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
 Quizzer::~Quizzer() { delete ui; }
 
 void Quizzer::actionGrindWords() {
-  emit wantText(0, Amphetype::SelectionMethod::GenSlowWords);
+  emit wantText(0, Amphetype::SelectionMethod::SlowWords);
+}
+
+void Quizzer::actionGrindViscWords() {
+  emit wantText(0, Amphetype::SelectionMethod::ViscousWords);
+}
+
+void Quizzer::actionGrindInaccurateWords() {
+  emit wantText(0, Amphetype::SelectionMethod::InaccurateWords);
+}
+
+void Quizzer::actionGrindDamagingWords() {
+  emit wantText(0, Amphetype::SelectionMethod::DamagingWords);
 }
 
 void Quizzer::loadSettings() {
@@ -217,6 +229,9 @@ void Quizzer::setText(const std::shared_ptr<Text>& t) {
   this->timerLabelStop();
   this->lessonTimer.stop();
 
-  ui->textInfoLabel->setText(QString("%1 #%2").arg(
-      text->getSourceName(), QString::number(text->getTextNumber())));
+  QString info_text;
+  info_text.append(text->getSourceName());
+  if (text->getTextNumber() >= 0)
+    info_text += " #" + QString::number(text->getTextNumber());
+  ui->textInfoLabel->setText(info_text);
 }

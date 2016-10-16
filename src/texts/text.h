@@ -19,27 +19,23 @@
 #ifndef SRC_TEXTS_TEXT_H_
 #define SRC_TEXTS_TEXT_H_
 
-#include <QByteArray>
 #include <QString>
 
 #include "defs.h"
 
 class Text {
  public:
-  Text();
-  explicit Text(Text*);
-  Text(int, int, const QString&,
-       Amphetype::TextType type = Amphetype::TextType::Standard);
-  Text(int, int, const QString&, const QString&, int,
-       Amphetype::TextType type = Amphetype::TextType::Standard);
-  ~Text();
+  Text(int id = -1, int source = 0, const QString& text = QString(),
+       const QString& sName = QString(), int tNum = -1);
+  Text(Text* other);
 
   int getId() const;
   int getSource() const;
   const QString& getText() const;
   const QString& getSourceName() const;
   int getTextNumber() const;
-  Amphetype::TextType getType() const;
+  virtual Amphetype::TextType getType() const;
+  virtual Amphetype::SelectionMethod nextTextSelectionPreference() const;
 
  private:
   int id;
@@ -47,7 +43,24 @@ class Text {
   QString text;
   QString sourceName;
   int textNumber;
-  Amphetype::TextType type;
+};
+
+class Lesson : public Text {
+ public:
+  Lesson(int, int, const QString&, const QString&, int);
+  Amphetype::TextType getType() const;
+  Amphetype::SelectionMethod nextTextSelectionPreference() const;
+};
+
+class TextFromStats : public Text {
+ public:
+  TextFromStats(Amphetype::Statistics::Order statsType, const QString& text);
+  TextFromStats(TextFromStats* other);
+  Amphetype::TextType getType() const;
+  Amphetype::SelectionMethod nextTextSelectionPreference() const;
+
+ private:
+  Amphetype::Statistics::Order stats_type_;
 };
 
 #endif  // SRC_TEXTS_TEXT_H_

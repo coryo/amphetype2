@@ -40,6 +40,7 @@
 
 #include "quizzer/test.h"
 #include "texts/text.h"
+#include "generators/lessongenwidget.h"
 #include "defs.h"
 
 static QMutex db_lock;
@@ -414,11 +415,11 @@ void Database::addStatistics(const QMultiHash<QStringRef, double>& stats,
         items << mistakeCount.count(k);
 
         if (k.length() == 1) {
-          items << 0;  // char
+          items << static_cast<int>(Amphetype::Statistics::Type::Keys);
         } else if (k.length() == 3) {
-          items << 1;  // tri
+          items << static_cast<int>(Amphetype::Statistics::Type::Trigrams);
         } else {
-          items << 2;  // word
+          items << static_cast<int>(Amphetype::Statistics::Type::Words);
         }
 
         items << k.toString();
@@ -578,34 +579,37 @@ QList<QVariantList> Database::getPerformanceData(int w, int source, int limit,
   return getRows(sql, QVariantList() << limit);
 }
 
-QList<QVariantList> Database::getStatisticsData(const QString& when, int type,
-                                                int count, int ord, int limit) {
+QList<QVariantList> Database::getStatisticsData(
+    const QString& when, Amphetype::Statistics::Type type, int count,
+    Amphetype::Statistics::Order stype, int limit) {
   QString order, dir;
-  switch (ord) {
-    case 0:
+  switch (stype) {
+    case Amphetype::Statistics::Order::Slow:
       order = "wpm asc";
       break;
-    case 1:
+    case Amphetype::Statistics::Order::Fast:
       order = "wpm desc";
       break;
-    case 2:
+    case Amphetype::Statistics::Order::Viscous:
       order = "viscosity desc";
       break;
-    case 3:
+    case Amphetype::Statistics::Order::Fluid:
       order = "viscosity asc";
       break;
-    case 4:
+    case Amphetype::Statistics::Order::Inaccurate:
       order = "accuracy asc";
       break;
-    case 5:
-      order = "misses desc";
+    case Amphetype::Statistics::Order::Accurate:
+      order = "mistakes desc";
       break;
-    case 6:
+    case Amphetype::Statistics::Order::Total:
       order = "total desc";
       break;
-    case 7:
+    case Amphetype::Statistics::Order::Damaging:
       order = "damage desc";
       break;
+    default:
+      order = "wpm asc";
   }
 
   QString sql = QString(
@@ -625,7 +629,8 @@ QList<QVariantList> Database::getStatisticsData(const QString& when, int type,
                     "ORDER BY %1 LIMIT ?")
                     .arg(order);
 
-  return getRows(sql, QVariantList() << when << type << count << limit);
+  return getRows(sql, QVariantList() << when << static_cast<int>(type) << count
+                                     << limit);
 }
 
 QList<QVariantList> Database::getSourcesList() {
@@ -684,6 +689,23 @@ std::shared_ptr<Text> Database::getNextText(int text_id) {
       "ORDER BY text.id ASC "
       "LIMIT 1",
       text_id);
+}
+
+std::shared_ptr<Text> Database::textFromStats(
+    Amphetype::Statistics::Order type) {
+  QSettings s;
+  QList<QVariantList> rows = getStatisticsData(
+      QDateTime::currentDateTime()
+          .addDays(-s.value("statisticsWidget/days", 30).toInt())
+          .toString(Qt::ISODate),
+      Amphetype::Statistics::Type::Words, 0, type, 10);
+  if (rows.isEmpty()) {
+    return std::make_shared<Text>();
+  }
+  QStringList words;
+  for (const auto& row : rows) words.append(row[0].toString());
+  return std::make_shared<TextFromStats>(
+      type, LessonGenWidget::generateText(words, 80));
 }
 
 void Database::updateText(int id, const QString& newText) {
@@ -912,8 +934,18 @@ std::shared_ptr<Text> Database::getTextWithQuery(const QString& query,
 
   int offset = row2.isEmpty() ? 0 : row2[0].toInt() - 1;
 
-  return std::make_shared<Text>(
-      row[0].toInt(), row[1].toInt(), row[2].toString(), row[3].toString(),
-      row[0].toInt() - offset,
-      static_cast<Amphetype::TextType>(row[4].toInt()));
+  Amphetype::TextType type = static_cast<Amphetype::TextType>(row[4].toInt());
+
+  switch (type) {
+    case Amphetype::TextType::Standard:
+      return std::make_shared<Text>(row[0].toInt(), row[1].toInt(),
+                                    row[2].toString(), row[3].toString(),
+                                    row[0].toInt() - offset);
+    case Amphetype::TextType::Lesson:
+      return std::make_shared<Lesson>(row[0].toInt(), row[1].toInt(),
+                                      row[2].toString(), row[3].toString(),
+                                      row[0].toInt() - offset);
+    default:
+      return std::make_shared<Text>();
+  }
 }

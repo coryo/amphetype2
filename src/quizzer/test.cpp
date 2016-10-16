@@ -215,7 +215,7 @@ void ResultWorker::process(Test* test, double wpm, double accuracy,
   // positions in the text where a mistake occurred. mistakeCount.count(key)
   // yields the amount of mistakes for a given key
   Database db;
-  if (test->text->getType() != Amphetype::TextType::Generated) {
+  if (test->text->getType() != Amphetype::TextType::GeneratedFromStatistics) {
     db.addResult(now_str, test->text, wpm, accuracy, viscosity);
     emit doneResult(test->text->getSource());
   }

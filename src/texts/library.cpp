@@ -408,70 +408,54 @@ void Library::selectSource(int source) {
 
 void Library::nextText(const std::shared_ptr<Text>& lastText,
                        Amphetype::SelectionMethod method) {
-  QSettings s;
-  Amphetype::SelectionMethod selectMethod;
-  if (method != Amphetype::SelectionMethod::None) {
-    selectMethod = static_cast<Amphetype::SelectionMethod>(method);
-  } else {
-    switch (lastText->getType()) {
-      case Amphetype::TextType::Lesson:
-        selectMethod = Amphetype::SelectionMethod::InOrder;
-        break;
-      case Amphetype::TextType::Generated:
-        selectMethod = Amphetype::SelectionMethod::GenSlowWords;
-        break;
-      case Amphetype::TextType::Standard:
-        selectMethod = static_cast<Amphetype::SelectionMethod>(
-            s.value("select_method", 0).toInt());
-        break;
-      default:
-        Q_ASSERT(false);
-    }
-  }
+  if (method == Amphetype::SelectionMethod::None)
+    method = lastText->nextTextSelectionPreference();
 
   QLOG_DEBUG() << "Library::nextText"
-               << "select_method =" << static_cast<int>(selectMethod);
+               << "select_method =" << static_cast<int>(method);
 
-  std::shared_ptr<Text> nextText;
   Database db;
-  switch (selectMethod) {
+  switch (method) {
     case Amphetype::SelectionMethod::Random:
       QLOG_DEBUG() << "nextText: Random";
-      nextText = db.getRandomText();
-      emit setText(nextText);
+      emit setText(db.getRandomText());
       break;
     case Amphetype::SelectionMethod::InOrder:
       QLOG_DEBUG() << "nextText: In Order";
-      if (lastText) {
-        nextText = db.getNextText(lastText);
-        emit setText(nextText);
-      } else {
-        nextText = db.getNextText();
-        emit setText(nextText);
-      }
+      emit setText(lastText ? db.getNextText(lastText) : db.getNextText());
       break;
     case Amphetype::SelectionMethod::Repeat:
       QLOG_DEBUG() << "nextText: Repeat";
       emit setText(lastText);
       break;
-    case Amphetype::SelectionMethod::GenSlowWords: {
+    case Amphetype::SelectionMethod::SlowWords:
       QLOG_DEBUG() << "nextText:: Generate from slow words";
-      QList<QVariantList> rows = db.getStatisticsData(
-          QDateTime::currentDateTime()
-              .addDays(-s.value("statisticsWidget/days", 30).toInt())
-              .toString(Qt::ISODate),
-          2, 0, 0, 10);
-      if (rows.isEmpty()) {
-        emit setText(std::make_shared<Text>());
-        return;
-      }
-      QStringList words;
-      for (const auto& row : rows) words.append(row[0].toString());
-      emit setText(std::make_shared<Text>(
-          -1, 0, LessonGenWidget::generateText(words, 80),
-          "Grind Mode: slow words", -1, Amphetype::TextType::Generated));
+      emit setText(db.textFromStats(Amphetype::Statistics::Order::Slow));
       break;
-    }
+    case Amphetype::SelectionMethod::FastWords:
+      QLOG_DEBUG() << "nextText:: Generate from fast words";
+      emit setText(db.textFromStats(Amphetype::Statistics::Order::Fast));
+      break;
+    case Amphetype::SelectionMethod::ViscousWords:
+      QLOG_DEBUG() << "nextText:: Generate from viscous words";
+      emit setText(db.textFromStats(Amphetype::Statistics::Order::Viscous));
+      break;
+    case Amphetype::SelectionMethod::FluidWords:
+      QLOG_DEBUG() << "nextText:: Generate from fluid words";
+      emit setText(db.textFromStats(Amphetype::Statistics::Order::Fluid));
+      break;
+    case Amphetype::SelectionMethod::InaccurateWords:
+      QLOG_DEBUG() << "nextText:: Generate from inaccurate words";
+      emit setText(db.textFromStats(Amphetype::Statistics::Order::Inaccurate));
+      break;
+    case Amphetype::SelectionMethod::AccurateWords:
+      QLOG_DEBUG() << "nextText:: Generate from accurate words";
+      emit setText(db.textFromStats(Amphetype::Statistics::Order::Accurate));
+      break;
+    case Amphetype::SelectionMethod::DamagingWords:
+      QLOG_DEBUG() << "nextText:: Generate from damaging words";
+      emit setText(db.textFromStats(Amphetype::Statistics::Order::Damaging));
+      break;
     default:
       Q_ASSERT(false);
   }
