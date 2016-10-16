@@ -22,6 +22,7 @@
 #include <QMainWindow>
 #include <QStringList>
 #include <QStandardItemModel>
+#include <QPoint>
 
 #include "mainwindow/keyboardmap/keyboardmap.h"
 
@@ -37,6 +38,7 @@ class StatisticsWidget : public QMainWindow {
   ~StatisticsWidget();
 
  private:
+  void contextMenu(const QPoint&);
   Ui::StatisticsWidget* ui;
   QStandardItemModel* model;
   int history_;
@@ -52,6 +54,7 @@ class StatisticsWidget : public QMainWindow {
 
  private slots:
   void generateList();
+  void deleteItem();
 };
 
 #endif  // SRC_ANALYSIS_STATISTICSWIDGET_H_

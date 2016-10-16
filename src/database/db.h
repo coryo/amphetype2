@@ -66,6 +66,7 @@ class Database : public QObject {
   void disableSource(const QList<int>& sources);
   void enableSource(const QList<int>& sources);
   void updateText(int, const QString&);
+  void deleteStatistic(const QString& data);
 
   // specific query functions
   int getSource(const QString&, int lesson = -1, int type = 0);

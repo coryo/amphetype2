@@ -27,6 +27,8 @@
 #include <string>
 #include <vector>
 
+#include <QsLog.h>
+
 #include "database/db.h"
 #include "ui_statisticswidget.h"
 
@@ -37,6 +39,27 @@ StatisticsWidget::StatisticsWidget(QWidget* parent)
   ui->setupUi(this);
 
   loadSettings();
+
+  model->setHorizontalHeaderLabels(QStringList() << "Item"
+                                                 << "WPM"
+                                                 << "Accuracy"
+                                                 << "Viscosity"
+                                                 << "Count"
+                                                 << "Mistakes"
+                                                 << "Impact");
+  model->horizontalHeaderItem(1)->setToolTip("Median");
+  model->horizontalHeaderItem(3)->setToolTip("Median");
+  ui->tableView->setModel(model);
+  ui->tableView->setSortingEnabled(false);
+
+  auto header = ui->tableView->horizontalHeader();
+  header->setSectionResizeMode(0, QHeaderView::Stretch);
+  header->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+  header->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+  header->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+  header->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+  header->setSectionResizeMode(5, QHeaderView::ResizeToContents);
+  header->setSectionResizeMode(6, QHeaderView::ResizeToContents);
 
   connect(ui->orderComboBox, SIGNAL(currentIndexChanged(int)), this,
           SLOT(populateStatistics()));
@@ -52,6 +75,9 @@ StatisticsWidget::StatisticsWidget(QWidget* parent)
           &StatisticsWidget::generateList);
 
   connect(ui->actionCloseWindow, &QAction::triggered, this, &QWidget::close);
+
+  connect(ui->tableView, &QWidget::customContextMenuRequested, this,
+          &StatisticsWidget::contextMenu);
 
   populateStatistics();
 }
@@ -83,6 +109,25 @@ void StatisticsWidget::saveSettings() {
 
 void StatisticsWidget::update() { this->populateStatistics(); }
 
+void StatisticsWidget::contextMenu(const QPoint& pos) {
+  auto index = ui->tableView->indexAt(pos);
+  QMenu menu(this);
+  QAction* deleteAction = menu.addAction("delete");
+  connect(deleteAction, &QAction::triggered, this,
+          &StatisticsWidget::deleteItem);
+  menu.exec(QCursor::pos());
+}
+
+void StatisticsWidget::deleteItem() {
+  auto rows = ui->tableView->selectionModel()->selectedRows();
+  Database db;
+  for (const auto& row : rows) {
+    auto data = row.data();
+    db.deleteStatistic(data.toString());
+  }
+  this->update();
+}
+
 void StatisticsWidget::generateList() {
   if (!this->model) return;
   if (!this->model->rowCount()) return;
@@ -96,38 +141,17 @@ void StatisticsWidget::generateList() {
 }
 
 void StatisticsWidget::populateStatistics() {
-  model->clear();
-
-  QStringList headers;
-  headers << "Item"
-          << "Speed"
-          << "Accuracy"
-          << "Viscosity"
-          << "Count"
-          << "Mistakes"
-          << "Impact";
-  model->setHorizontalHeaderLabels(headers);
-  ui->tableView->setModel(model);
-  ui->tableView->setSortingEnabled(false);
-
-  ui->tableView->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
-  ui->tableView->verticalHeader()->setDefaultSectionSize(24);
-
-  int ord = ui->orderComboBox->currentIndex();
-  int cat = ui->typeComboBox->currentIndex();
-  int limit = ui->limitSpinBox->value();
-  int count = ui->minCountSpinBox->value();
-
-  QString historyString =
-      QDateTime::currentDateTime().addDays(-history_).toString(Qt::ISODate);
+  model->removeRows(0, model->rowCount());
 
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
 
   Database db;
-  QList<QVariantList> rows =
-      db.getStatisticsData(historyString, cat, count, ord, limit);
-  for (QVariantList row : rows) {
+  QList<QVariantList> rows = db.getStatisticsData(
+      QDateTime::currentDateTime().addDays(-history_).toString(Qt::ISODate),
+      ui->typeComboBox->currentIndex(), ui->minCountSpinBox->value(),
+      ui->orderComboBox->currentIndex(), ui->limitSpinBox->value());
+  for (const QVariantList& row : rows) {
     QList<QStandardItem*> items;
     // item: key/trigram/word
     QString data(row[0].toString());
@@ -136,8 +160,7 @@ void StatisticsWidget::populateStatistics() {
     items << new QStandardItem(data);
     items.last()->setFont(font);
     // speed
-    items << new QStandardItem(QString::number(row[1].toDouble(), 'f', 1) +
-                               " wpm");
+    items << new QStandardItem(QString::number(row[1].toDouble(), 'f', 1));
     // accuracy
     items << new QStandardItem(QString::number(row[2].toDouble(), 'f', 1) +
                                "%");
@@ -150,11 +173,8 @@ void StatisticsWidget::populateStatistics() {
     // impact
     items << new QStandardItem(QString::number(row[6].toDouble(), 'f', 1));
 
-    for (QStandardItem* item : items) item->setFlags(Qt::ItemIsEnabled);
     model->appendRow(items);
   }
 
-  ui->tableView->horizontalHeader()->setSectionResizeMode(0,
-                                                          QHeaderView::Stretch);
-  ui->tableView->resizeColumnsToContents();
+  // ui->tableView->resizeColumnsToContents();
 }

@@ -304,6 +304,12 @@ void Database::deleteResult(const QString& id, const QString& datetime) {
       QVariantList() << id << datetime);
 }
 
+void Database::deleteStatistic(const QString& data) {
+  QLOG_DEBUG() << "deleteStatistic:"
+               << "deleting all statistics data for" << data;
+  bindAndRun("DELETE FROM statistic WHERE data = ?", data);
+}
+
 void Database::addText(int source, const QString& text, int lesson,
                        bool update) {
   int dis = ((lesson == 2) ? 1 : 0);
