@@ -19,6 +19,11 @@ find_package(Qt5Core REQUIRED)
 find_package(Qt5PrintSupport REQUIRED)
 find_package(Qt5XmlPatterns REQUIRED)
 find_package(Qt5Multimedia REQUIRED)
+find_package(Qt5Test REQUIRED)
+
+enable_testing()
 
 add_subdirectory(external)
 add_subdirectory(src)
+
+add_subdirectory(tests)
