@@ -59,19 +59,15 @@ class Library : public QMainWindow {
  signals:
   void setText(const std::shared_ptr<Text>&);
   void progress(int);
-  void gotoTab(int);
   void sourceDeleted(int);
   void sourcesChanged();
   void sourceChanged(int);
-  void sourcesDeleted(QList<int>);
-  void textsChanged(QList<int>);
-  void textsDeleted(QList<int>);
+  void sourcesDeleted(const QList<int>&);
+  void textsChanged(const QList<int>&);
+  void textsDeleted(const QList<int>&);
 
  public slots:
   void reload();
-  void nextText(
-      const std::shared_ptr<Text>&,
-      Amphetype::SelectionMethod method = Amphetype::SelectionMethod::None);
   void refreshSource(int);
   void refreshSources();
   void selectSource(int source);

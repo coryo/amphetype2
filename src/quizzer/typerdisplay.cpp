@@ -36,6 +36,11 @@ TyperDisplay::TyperDisplay(QWidget* parent)
           &TyperDisplay::updateDisplay);
 }
 
+QSize TyperDisplay::minimumSizeHint() const {
+  return QSize(this->document()->size().width() + 10,
+               this->document()->size().height() + 5);
+}
+
 void TyperDisplay::setCols(int cols) {
   this->cols = cols;
   this->wordWrap(cols);
@@ -48,6 +53,12 @@ void TyperDisplay::setTextTarget(const QString& t) {
   this->wordWrap(this->cols);
 }
 
+// Ideally I would just use QTextCursor and select the text and change the
+// highlight colour.
+// If you have the space between two words selected and you have Qt wrap the
+// text, the selection of the space will not be visible. There doesn't seem to
+// be an easy way to change the behaviour, so we need to implement our own
+// wrapping and highlighting.
 void TyperDisplay::moveCursor(int testPosition, int cursorPosition) {
   if (this->originalText.isEmpty() || testPosition < 0 ||
       testPosition >= this->originalText.length())
@@ -56,7 +67,7 @@ void TyperDisplay::moveCursor(int testPosition, int cursorPosition) {
   this->testPosition = testPosition;
   this->cursorPosition = cursorPosition;
 
-  QStringList wrapped = QStringList(wrappedText);
+  QStringList wrapped = wrappedText;
   int errCount = cursorPosition - testPosition;
   std::pair<int, int> pos, pos2;
 
@@ -70,20 +81,19 @@ void TyperDisplay::moveCursor(int testPosition, int cursorPosition) {
       pos2 = this->posToListPos(cursorPosition);
     }
     wrapped[pos2.first].insert(pos2.second + 1, "</span>");
-    wrapped[pos.first].insert(pos.second,
-                              "<span style='color:" + highlightedTextColor +
-                                  "; background-color:" + errorColor + "'>");
+    wrapped[pos.first].insert(
+        pos.second, "<span style='color:" + highlightedTextColor.name() +
+                        "; background-color:" + errorColor.name() + "'>");
   } else {
     pos = this->posToListPos(testPosition);
     wrapped[pos.first].insert(pos.second + 1, "</span>");
-    wrapped[pos.first].insert(pos.second,
-                              "<span style='color:" + highlightedTextColor +
-                                  "; background-color:" + correctColor + "'>");
+    wrapped[pos.first].insert(
+        pos.second, "<span style='color:" + highlightedTextColor.name() +
+                        "; background-color:" + correctColor.name() + "'>");
   }
 
-  this->setText(wrapped.join("<br>"));
-  this->setMinimumWidth(this->document()->size().width() + 10);
-  this->setMinimumHeight(this->document()->size().height() + 30);
+  this->setHtml(wrapped.join("<br>"));
+  setMinimumSize(minimumSizeHint());
 }
 
 void TyperDisplay::wordWrap(int w) {
@@ -109,7 +119,7 @@ void TyperDisplay::wordWrap(int w) {
 
     if (lineBreak >= 0) {
       line = line.left(lineBreak + 1);
-      wrappedText << line.replace(lineBreak, 1, u8"\u21B5");
+      wrappedText << line.replace(lineBreak, 1, QChar(8629));
     } else {
       wrappedText << line;
     }

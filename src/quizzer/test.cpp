@@ -28,19 +28,20 @@
 #include <QsLog.h>
 
 #include "database/db.h"
-#include "texts/text.h"
 #include "defs.h"
+#include "texts/text.h"
 
-Test::Test(const std::shared_ptr<Text>& t)
-    : text(t),
+Test::Test(const std::shared_ptr<Text>& t, QObject* parent)
+    : QObject(parent),
+      text(t),
       started(false),
       finished(false),
       currentPos(0),
       apmWindow(5),
       totalMs(0) {
-  msBetween.resize(t->getText().length());
-  timeAt.resize(t->getText().length());
-  wpm.resize(t->getText().length());
+  msBetween.resize(t->getText().length() + 1);
+  timeAt.resize(t->getText().length() + 1);
+  wpm.resize(t->getText().length() + 1);
 }
 
 Test::~Test() { QLOG_DEBUG() << "deleting test"; }
@@ -61,10 +62,8 @@ void Test::start() {
 }
 
 void Test::abort() {
-  if (!this->finished) {
-    this->finished = true;
-    this->deleteLater();
-  }
+  this->finished = true;
+  this->deleteLater();
 }
 
 void Test::cancelTest() {
@@ -78,38 +77,9 @@ void Test::restartTest() {
 }
 
 void Test::finish() {
-  this->totalMs = this->timer.elapsed();
-  QSettings s;
-
-  double wpm = this->wpm.back();
-  // tally mistakes
-  int mistakes = this->mistakeCount();
-  // calc accuracy
-  double accuracy =
-      1.0 - mistakes / static_cast<double>(this->text->getText().length());
-  // viscocity
-  double spc = (this->totalMs / 1000.0) /
-               this->text->getText().length();  // seconds per character
-  QVector<double> v;
-  for (int i = 0; i < this->msBetween.size(); ++i) {
-    v << qPow((((this->msBetween.at(i) / 1000.0) - spc) / spc), 2);
-  }
-  double sum = 0.0;
-  for (const auto& x : v) sum += x;
-  double viscosity = sum / this->text->getText().length();
-
   this->finished = true;
-  emit done(wpm, accuracy, viscosity);
-
-  if (s.value("perf_logging").toBool()) {
-    ResultWorker saver;
-    connect(&saver, &ResultWorker::done, this, &QObject::deleteLater);
-    connect(&saver, &ResultWorker::doneResult, this, &Test::newResult);
-    connect(&saver, &ResultWorker::doneStatistic, this, &Test::newStatistics);
-    saver.process(this, wpm, accuracy, viscosity);
-  } else {
-    QLOG_DEBUG() << "Test Complete. Skipping results.";
-  }
+  this->totalMs = this->timer.elapsed();
+  this->prepareResult();
 }
 
 void Test::handleInput(QString currentText, int ms, int direction) {
@@ -207,45 +177,55 @@ QHash<QPair<QChar, QChar>, int> Test::getMistakes() const {
   return mis;
 }
 
-void ResultWorker::process(Test* test, double wpm, double accuracy,
-                           double viscosity) {
-  QString now_str = QDateTime::currentDateTime().toString(Qt::ISODate);
+void Test::prepareResult() {
+  // QString now_str = QDateTime::currentDateTime().toString(Qt::ISODate);
+
+  double wpm = this->wpm.back();
+  // tally mistakes
+  int mistakes = this->mistakeCount();
+  // calc accuracy
+  double accuracy =
+      1.0 - mistakes / static_cast<double>(this->text->getText().length());
+  // viscocity
+  double spc = (this->totalMs / 1000.0) /
+               this->text->getText().length();  // seconds per character
+  QVector<double> v;
+  for (int i = 0; i < this->msBetween.size(); ++i) {
+    v << qPow((((this->msBetween.at(i) / 1000.0) - spc) / spc), 2);
+  }
+  double sum = 0.0;
+  for (const auto& x : v) sum += x;
+  double viscosity = sum / this->text->getText().length();
+
   // Generate statistics, the key is character/word/trigram
   // stats are the time values, visc viscosity, mistakeCount values are
   // positions in the text where a mistake occurred. mistakeCount.count(key)
   // yields the amount of mistakes for a given key
-  Database db;
-  if (test->text->getType() != Amphetype::TextType::GeneratedFromStatistics) {
-    db.addResult(now_str, test->text, wpm, accuracy, viscosity);
-    emit doneResult(test->text->getSource());
-  }
   int start, end;
-  double spc, perch, visco, tspc;
+  double perch, visco, tspc;
 
   QMultiHash<QStringRef, double> stats;
   QMultiHash<QStringRef, double> visc;
   QMultiHash<QStringRef, int> mistakeCount;
 
-  spc = (test->totalMs / 1000.0) / test->text->getText().length();
-
   // characters
-  for (int i = 0; i < test->text->getText().length(); ++i) {
+  for (int i = 0; i < this->text->getText().length(); ++i) {
     // the character as a qstringref
-    QStringRef c(&(test->text->getText()), i, 1);
+    QStringRef c(&(this->text->getText()), i, 1);
 
     // add a time value and visc value for the key,
     // time isn't valid for char 0
     if (i > 0) {
-      stats.insert(c, test->msBetween.at(i) / 1000.0);
-      visc.insert(c, qPow((((test->msBetween.at(i) / 1000.0) - spc) / spc), 2));
+      stats.insert(c, this->msBetween.at(i) / 1000.0);
+      visc.insert(c, qPow((((this->msBetween.at(i) / 1000.0) - spc) / spc), 2));
     }
     // add the mistake to the key
-    if (test->mistakes.contains(i)) mistakeCount.insert(c, i);
+    if (this->mistakes.contains(i)) mistakeCount.insert(c, i);
   }
   // trigrams
-  for (int i = 0; i < test->text->getText().length() - 2; ++i) {
+  for (int i = 0; i < this->text->getText().length() - 2; ++i) {
     // the trigram as a qstringref
-    QStringRef tri(&(test->text->getText()), i, 3);
+    QStringRef tri(&(this->text->getText()), i, 3);
     start = i;
     end = i + 3;
 
@@ -254,9 +234,9 @@ void ResultWorker::process(Test* test, double wpm, double accuracy,
     // for each character in the tri
     for (int j = start; j < end; ++j) {
       // add a mistake to the trigram, if it had one
-      if (test->mistakes.contains(j)) mistakeCount.insert(tri, j);
+      if (this->mistakes.contains(j)) mistakeCount.insert(tri, j);
       // sum the times for the chracters in the tri
-      perch += test->msBetween.at(j);
+      perch += this->msBetween.at(j);
     }
     if (i > 0) {
       // average time per key
@@ -265,7 +245,7 @@ void ResultWorker::process(Test* test, double wpm, double accuracy,
       tspc = perch / 1000.0;
       // get the average viscosity
       for (int j = start; j < end; ++j)
-        visco += qPow(((test->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
+        visco += qPow(((this->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
       visco = visco / (end - start);
 
       stats.insert(tri, tspc);
@@ -275,7 +255,7 @@ void ResultWorker::process(Test* test, double wpm, double accuracy,
   // words
   QRegularExpression re("(\\w|'(?![A-Z]))+(-\\w(\\w|')*)*",
                         QRegularExpression::UseUnicodePropertiesOption);
-  QRegularExpressionMatchIterator i = re.globalMatch(test->text->getText());
+  QRegularExpressionMatchIterator i = re.globalMatch(this->text->getText());
   QRegularExpressionMatch match;
   while (i.hasNext()) {
     match = i.next();
@@ -289,20 +269,20 @@ void ResultWorker::process(Test* test, double wpm, double accuracy,
     end = match.capturedEnd();
 
     // the word as a qstringref
-    QStringRef word = QStringRef(&(test->text->getText()), start, length);
+    QStringRef word = QStringRef(&(this->text->getText()), start, length);
 
     perch = 0;
     visco = 0;
     // for each character in the word
     for (int j = start; j < end; ++j) {
-      if (test->mistakes.contains(j)) mistakeCount.insert(word, j);
-      perch += test->msBetween.at(j);
+      if (this->mistakes.contains(j)) mistakeCount.insert(word, j);
+      perch += this->msBetween.at(j);
     }
     perch = perch / static_cast<double>(end - start);
 
     tspc = perch / 1000.0;
     for (int j = start; j < end; ++j)
-      visco += qPow(((test->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
+      visco += qPow(((this->msBetween.at(j) / 1000.0 - tspc) / tspc), 2);
     visco = visco / (end - start);
 
     stats.insert(word, tspc);
@@ -310,10 +290,26 @@ void ResultWorker::process(Test* test, double wpm, double accuracy,
   }
 
   // add stuff to the database
-  QLOG_DEBUG() << "Adding statistics,";
-  db.addStatistics(stats, visc, mistakeCount);
-  emit doneStatistic();
-  QLOG_DEBUG() << "Adding mistakes";
-  db.addMistakes(test->getMistakes());
-  emit done();
+  auto mistakesData = getMistakes();
+  TestResult* result =
+      new TestResult(this->text, QDateTime::currentDateTime(), wpm, accuracy,
+                     viscosity, stats, visc, mistakeCount, mistakesData);
+  emit resultReady(result);
+}
+
+void TestResult::save() {
+  Database db;
+  if (text_->saveFlags() & Amphetype::SaveFlags::SaveResults) {
+    QLOG_DEBUG() << "Saving results";
+    db.addResult(now_.toString(Qt::ISODate), text_, wpm_, accuracy_,
+                 viscosity_);
+  }
+  if (text_->saveFlags() & Amphetype::SaveFlags::SaveStatistics) {
+    QLOG_DEBUG() << "Saving statistics";
+    db.addStatistics(stats_values_, viscosity_values_, mistake_counts_);
+  }
+  if (text_->saveFlags() & Amphetype::SaveFlags::SaveMistakes) {
+    QLOG_DEBUG() << "Saving mistakes";
+    db.addMistakes(mistakes_);
+  }
 }

@@ -323,7 +323,6 @@ void Library::actionSendToTyper(bool checked) {
   Database db;
   auto t = db.getText(id.toInt());
   emit setText(t);
-  emit gotoTab(0);
 }
 
 void Library::textsTableDoubleClickHandler(const QModelIndex& index) {
@@ -335,7 +334,6 @@ void Library::textsTableDoubleClickHandler(const QModelIndex& index) {
   Database db;
   auto t = db.getText(text_id.toInt());
   emit setText(t);
-  emit gotoTab(0);
 }
 
 void Library::textsTableClickHandler(const QModelIndex& index) {
@@ -403,61 +401,6 @@ void Library::selectSource(int source) {
       ui->sourcesTable->setCurrentIndex(index);
       return;
     }
-  }
-}
-
-void Library::nextText(const std::shared_ptr<Text>& lastText,
-                       Amphetype::SelectionMethod method) {
-  if (method == Amphetype::SelectionMethod::None)
-    method = lastText->nextTextSelectionPreference();
-
-  QLOG_DEBUG() << "Library::nextText"
-               << "select_method =" << static_cast<int>(method);
-
-  Database db;
-  switch (method) {
-    case Amphetype::SelectionMethod::Random:
-      QLOG_DEBUG() << "nextText: Random";
-      emit setText(db.getRandomText());
-      break;
-    case Amphetype::SelectionMethod::InOrder:
-      QLOG_DEBUG() << "nextText: In Order";
-      emit setText(lastText ? db.getNextText(lastText) : db.getNextText());
-      break;
-    case Amphetype::SelectionMethod::Repeat:
-      QLOG_DEBUG() << "nextText: Repeat";
-      emit setText(lastText);
-      break;
-    case Amphetype::SelectionMethod::SlowWords:
-      QLOG_DEBUG() << "nextText:: Generate from slow words";
-      emit setText(db.textFromStats(Amphetype::Statistics::Order::Slow));
-      break;
-    case Amphetype::SelectionMethod::FastWords:
-      QLOG_DEBUG() << "nextText:: Generate from fast words";
-      emit setText(db.textFromStats(Amphetype::Statistics::Order::Fast));
-      break;
-    case Amphetype::SelectionMethod::ViscousWords:
-      QLOG_DEBUG() << "nextText:: Generate from viscous words";
-      emit setText(db.textFromStats(Amphetype::Statistics::Order::Viscous));
-      break;
-    case Amphetype::SelectionMethod::FluidWords:
-      QLOG_DEBUG() << "nextText:: Generate from fluid words";
-      emit setText(db.textFromStats(Amphetype::Statistics::Order::Fluid));
-      break;
-    case Amphetype::SelectionMethod::InaccurateWords:
-      QLOG_DEBUG() << "nextText:: Generate from inaccurate words";
-      emit setText(db.textFromStats(Amphetype::Statistics::Order::Inaccurate));
-      break;
-    case Amphetype::SelectionMethod::AccurateWords:
-      QLOG_DEBUG() << "nextText:: Generate from accurate words";
-      emit setText(db.textFromStats(Amphetype::Statistics::Order::Accurate));
-      break;
-    case Amphetype::SelectionMethod::DamagingWords:
-      QLOG_DEBUG() << "nextText:: Generate from damaging words";
-      emit setText(db.textFromStats(Amphetype::Statistics::Order::Damaging));
-      break;
-    default:
-      Q_ASSERT(false);
   }
 }
 

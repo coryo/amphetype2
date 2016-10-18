@@ -19,27 +19,32 @@
 #ifndef SRC_QUIZZER_TYPERDISPLAY_H_
 #define SRC_QUIZZER_TYPERDISPLAY_H_
 
+#include <QColor>
+#include <QSize>
 #include <QString>
 #include <QStringList>
 #include <QTextEdit>
+
 
 #include <utility>
 
 class TyperDisplay : public QTextEdit {
   Q_OBJECT
-  Q_PROPERTY(QString correctColor MEMBER correctColor NOTIFY colorChanged)
-  Q_PROPERTY(QString errorColor MEMBER errorColor NOTIFY colorChanged)
-  Q_PROPERTY(QString highlightedTextColor MEMBER highlightedTextColor NOTIFY
+  Q_PROPERTY(QColor correctColor MEMBER correctColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor errorColor MEMBER errorColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor highlightedTextColor MEMBER highlightedTextColor NOTIFY
                  colorChanged)
 
  public:
   explicit TyperDisplay(QWidget* parent = Q_NULLPTR);
   void setTextTarget(const QString&);
 
+  QSize minimumSizeHint() const;
+
  private:
-  QString correctColor;
-  QString errorColor;
-  QString highlightedTextColor;
+  QColor correctColor;
+  QColor errorColor;
+  QColor highlightedTextColor;
 
   QString originalText;
   QStringList wrappedText;

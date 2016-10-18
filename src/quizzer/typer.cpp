@@ -18,13 +18,13 @@
 
 #include <QApplication>
 #include <QKeyEvent>
-#include <QUrl>
 #include <QSettings>
+#include <QUrl>
 
 #include <QsLog.h>
 
-#include "quizzer/typer.h"
 #include "quizzer/test.h"
+#include "quizzer/typer.h"
 
 Typer::Typer(QWidget* parent) : QPlainTextEdit(parent), test_(nullptr) {
   this->hide();
@@ -47,6 +47,25 @@ void Typer::toggleSounds(int state) {
   successSound.setMuted(state != Qt::Checked);
 }
 
+void Typer::handleResult(TestResult* result) {
+  QSettings s;
+  successSound.play();
+
+  clearTest();
+
+  QLOG_DEBUG() << result->wpm() << result->accuracy() << result->viscosity();
+
+  emit done(result->wpm(), result->accuracy(), result->viscosity());
+
+  if (s.value("perf_logging", true).toBool()) {
+    result->save();
+    emit newResult(result->text().getSource());
+    emit newStatistics();
+  }
+
+  delete result;
+}
+
 void Typer::setDisplay(TyperDisplay* display) { display_ = display; }
 
 void Typer::setTextTarget(const std::shared_ptr<Text>& text) {
@@ -56,17 +75,16 @@ void Typer::setTextTarget(const std::shared_ptr<Text>& text) {
   test_->moveToThread(&test_thread_);
   connect(this, &Typer::newInput, test_, &Test::handleInput);
   connect(test_, &Test::mistake, &errorSound, &QSoundEffect::play);
-  connect(test_, &Test::done, &successSound, &QSoundEffect::play);
 
-  connect(test_, &Test::done, this, &Typer::clearTest);
   connect(test_, &Test::newWpm, this, &Typer::newWpm);
   connect(test_, &Test::newApm, this, &Typer::newApm);
   connect(test_, &Test::characterAdded, this, &Typer::characterAdded);
   connect(test_, &Test::testStarted, this, &Typer::testStarted);
-  connect(test_, &Test::done, this, &Typer::done);
   connect(test_, &Test::newResult, this, &Typer::newResult);
   connect(test_, &Test::newStatistics, this, &Typer::newStatistics);
   connect(test_, &Test::positionChanged, display_, &TyperDisplay::moveCursor);
+
+  connect(test_, &Test::resultReady, this, &Typer::handleResult);
 
   if (!this->toPlainText().isEmpty()) {
     this->blockSignals(true);
@@ -77,7 +95,7 @@ void Typer::setTextTarget(const std::shared_ptr<Text>& text) {
 
 void Typer::clearTest() {
   if (test_ != nullptr) {
-    test_->abort();
+    delete test_;
     test_ = nullptr;
   }
 }
@@ -96,16 +114,16 @@ void Typer::keyPressEvent(QKeyEvent* e) {
   if (e->matches(QKeySequence::Copy) || e->matches(QKeySequence::Cut) ||
       e->matches(QKeySequence::Paste)) {
     e->ignore();
-  } else if (e->key() == Qt::Key_Escape) {
+  } else if (e->matches(QKeySequence::Cancel)) {
     clearTest();
-    emit restarted();
     e->ignore();
+    emit restarted();
   } else if (e->key() == Qt::Key_F1 ||
              ((e->key() == Qt::Key_1 || e->key() == Qt::Key_Space) &&
               e->modifiers() == Qt::ControlModifier)) {
     clearTest();
-    emit cancelled();
     e->ignore();
+    emit cancelled();
   } else {
     int pos1 = this->textCursor().position();
     QPlainTextEdit::keyPressEvent(e);

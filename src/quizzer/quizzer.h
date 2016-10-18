@@ -26,14 +26,13 @@
 #include <QTimer>
 #include <QWidget>
 
-
 #include <memory>
 
 #include "quizzer/test.h"
 #include "quizzer/typer.h"
+#include "quizzer/typerdisplay.h"
 #include "texts/library.h"
 #include "texts/text.h"
-
 
 namespace Ui {
 class Quizzer;
@@ -49,9 +48,11 @@ class Quizzer : public QWidget {
   ~Quizzer();
   Typer *getTyper() const;
 
- private:
+ protected:
   void focusInEvent(QFocusEvent *event);
   void focusOutEvent(QFocusEvent *event);
+
+ private:
   Ui::Quizzer *ui;
   std::shared_ptr<Text> text;
   QTimer lessonTimer;
@@ -63,12 +64,9 @@ class Quizzer : public QWidget {
   double target_vis_;
 
  signals:
-  void wantText(const std::shared_ptr<Text> &,
-                Amphetype::SelectionMethod = Amphetype::SelectionMethod::None);
   void colorChanged();
   void newResult(int);
   void newStatistics();
-
   void newWpm(double, double);
   void newApm(double, double);
   void characterAdded();
@@ -78,15 +76,15 @@ class Quizzer : public QWidget {
   void loadSettings();
   void saveSettings();
   void setText(const std::shared_ptr<Text> &);
-  void checkSource(QList<int>);
-  void checkText(QList<int>);
+  void checkSource(const QList<int> &);
+  void checkText(const QList<int> &);
   void actionGrindWords();
   void actionGrindViscWords();
   void actionGrindInaccurateWords();
   void actionGrindDamagingWords();
 
  private slots:
-  void alertText(const char *);
+  void alertText(const QString &);
   void beginTest(int);
   void done(double, double, double);
 

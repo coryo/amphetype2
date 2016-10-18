@@ -94,7 +94,7 @@ class Database : public QObject {
   std::shared_ptr<Text> getNextText();
   // get the text that follows the given text
   std::shared_ptr<Text> getNextText(int);
-  std::shared_ptr<Text> getNextText(const std::shared_ptr<Text>&);
+  std::shared_ptr<Text> getNextText(const Text&);
   std::shared_ptr<Text> getRandomText();
   // get a text with a given id
   std::shared_ptr<Text> getText(int);

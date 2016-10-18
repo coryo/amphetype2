@@ -20,6 +20,7 @@
 
 #include <QFont>
 #include <QFontDatabase>
+#include <QPainter>
 #include <QSettings>
 
 #include <QsLog.h>
@@ -72,19 +73,19 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
 Quizzer::~Quizzer() { delete ui; }
 
 void Quizzer::actionGrindWords() {
-  emit wantText(0, Amphetype::SelectionMethod::SlowWords);
+  this->setText(Text::selectText(Amphetype::SelectionMethod::SlowWords));
 }
 
 void Quizzer::actionGrindViscWords() {
-  emit wantText(0, Amphetype::SelectionMethod::ViscousWords);
+  this->setText(Text::selectText(Amphetype::SelectionMethod::ViscousWords));
 }
 
 void Quizzer::actionGrindInaccurateWords() {
-  emit wantText(0, Amphetype::SelectionMethod::InaccurateWords);
+  this->setText(Text::selectText(Amphetype::SelectionMethod::InaccurateWords));
 }
 
 void Quizzer::actionGrindDamagingWords() {
-  emit wantText(0, Amphetype::SelectionMethod::DamagingWords);
+  this->setText(Text::selectText(Amphetype::SelectionMethod::DamagingWords));
 }
 
 void Quizzer::loadSettings() {
@@ -116,7 +117,7 @@ void Quizzer::loadSettings() {
 
 void Quizzer::saveSettings() {
   QSettings s;
-  s.setValue("Quizzer/typer_cols", ui->typerColsSpinBox->value());
+  // s.setValue("Quizzer/typer_cols", ui->typerColsSpinBox->value());
   s.setValue("Quizzer/play_sounds",
              ui->soundsCheckBox->checkState() == Qt::Checked);
   // s.setValue("Quizzer/show_last", ui->result->isVisible());
@@ -129,7 +130,7 @@ void Quizzer::focusOutEvent(QFocusEvent* event) {
   ui->typer->releaseKeyboard();
 }
 
-void Quizzer::checkSource(QList<int> sources) {
+void Quizzer::checkSource(const QList<int>& sources) {
   for (const auto& source : sources) {
     if (this->text->getSource() == source) {
       ui->typer->cancel();
@@ -138,7 +139,7 @@ void Quizzer::checkSource(QList<int> sources) {
   }
 }
 
-void Quizzer::checkText(QList<int> texts) {
+void Quizzer::checkText(const QList<int>& texts) {
   for (const auto& text : texts) {
     if (this->text->getId() == text) {
       ui->typer->cancel();
@@ -152,10 +153,10 @@ Typer* Quizzer::getTyper() const { return this->ui->typer; }
 void Quizzer::restart() { this->setText(this->text); }
 
 void Quizzer::cancelled() {
-  emit wantText(this->text, Amphetype::SelectionMethod::Random);
+  this->setText(Text::selectText(Amphetype::SelectionMethod::Random));
 }
 
-void Quizzer::alertText(const char* text) {
+void Quizzer::alertText(const QString& text) {
   ui->alertLabel->setText(text);
   ui->alertLabel->show();
 }
@@ -176,7 +177,7 @@ void Quizzer::done(double wpm, double acc, double vis) {
     this->setText(this->text);
   } else {
     ui->alertLabel->hide();
-    emit this->wantText(this->text);
+    this->setText(this->text->nextText());
   }
 }
 
@@ -209,9 +210,8 @@ void Quizzer::timerLabelReset() {
 
 void Quizzer::setPreviousResultText(double lastWpm, double lastAcc) {
   int n = 10;
-  QPair<double, double> stats;
   Database db;
-  stats = db.getMedianStats(n);
+  auto stats = db.getMedianStats(n);
 
   ui->result->setText("Last: " + QString::number(lastWpm, 'f', 1) + "wpm (" +
                       QString::number(lastAcc * 100, 'f', 1) + "%)\n" +

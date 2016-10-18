@@ -37,6 +37,13 @@ enum class SelectionMethod {
   DamagingWords
 };
 
+enum SaveFlags {
+  None = 0x0,
+  SaveResults = 0x1,
+  SaveStatistics = 0x2,
+  SaveMistakes = 0x4
+};
+
 enum class TextType { Standard = 0, Lesson, GeneratedFromStatistics };
 
 namespace Statistics {

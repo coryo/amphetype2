@@ -5,7 +5,7 @@ namespace Date {
 
 QString PrettyTimeDelta(const QDateTime& a, const QDateTime& b) {
   int secs = a.secsTo(b);
-  if (secs >= 84601) {
+  if (secs >= 84600) {
     int days = qRound(secs / 86400.0);
     return QString("%1 day%2 ago").arg(days).arg(days > 1 ? "s" : "");
   } else if (secs >= 3600) {

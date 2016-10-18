@@ -99,8 +99,8 @@ MainWindow::MainWindow(QWidget* parent)
   ui->menuView->addAction(ui->mapDock->toggleViewAction());
 
   // Typer
-  connect(ui->quizzer, &Quizzer::wantText, this->libraryWidget,
-          &Library::nextText);
+  // connect(ui->quizzer, &Quizzer::wantText, this->libraryWidget,
+  //         &Library::nextText);
   connect(ui->quizzer, &Quizzer::newResult, this->performanceWidget,
           &PerformanceHistory::refreshPerformance);
   connect(ui->quizzer, &Quizzer::newResult, this->libraryWidget,
@@ -133,8 +133,6 @@ MainWindow::MainWindow(QWidget* parent)
   // Performance
   connect(this->performanceWidget, &PerformanceHistory::setText, ui->quizzer,
           &Quizzer::setText);
-  // connect(this->performanceWidget, &PerformanceHistory::gotoTab, this,
-  //         &MainWindow::gotoTab);
   connect(this->performanceWidget, &PerformanceHistory::settingsChanged,
           ui->plot, &LivePlot::updatePlotTargetLine);
 
@@ -210,8 +208,8 @@ MainWindow::MainWindow(QWidget* parent)
   libraryWidget->restoreGeometry(
       s.value("libraryWindow/windowGeometry").toByteArray());
 
-  ui->quizzer->wantText(0, static_cast<Amphetype::SelectionMethod>(
-                               s.value("select_method", 0).toInt()));
+  ui->quizzer->setText(Text::selectText(static_cast<Amphetype::SelectionMethod>(
+      s.value("select_method", 0).toInt())));
 }
 
 MainWindow::~MainWindow() {
@@ -274,9 +272,8 @@ void MainWindow::changeProfile(QAction* action) {
   Database db(name);
   db.initDB();
   emit profileChanged(name);
-
-  ui->quizzer->wantText(0, static_cast<Amphetype::SelectionMethod>(
-                               s.value("select_method", 0).toInt()));
+  ui->quizzer->setText(Text::selectText(static_cast<Amphetype::SelectionMethod>(
+      s.value("select_method", 0).toInt())));
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {

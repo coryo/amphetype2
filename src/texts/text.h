@@ -21,21 +21,31 @@
 
 #include <QString>
 
+#include <memory>
+
 #include "defs.h"
 
 class Text {
  public:
-  Text(int id = -1, int source = 0, const QString& text = QString(),
-       const QString& sName = QString(), int tNum = -1);
-  Text(Text* other);
+  Text(const QString& text = QString(), int id = -1,
+       int source = 0, const QString& sName = QString(), int tNum = -1);
+  Text(const Text& other);
 
   int getId() const;
   int getSource() const;
   const QString& getText() const;
   const QString& getSourceName() const;
   int getTextNumber() const;
+
+  std::shared_ptr<Text> nextText();
+
+  static std::shared_ptr<Text> selectText(
+      Amphetype::SelectionMethod method = Amphetype::SelectionMethod::Random,
+      const Text* last = nullptr);
+
   virtual Amphetype::TextType getType() const;
   virtual Amphetype::SelectionMethod nextTextSelectionPreference() const;
+  virtual int saveFlags() const;
 
  private:
   int id;
@@ -47,17 +57,19 @@ class Text {
 
 class Lesson : public Text {
  public:
-  Lesson(int, int, const QString&, const QString&, int);
+  Lesson(const QString&, int, int, const QString&, int);
   Amphetype::TextType getType() const;
   Amphetype::SelectionMethod nextTextSelectionPreference() const;
+  int saveFlags() const;
 };
 
 class TextFromStats : public Text {
  public:
   TextFromStats(Amphetype::Statistics::Order statsType, const QString& text);
-  TextFromStats(TextFromStats* other);
+  TextFromStats(const TextFromStats& other);
   Amphetype::TextType getType() const;
   Amphetype::SelectionMethod nextTextSelectionPreference() const;
+  int saveFlags() const;
 
  private:
   Amphetype::Statistics::Order stats_type_;

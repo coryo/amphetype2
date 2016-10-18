@@ -22,11 +22,12 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QPair>
 #include <QSettings>
 #include <QStandardPaths>
-#include <QMutex>
-#include <QMutexLocker>
+
 
 #include <sqlite3.h>
 #include <sqlite3pp.h>
@@ -38,10 +39,11 @@
 
 #include <QsLog.h>
 
+#include "defs.h"
+#include "generators/lessongenwidget.h"
 #include "quizzer/test.h"
 #include "texts/text.h"
-#include "generators/lessongenwidget.h"
-#include "defs.h"
+
 
 static QMutex db_lock;
 
@@ -123,6 +125,7 @@ Database::Database(const QString& name) {
     db_path_ = path.arg(name);
   }
 
+  QMutexLocker locker(&db_lock);
   conn_ = std::make_unique<DBConnection>(db_path_);
 }
 
@@ -639,11 +642,10 @@ QList<QVariantList> Database::getSourcesList() {
 
 std::shared_ptr<Text> Database::getText(int id) {
   return getTextWithQuery(
-      "select text.id, source, text, source.name, source.type "
-      "from text "
-      "left join source "
-      "on (text.source = source.id) "
-      "where text.id = ?",
+      "SELECT text.id, source, text, name, type "
+      "FROM text "
+      "LEFT JOIN source ON (text.source = source.id) "
+      "WHERE text.id = ?",
       id);
 }
 
@@ -675,9 +677,8 @@ std::shared_ptr<Text> Database::getNextText() {
   return getNextText(row2[0].toInt());
 }
 
-std::shared_ptr<Text> Database::getNextText(
-    const std::shared_ptr<Text>& lastText) {
-  return getNextText(lastText->getId());
+std::shared_ptr<Text> Database::getNextText(const Text& lastText) {
+  return getNextText(lastText.getId());
 }
 
 std::shared_ptr<Text> Database::getNextText(int text_id) {
@@ -755,16 +756,10 @@ void Database::compress() {
           conn_->db(),
           "INSERT INTO statistic (w, data, type, time, count, mistakes,"
           "viscosity) VALUES (?, ?, ?, ?, ?, ?, ?)");
-      QLOG_DEBUG() << "\ta"
-                   << getOneRow(conn_->db(),
-                                "SELECT count(), sum(count) from statistic");
       bindAndRun(&deleteCmd, g.first);
       for (const QVariantList& row : rows) {
         bindAndRun(&insertCmd, row);
       }
-      QLOG_DEBUG() << "\tb"
-                   << getOneRow(conn_->db(),
-                                "SELECT count(), sum(count) from statistic");
     }
     db_lock.lock();
     xct.commit();
@@ -876,8 +871,7 @@ void Database::bind_value(sqlite3pp::statement* stmnt, int pos,
         break;
       }
       default: {
-        stmnt->bind(pos, value.toString().toUtf8().constData(),
-                    sqlite3pp::copy);
+        stmnt->bind(pos, value.value<QString>().toStdString(), sqlite3pp::copy);
         break;
       }
     }
@@ -938,12 +932,12 @@ std::shared_ptr<Text> Database::getTextWithQuery(const QString& query,
 
   switch (type) {
     case Amphetype::TextType::Standard:
-      return std::make_shared<Text>(row[0].toInt(), row[1].toInt(),
-                                    row[2].toString(), row[3].toString(),
+      return std::make_shared<Text>(row[2].toString(), row[0].toInt(),
+                                    row[1].toInt(), row[3].toString(),
                                     row[0].toInt() - offset);
     case Amphetype::TextType::Lesson:
-      return std::make_shared<Lesson>(row[0].toInt(), row[1].toInt(),
-                                      row[2].toString(), row[3].toString(),
+      return std::make_shared<Lesson>(row[2].toString(), row[0].toInt(),
+                                      row[1].toInt(), row[3].toString(),
                                       row[0].toInt() - offset);
     default:
       return std::make_shared<Text>();

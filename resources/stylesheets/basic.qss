@@ -5,10 +5,10 @@ KeyboardMap {
 }
 
 TyperDisplay {
-        color: #000000;
-        qproperty-correctColor: #ADFF2F;/*#79B221;*/
-        qproperty-errorColor: #FF0000;
-        qproperty-highlightedTextColor: #000000;
+        color: rgb(0, 0, 0);
+        qproperty-correctColor: rgb(173, 255, 47);
+        qproperty-errorColor: rgb(255, 0, 0);
+        qproperty-highlightedTextColor: rgb(0, 0, 0);
 }
 
 Quizzer {

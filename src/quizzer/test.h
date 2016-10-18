@@ -24,6 +24,7 @@
 #include <QHash>
 #include <QKeyEvent>
 #include <QList>
+#include <QMetaType>
 #include <QObject>
 #include <QSet>
 #include <QString>
@@ -33,27 +34,62 @@
 
 #include "texts/text.h"
 
-class Test;
-
-class ResultWorker : public QObject {
+class TestResult : public QObject {
   Q_OBJECT
 
  public:
-  void process(Test*, double, double, double);
+  TestResult(const std::shared_ptr<Text>& text, const QDateTime& when,
+             double wpm, double accuracy, double viscosity,
+             const QMultiHash<QStringRef, double>& statsValues,
+             const QMultiHash<QStringRef, double>& viscValues,
+             const QMultiHash<QStringRef, int>& mistakeCounts,
+             const QHash<QPair<QChar, QChar>, int>& mistakes,
+             QObject* parent = Q_NULLPTR)
+      : QObject(parent),
+        text_(text),
+        now_(when),
+        wpm_(wpm),
+        accuracy_(accuracy),
+        viscosity_(viscosity),
+        stats_values_(statsValues),
+        viscosity_values_(viscValues),
+        mistake_counts_(mistakeCounts),
+        mistakes_(mistakes) {}
 
- signals:
-  void doneResult(int);
-  void doneStatistic();
-  void done();
+  void save();
+
+  double wpm() const { return wpm_; }
+  double accuracy() const { return accuracy_; }
+  double viscosity() const { return viscosity_; }
+  const QMultiHash<QStringRef, double> statsValues() const {
+    return stats_values_;
+  }
+  const QMultiHash<QStringRef, double> viscosityValues() const {
+    return viscosity_values_;
+  }
+  const QMultiHash<QStringRef, int> mistakeCounts() const {
+    return mistake_counts_;
+  }
+  const QHash<QPair<QChar, QChar>, int> mistakes() const { return mistakes_; }
+  const Text& text() const { return *text_; }
+
+ private:
+  QDateTime now_;
+  std::shared_ptr<Text> text_;
+  double wpm_;
+  double viscosity_;
+  double accuracy_;
+  QMultiHash<QStringRef, double> stats_values_;
+  QMultiHash<QStringRef, double> viscosity_values_;
+  QMultiHash<QStringRef, int> mistake_counts_;
+  QHash<QPair<QChar, QChar>, int> mistakes_;
 };
 
 class Test : public QObject {
   Q_OBJECT
 
-  friend class ResultWorker;
-
  public:
-  explicit Test(const std::shared_ptr<Text>&);
+  Test(const std::shared_ptr<Text>&, QObject* parent = Q_NULLPTR);
   ~Test();
   void start();
   int mistakeCount() const;
@@ -68,6 +104,7 @@ class Test : public QObject {
   QHash<QPair<QChar, QChar>, int> getMistakes() const;
   void finish();
   void addMistake(int, const QChar&, const QChar&);
+  void prepareResult();
 
  private:
   std::shared_ptr<Text> text;
@@ -91,6 +128,7 @@ class Test : public QObject {
   void cancelled();
   void restarted();
   void saveResult(Test*, double, double, double);
+  void resultReady(TestResult*);
 
   void newResult(int);
   void newStatistics();

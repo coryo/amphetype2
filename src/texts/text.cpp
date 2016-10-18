@@ -22,7 +22,9 @@
 
 #include <QsLog.h>
 
-Text::Text(int id, int source, const QString& text, const QString& sName,
+#include "database/db.h"
+
+Text::Text(const QString& text, int id, int source, const QString& sName,
            int tNum)
     : id(id), source(source), sourceName(sName), textNumber(tNum) {
   if (text.isEmpty() && id == -1 && source == 0) {
@@ -43,12 +45,12 @@ Text::Text(int id, int source, const QString& text, const QString& sName,
   }
 }
 
-Text::Text(Text* other)
-    : id(other->id),
-      source(other->source),
-      text(other->text),
-      sourceName(other->sourceName),
-      textNumber(other->textNumber) {}
+Text::Text(const Text& other)
+    : id(other.id),
+      source(other.source),
+      text(other.text),
+      sourceName(other.sourceName),
+      textNumber(other.textNumber) {}
 
 int Text::getId() const { return id; }
 int Text::getSource() const { return source; }
@@ -66,9 +68,51 @@ Amphetype::SelectionMethod Text::nextTextSelectionPreference() const {
       s.value("select_method", 0).toInt());
 }
 
-Lesson::Lesson(int id, int source, const QString& text, const QString& sName,
+std::shared_ptr<Text> Text::nextText() {
+  return Text::selectText(this->nextTextSelectionPreference(), this);
+}
+
+std::shared_ptr<Text> Text::selectText(Amphetype::SelectionMethod method,
+                                       const Text* last) {
+  Database db;
+  switch (method) {
+    case Amphetype::SelectionMethod::Random:
+      return db.getRandomText();
+    case Amphetype::SelectionMethod::InOrder:
+      return last == nullptr ? db.getNextText() : db.getNextText(*last);
+    case Amphetype::SelectionMethod::Repeat:
+      return last == nullptr ? std::make_shared<Text>()
+                             : std::make_shared<Text>(*last);
+    case Amphetype::SelectionMethod::SlowWords:
+      return db.textFromStats(Amphetype::Statistics::Order::Slow);
+    case Amphetype::SelectionMethod::FastWords:
+      return db.textFromStats(Amphetype::Statistics::Order::Fast);
+    case Amphetype::SelectionMethod::ViscousWords:
+      return db.textFromStats(Amphetype::Statistics::Order::Viscous);
+    case Amphetype::SelectionMethod::FluidWords:
+      return db.textFromStats(Amphetype::Statistics::Order::Fluid);
+    case Amphetype::SelectionMethod::InaccurateWords:
+      return db.textFromStats(Amphetype::Statistics::Order::Inaccurate);
+    case Amphetype::SelectionMethod::AccurateWords:
+      return db.textFromStats(Amphetype::Statistics::Order::Accurate);
+    case Amphetype::SelectionMethod::DamagingWords:
+      return db.textFromStats(Amphetype::Statistics::Order::Damaging);
+    default:
+      Q_ASSERT(false);
+      return db.getRandomText();
+  }
+}
+
+int Text::saveFlags() const {
+  return (Amphetype::SaveFlags::SaveResults |
+          Amphetype::SaveFlags::SaveStatistics |
+          Amphetype::SaveFlags::SaveMistakes);
+}
+
+
+Lesson::Lesson(const QString& text, int id, int source, const QString& sName,
                int tNum)
-    : Text(id, source, text, sName, tNum) {}
+    : Text(text, id, source, sName, tNum) {}
 
 Amphetype::TextType Lesson::getType() const {
   return Amphetype::TextType::Lesson;
@@ -78,15 +122,21 @@ Amphetype::SelectionMethod Lesson::nextTextSelectionPreference() const {
   return Amphetype::SelectionMethod::InOrder;
 }
 
+int Lesson::saveFlags() const {
+  return (Amphetype::SaveFlags::SaveResults |
+          Amphetype::SaveFlags::SaveMistakes);
+}
+
+
 TextFromStats::TextFromStats(Amphetype::Statistics::Order statsType,
                              const QString& text)
-    : Text(-1, 0, text, "Text From Stats", -1), stats_type_(statsType) {}
+    : Text(text, -1, 0, "Text From Stats", -1), stats_type_(statsType) {}
 Amphetype::TextType TextFromStats::getType() const {
   return Amphetype::TextType::GeneratedFromStatistics;
 }
 
-TextFromStats::TextFromStats(TextFromStats* other)
-    : Text(other), stats_type_(other->stats_type_) {}
+TextFromStats::TextFromStats(const TextFromStats& other)
+    : Text(other), stats_type_(other.stats_type_) {}
 
 Amphetype::SelectionMethod TextFromStats::nextTextSelectionPreference() const {
   switch (stats_type_) {
@@ -107,4 +157,9 @@ Amphetype::SelectionMethod TextFromStats::nextTextSelectionPreference() const {
     default:
       return Amphetype::SelectionMethod::SlowWords;
   };
+}
+
+int TextFromStats::saveFlags() const {
+  return (Amphetype::SaveFlags::SaveStatistics |
+          Amphetype::SaveFlags::SaveMistakes);
 }

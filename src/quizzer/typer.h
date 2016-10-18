@@ -20,8 +20,8 @@
 #define SRC_QUIZZER_TYPER_H_
 
 #include <QPlainTextEdit>
-#include <QThread>
 #include <QSoundEffect>
+#include <QThread>
 
 #include <memory>
 
@@ -51,6 +51,9 @@ class Typer : public QPlainTextEdit {
   void characterAdded();
   void testStarted(int);
   void done(double, double, double);
+
+ public slots:
+  void handleResult(TestResult*);
 
  private:
   void keyPressEvent(QKeyEvent* e);

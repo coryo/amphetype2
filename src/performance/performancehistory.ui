@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>516</width>
-    <height>537</height>
+    <width>491</width>
+    <height>529</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -372,6 +372,13 @@
      </item>
      <item>
       <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="1">
+        <widget class="QCheckBox" name="plotCheckBox">
+         <property name="text">
+          <string>Hide Plot</string>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="7">
         <spacer name="horizontalSpacer">
          <property name="orientation">
@@ -385,13 +392,6 @@
          </property>
         </spacer>
        </item>
-       <item row="0" column="1">
-        <widget class="QCheckBox" name="plotCheckBox">
-         <property name="text">
-          <string>Hide Plot</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="5">
         <widget class="QCheckBox" name="dampenCheckBox">
          <property name="sizePolicy">
@@ -402,6 +402,20 @@
          </property>
          <property name="text">
           <string>SMA n:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QCheckBox" name="timeScaleCheckBox">
+         <property name="text">
+          <string>Time X</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="4">
+        <widget class="QCheckBox" name="lineCheckBox">
+         <property name="text">
+          <string>Hide Line</string>
          </property>
         </widget>
        </item>
@@ -437,18 +451,11 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="4">
-        <widget class="QCheckBox" name="lineCheckBox">
-         <property name="text">
-          <string>Hide Line</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
+       <item row="0" column="8">
         <widget class="QComboBox" name="plotSelector">
          <item>
           <property name="text">
-           <string>WPM</string>
+           <string>None</string>
           </property>
          </item>
          <item>
@@ -461,13 +468,6 @@
            <string>Viscosity</string>
           </property>
          </item>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QCheckBox" name="timeScaleCheckBox">
-         <property name="text">
-          <string>Time X</string>
-         </property>
         </widget>
        </item>
       </layout>
@@ -501,7 +501,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>516</width>
+     <width>491</width>
      <height>21</height>
     </rect>
    </property>
