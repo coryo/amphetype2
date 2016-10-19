@@ -117,7 +117,7 @@ void Quizzer::loadSettings() {
 
 void Quizzer::saveSettings() {
   QSettings s;
-  // s.setValue("Quizzer/typer_cols", ui->typerColsSpinBox->value());
+  s.setValue("Quizzer/typer_cols", ui->typerColsSpinBox->value());
   s.setValue("Quizzer/play_sounds",
              ui->soundsCheckBox->checkState() == Qt::Checked);
   // s.setValue("Quizzer/show_last", ui->result->isVisible());
@@ -162,7 +162,6 @@ void Quizzer::alertText(const QString& text) {
 }
 
 void Quizzer::done(double wpm, double acc, double vis) {
-  // set the previous results label text
   this->setPreviousResultText(wpm, acc);
 
   // repeat if targets not met, otherwise get next text
