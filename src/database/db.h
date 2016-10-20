@@ -114,8 +114,6 @@ class Database : public QObject {
   // create a text object with a given query
   std::shared_ptr<Text> getTextWithQuery(const QString&,
                                          const QVariant& = QVariant());
-  void createFunctions(sqlite3pp::database*, sqlite3pp::ext::function*,
-                       sqlite3pp::ext::aggregate*);
 };
 
 #endif  // SRC_DATABASE_DB_H_

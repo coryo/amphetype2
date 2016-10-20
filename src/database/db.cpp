@@ -28,7 +28,6 @@
 #include <QSettings>
 #include <QStandardPaths>
 
-
 #include <sqlite3.h>
 #include <sqlite3pp.h>
 
@@ -40,10 +39,9 @@
 #include <QsLog.h>
 
 #include "defs.h"
-#include "generators/lessongenwidget.h"
+#include "generators/generate.h"
 #include "quizzer/test.h"
 #include "texts/text.h"
-
 
 static QMutex db_lock;
 
@@ -70,21 +68,6 @@ struct agg_median {
 
   std::vector<double> v;
 };
-
-template <class T>
-struct agg_mean {
-  agg_mean() {
-    sum_ = 0.0;
-    c_ = 0;
-  }
-  void step(T value, int count) {
-    sum_ += value * count;
-    c_ += count;
-  }
-  double finish() { return sum_ / static_cast<double>(c_); }
-  double sum_;
-  int c_;
-};
 };  // sqlite_extensions
 
 DBConnection::DBConnection(const QString& path) {
@@ -93,7 +76,6 @@ DBConnection::DBConnection(const QString& path) {
   aggr_ = std::make_unique<sqlite3pp::ext::aggregate>(*(db_));
   func_->create<double(double, double)>("pow", &sqlite_extensions::pow);
   aggr_->create<sqlite_extensions::agg_median, double>("agg_median");
-  aggr_->create<sqlite_extensions::agg_mean<double>, double, int>("agg_mean");
   db_->execute("PRAGMA foreign_keys = ON");
   db_->execute("PRAGMA journal_mode = WAL");
 }
@@ -122,9 +104,8 @@ Database::Database(const QString& name) {
       db_path_ = path.arg(profile);
     }
   } else {
-    db_path_ = path.arg(name);
+    db_path_ = (name == ":memory:") ? name : path.arg(name);
   }
-
   QMutexLocker locker(&db_lock);
   conn_ = std::make_unique<DBConnection>(db_path_);
 }
@@ -705,8 +686,8 @@ std::shared_ptr<Text> Database::textFromStats(
   }
   QStringList words;
   for (const auto& row : rows) words.append(row[0].toString());
-  return std::make_shared<TextFromStats>(
-      type, LessonGenWidget::generateText(words, 80));
+  return std::make_shared<TextFromStats>(type,
+                                         Generators::generateText(words, 80));
 }
 
 void Database::updateText(int id, const QString& newText) {
@@ -731,7 +712,7 @@ void Database::compress() {
 
   QString sql =
       "SELECT strftime('%Y-%m-%dT%H:%M:%S',avg(julianday(w))),"
-      "data, type, agg_mean(time, count), sum(count), sum(mistakes),"
+      "data, type, sum(time * count) / sum(count), sum(count), sum(mistakes),"
       "agg_median(viscosity) "
       "FROM statistic "
       "WHERE datetime(w) <= datetime('%1') "
