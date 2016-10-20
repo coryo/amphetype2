@@ -31,11 +31,18 @@ install:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then source /opt/qt57/bin/qt57-env.sh                   ; fi
 - cmake --version
 
+before_script:
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export DISPLAY=:99.0         ; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -e /etc/init.d/xvfb start ; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sleep 3                      ; fi
+
 script:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then CXX=g++-4.9 cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTDIR} . ; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTDIR} .               ; fi
 - make
 - ctest -V
+
+after_success:
 - chmod +x ./.travis/deploy.sh
 - source ./.travis/deploy.sh
 
