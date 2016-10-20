@@ -56,7 +56,6 @@ int Test::mistakeCount() const { return this->mistakes.size(); }
 void Test::start() {
   this->startTime = QDateTime::currentDateTime();
   this->timer.start();
-  this->intervalTimer.start();
   this->started = true;
   emit testStarted(this->text->getText().length());
 }
@@ -78,7 +77,7 @@ void Test::restartTest() {
 
 void Test::finish() {
   this->finished = true;
-  this->totalMs = this->timer.elapsed();
+  this->totalMs = this->timeAt.last();
   this->prepareResult();
 }
 
@@ -112,11 +111,7 @@ void Test::handleInput(QString currentText, int ms, int direction) {
       this->msBetween[this->currentPos - 1] =
           this->timeAt[currentPos] - this->timeAt[currentPos - 1];
       // store wpm
-      this->wpm << 12.0 *
-                       (this->currentPos / (static_cast<double>(ms) / 1000.0));
-      QLOG_TRACE() << "pos:" << this->currentPos - 1 << currentPos
-                   << "ms between:" << this->msBetween[this->currentPos - 1]
-                   << "wpm:" << this->wpm.last();
+      this->wpm[currentPos] = 12.0 * (this->currentPos / (ms / 1000.0));
     }
 
     if (this->currentPos > this->apmWindow) {

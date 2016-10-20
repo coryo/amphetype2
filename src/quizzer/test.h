@@ -119,7 +119,6 @@ class Test : public QObject {
   QSet<int> mistakes;
   QList<QPair<QChar, QChar>> mistakeList;
   QElapsedTimer timer;
-  QElapsedTimer intervalTimer;
   int apmWindow;
 
  signals:
