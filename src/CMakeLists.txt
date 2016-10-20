@@ -51,6 +51,7 @@ set(${PROJECT_NAME}_SOURCES
 	generators/traininggenerator.cpp
 	generators/traininggenwidget.cpp
   generators/lessongenwidget.cpp
+  generators/generate.cpp
 )
 
 set(MACOSX_BUNDLE_ICON_FILE icon.icns)

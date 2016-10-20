@@ -84,22 +84,3 @@ void LessonGenWidget::generate() {
   db.addTexts(source, lessons);
   emit newLesson(source);
 }
-
-QString LessonGenWidget::generateText(QStringList& words, int targetLength) {
-  std::random_device rd;
-  std::mt19937 g(rd());
-
-  QStringList lessonList;
-  int cur_length = 0;
-  while (cur_length < targetLength) {
-    std::shuffle(words.begin(), words.end(), g);
-
-    for (const auto& word : words) {
-      if (cur_length >= targetLength) break;
-      cur_length += word.length();
-      lessonList << word;
-    }
-  }
-
-  return lessonList.join(QChar::Space);
-}

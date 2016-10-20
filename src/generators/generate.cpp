@@ -16,32 +16,35 @@
 // along with amphetype2.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef SRC_GENERATORS_LESSONGENWIDGET_H_
-#define SRC_GENERATORS_LESSONGENWIDGET_H_
+#include "generators/generate.h"
 
-#include <QWidget>
+#include <QChar>
+#include <QString>
 #include <QStringList>
 
-namespace Ui {
-class LessonGenWidget;
+
+#include <algorithm>
+#include <random>
+
+
+namespace Generators {
+
+QString generateText(QStringList& words, int targetLength) {
+  std::random_device rd;
+  std::mt19937 g(rd());
+
+  QStringList lessonList;
+  int cur_length = 0;
+  while (cur_length < targetLength) {
+    std::shuffle(words.begin(), words.end(), g);
+
+    for (const auto& word : words) {
+      if (cur_length >= targetLength) break;
+      cur_length += word.length();
+      lessonList << word;
+    }
+  }
+
+  return lessonList.join(QChar::Space);
 }
-
-class LessonGenWidget : public QWidget {
-  Q_OBJECT
-
- public:
-  explicit LessonGenWidget(QWidget *parent = 0);
-  ~LessonGenWidget();
-
- private:
-  Ui::LessonGenWidget *ui;
-  void generate();
-
- signals:
-  void newLesson(int);
-
- public slots:
-  void addItems(QStringList &);
-};
-
-#endif  // SRC_GENERATORS_LESSONGENWIDGET_H_
+};  // namespace Generators

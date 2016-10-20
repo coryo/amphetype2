@@ -16,32 +16,14 @@
 // along with amphetype2.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef SRC_GENERATORS_LESSONGENWIDGET_H_
-#define SRC_GENERATORS_LESSONGENWIDGET_H_
+#ifndef SRC_GENERATORS_GENERATE_H_
+#define SRC_GENERATORS_GENERATE_H_
 
-#include <QWidget>
+#include <QString>
 #include <QStringList>
 
-namespace Ui {
-class LessonGenWidget;
-}
-
-class LessonGenWidget : public QWidget {
-  Q_OBJECT
-
- public:
-  explicit LessonGenWidget(QWidget *parent = 0);
-  ~LessonGenWidget();
-
- private:
-  Ui::LessonGenWidget *ui;
-  void generate();
-
- signals:
-  void newLesson(int);
-
- public slots:
-  void addItems(QStringList &);
+namespace Generators {
+QString generateText(QStringList& words, int targetLength);
 };
 
-#endif  // SRC_GENERATORS_LESSONGENWIDGET_H_
+#endif  // SRC_GENERATORS_GENERATE_H_
