@@ -20,7 +20,10 @@ add_executable(DatabaseTests
   ${CMAKE_SOURCE_DIR}/src/generators/generate.cpp
 )
 add_test(DatabaseTests DatabaseTests)
-target_link_libraries(DatabaseTests Qt5::Test Qt5::Widgets sqlite3 qslog)
+target_link_libraries(DatabaseTests
+  Qt5::Test Qt5::Widgets sqlite3 qslog
+  ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS}
+)
 
 add_executable(TestTests
   testtests.cpp
@@ -30,4 +33,7 @@ add_executable(TestTests
   ${CMAKE_SOURCE_DIR}/src/texts/text.cpp
 )
 add_test(TestTests TestTests)
-target_link_libraries(TestTests Qt5::Test Qt5::Widgets sqlite3 qslog)
+target_link_libraries(TestTests
+  Qt5::Test Qt5::Widgets sqlite3 qslog
+  ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS}
+)
