@@ -4,10 +4,12 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(
 	${CMAKE_SOURCE_DIR}/external/qcustomplot
 	${CMAKE_SOURCE_DIR}/external/sqlite
+  ${CMAKE_SOURCE_DIR}/external/sqlite3pp
 	${CMAKE_SOURCE_DIR}/external/qslog
 )
 
-# Instruct CMake to run moc automatically when needed.
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set_property(GLOBAL PROPERTY AUTOGEN_TARGETS_FOLDER "autogen")
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
@@ -19,39 +21,68 @@ configure_file(
 
 set(${PROJECT_NAME}_SOURCES
 	main.cpp
-
-	mainwindow/mainwindow.cpp
-  mainwindow/liveplot/liveplot.cpp
-  mainwindow/keyboardmap/keyboardmap.cpp
-
+	analysis/statisticswidget.cpp
 	database/db.cpp
-
-  performance/performancehistory.cpp
-
-	settings/settingswidget.cpp
-
-  analysis/statisticswidget.cpp
-
+	generators/traininggenerator.cpp
+	generators/traininggenwidget.cpp
+	generators/lessongenwidget.cpp
+	generators/generate.cpp
+	mainwindow/mainwindow.cpp
+	mainwindow/liveplot/liveplot.cpp
+	mainwindow/keyboardmap/keyboardmap.cpp
+	performance/performancehistory.cpp
 	quizzer/quizzer.cpp
 	quizzer/test.cpp
 	quizzer/typer.cpp
 	quizzer/typerdisplay.cpp
-
-  texts/text.cpp
+	settings/settingswidget.cpp
+	texts/text.cpp
 	texts/library.cpp
-  texts/lessonminer.cpp
-  texts/lessonminercontroller.h
-  texts/textmodel.cpp
-  texts/sourcemodel.cpp
-  texts/edittextdialog.cpp
+	texts/lessonminer.cpp
+	texts/textmodel.cpp
+	texts/sourcemodel.cpp
+	texts/edittextdialog.cpp
+	util/RunGuard.cpp
+	util/datetime.cpp
+)
 
-  util/RunGuard.cpp
-  util/datetime.cpp
+set(${PROJECT_NAME}_HEADERS
+	defs.h
+	analysis/statisticswidget.h
+	database/db.h
+	generators/generate.h
+	generators/lessongenwidget.h
+	generators/traininggenerator.h
+	generators/traininggenwidget.h
+	mainwindow/mainwindow.h
+	mainwindow/keyboardmap/keyboardmap.h
+	mainwindow/liveplot/liveplot.h
+	performance/performancehistory.h
+	quizzer/quizzer.h
+	quizzer/test.h
+	quizzer/typer.h
+	quizzer/typerdisplay.h
+	settings/settingswidget.h
+	texts/edittextdialog.h
+	texts/lessonminer.h
+	texts/lessonminercontroller.h
+	texts/library.h
+	texts/sourcemodel.h
+	texts/text.h
+	texts/textmodel.h
+	util/datetime.h
+	util/RunGuard.h
+)
 
-	generators/traininggenerator.cpp
-	generators/traininggenwidget.cpp
-  generators/lessongenwidget.cpp
-  generators/generate.cpp
+set(${PROJECT_NAME}_UI_FILES
+  analysis/statisticswidget.ui
+  generators/lessongenwidget.ui
+  generators/traininggenwidget.ui
+  mainwindow/mainwindow.ui
+  performance/performancehistory.ui
+  quizzer/quizzer.ui
+  settings/settingswidget.ui
+  texts/library.ui
 )
 
 set(MACOSX_BUNDLE_ICON_FILE icon.icns)
@@ -70,15 +101,23 @@ if(WIN32)
   list(APPEND RESOURCE_FILES ${CMAKE_SOURCE_DIR}/bundle/win/icon.rc)
 endif()
 
-# Executable
+list(APPEND RESOURCE_FILES 
+  ${CMAKE_SOURCE_DIR}/resources/resources.qrc
+  ${CMAKE_SOURCE_DIR}/resources/stylesheets/style.qrc
+)
+
+# source groups for MSVC
+source_group("UI Files" FILES ${${PROJECT_NAME}_UI_FILES})
+source_group("Resources" FILES ${RESOURCE_FILES})
+source_group("autogen" REGULAR_EXPRESSION "((.*)_automoc\\.cpp)|(qrc_(.*)\\.cpp)|(ui_(.*)\\.h)")
+
 add_executable(amphetype2 WIN32 MACOSX_BUNDLE
 	${${PROJECT_NAME}_SOURCES}
-	${CMAKE_SOURCE_DIR}/resources/resources.qrc
-  ${CMAKE_SOURCE_DIR}/resources/stylesheets/style.qrc
+	${${PROJECT_NAME}_HEADERS}
+  ${${PROJECT_NAME}_UI_FILES}
   ${RESOURCE_FILES}
 )
 
-# Use the Widgets module from Qt 5.
 target_link_libraries(amphetype2
 	Qt5::Widgets
   Qt5::XmlPatterns
@@ -90,6 +129,7 @@ target_link_libraries(amphetype2
 	${CMAKE_DL_LIBS}
   ${OS_LIBS}
 )
+
 set_target_properties(amphetype2 PROPERTIES
   MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/bundle/osx/MacOSXBundleInfo.plist.in
 )

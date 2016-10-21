@@ -1,11 +1,14 @@
-INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/src )
-INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/external/sqlite )
-INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/external/qslog )
-INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/tests )
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+include_directories(
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/external/sqlite
+  ${CMAKE_SOURCE_DIR}/external/sqlite3pp
+  ${CMAKE_SOURCE_DIR}/external/qslog
+)
 
 set(CMAKE_AUTOMOC ON)
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+# Util Tests
 add_executable(UtilTests
   utiltests.cpp
   ${CMAKE_SOURCE_DIR}/src/util/datetime.cpp
@@ -13,6 +16,7 @@ add_executable(UtilTests
 add_test(UtilTests UtilTests)
 target_link_libraries(UtilTests Qt5::Test Qt5::Core)
 
+# Database Tests
 add_executable(DatabaseTests
   databasetests.cpp
   ${CMAKE_SOURCE_DIR}/src/database/db.cpp
@@ -25,6 +29,7 @@ target_link_libraries(DatabaseTests
   ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS}
 )
 
+# Test Tests
 add_executable(TestTests
   testtests.cpp
   ${CMAKE_SOURCE_DIR}/src/database/db.cpp
