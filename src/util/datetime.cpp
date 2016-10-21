@@ -18,8 +18,8 @@
 
 #include "util/datetime.h"
 
-namespace Util {
-namespace Date {
+namespace util {
+namespace date {
 
 QString PrettyTimeDelta(const QDateTime& a, const QDateTime& b) {
   int secs = a.secsTo(b);
@@ -39,5 +39,5 @@ QString PrettyTimeDelta(const QDateTime& a, const QDateTime& b) {
   }
 }
 
-};  // Date
-};  // Util
+};  // date
+};  // util

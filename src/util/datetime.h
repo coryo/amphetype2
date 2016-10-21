@@ -22,8 +22,8 @@
 #include <QDateTime>
 #include <QString>
 
-namespace Util {
-namespace Date {
+namespace util {
+namespace date {
 QString PrettyTimeDelta(const QDateTime& a, const QDateTime& b);
 };
 };
