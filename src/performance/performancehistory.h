@@ -36,40 +36,22 @@ class PerformanceHistory;
 
 class PerformanceHistory : public QMainWindow {
   Q_OBJECT
-  Q_PROPERTY(QColor wpmLineColor MEMBER wpmLineColor NOTIFY colorChanged)
-  Q_PROPERTY(QColor accLineColor MEMBER accLineColor NOTIFY colorChanged)
-  Q_PROPERTY(QColor visLineColor MEMBER visLineColor NOTIFY colorChanged)
-  Q_PROPERTY(QColor smaLineColor MEMBER smaLineColor NOTIFY colorChanged)
-  Q_PROPERTY(QColor targetLineColor MEMBER targetLineColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor wpmLineColor MEMBER wpm_line_ NOTIFY colorChanged)
+  Q_PROPERTY(QColor accLineColor MEMBER acc_line_ NOTIFY colorChanged)
+  Q_PROPERTY(QColor visLineColor MEMBER vis_line_ NOTIFY colorChanged)
+  Q_PROPERTY(QColor smaLineColor MEMBER sma_line_ NOTIFY colorChanged)
+  Q_PROPERTY(QColor targetLineColor MEMBER target_line_ NOTIFY colorChanged)
   Q_PROPERTY(
-      QColor plotBackgroundColor MEMBER plotBackgroundColor NOTIFY colorChanged)
+      QColor plotBackgroundColor MEMBER plot_background_ NOTIFY colorChanged)
   Q_PROPERTY(
-      QColor plotForegroundColor MEMBER plotForegroundColor NOTIFY colorChanged)
+      QColor plotForegroundColor MEMBER plot_foreground_ NOTIFY colorChanged)
 
  public:
   explicit PerformanceHistory(QWidget* parent = 0);
   ~PerformanceHistory();
 
- private:
-  void contextMenu(const QPoint&);
-  void dampen(QCPGraph*, int n, QCPGraph* out);
-
-  Ui::PerformanceHistory* ui;
-  QStandardItemModel* model;
-  // colors
-  QColor wpmLineColor;
-  QColor accLineColor;
-  QColor visLineColor;
-  QColor smaLineColor;
-  QColor targetLineColor;
-  QColor plotBackgroundColor;
-  QColor plotForegroundColor;
-
-  double target_wpm_;
-
  signals:
   void setText(std::shared_ptr<Text>);
-  void gotoTab(int);
   void colorChanged();
   void settingsChanged();
 
@@ -81,11 +63,25 @@ class PerformanceHistory : public QMainWindow {
   void saveSettings();
 
  private slots:
+  void contextMenu(const QPoint&);
+  void dampen(QCPGraph*, int n, QCPGraph* out);
   void deleteResult(bool);
   void doubleClicked(const QModelIndex&);
   void showPlot(int = 0);
   void updateColors();
   void togglePlotLine(int);
+
+ private:
+  Ui::PerformanceHistory* ui;
+  QStandardItemModel* model_;
+  QColor wpm_line_;
+  QColor acc_line_;
+  QColor vis_line_;
+  QColor sma_line_;
+  QColor target_line_;
+  QColor plot_background_;
+  QColor plot_foreground_;
+  double target_wpm_;
 };
 
 #endif  // SRC_PERFORMANCE_PERFORMANCEHISTORY_H_

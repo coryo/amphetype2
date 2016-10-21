@@ -24,6 +24,8 @@
 #include <QMainWindow>
 #include <QString>
 
+#include <memory>
+
 #include "analysis/statisticswidget.h"
 #include "generators/lessongenwidget.h"
 #include "generators/traininggenwidget.h"
@@ -43,19 +45,6 @@ class MainWindow : public QMainWindow {
   explicit MainWindow(QWidget* parent = Q_NULLPTR);
   ~MainWindow();
 
- protected:
-  void closeEvent(QCloseEvent* event);
-
- private:
-  Ui::MainWindow* ui;
-  SettingsWidget* settingsWidget;
-  StatisticsWidget* statisticsWidget;
-  PerformanceHistory* performanceWidget;
-  Library* libraryWidget;
-  LessonGenWidget* lessonGenerator;
-  TrainingGenWidget* trainingGenerator;
-  void populateProfiles();
-
  signals:
   void profileChanged(QString);
 
@@ -63,6 +52,19 @@ class MainWindow : public QMainWindow {
   void changeProfile(QAction*);
   void updateWindowTitle();
   void aboutDialog();
+  void populateProfiles();
+
+ protected:
+  void closeEvent(QCloseEvent* event);
+
+ private:
+  Ui::MainWindow* ui;
+  std::unique_ptr<SettingsWidget> settings_;
+  std::unique_ptr<StatisticsWidget> statistics_;
+  std::unique_ptr<PerformanceHistory> performance_;
+  std::unique_ptr<Library> library_;
+  std::unique_ptr<LessonGenWidget> lesson_generator_;
+  std::unique_ptr<TrainingGenWidget> training_generator_;
 };
 
 #endif  // SRC_MAINWINDOW_MAINWINDOW_H_

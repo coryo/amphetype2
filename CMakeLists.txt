@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.2.2)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_definitions(-DQT_MESSAGELOGCONTEXT -DQS_LOG_LINE_NUMBERS)
+add_definitions(-DQT_MESSAGELOGCONTEXT -DQS_LOG_LINE_NUMBERS -DQS_LOG_SEPARATE_THREAD)
 
 find_package(Git)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -26,4 +26,4 @@ enable_testing()
 add_subdirectory(external)
 add_subdirectory(src)
 
-add_subdirectory(tests)
+add_subdirectory(test)

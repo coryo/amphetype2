@@ -10,7 +10,7 @@ set(CMAKE_AUTOMOC ON)
 
 # Util Tests
 add_executable(UtilTests
-  utiltests.cpp
+  test_util.cpp
   ${CMAKE_SOURCE_DIR}/src/util/datetime.cpp
 )
 add_test(UtilTests UtilTests)
@@ -18,7 +18,7 @@ target_link_libraries(UtilTests Qt5::Test Qt5::Core)
 
 # Database Tests
 add_executable(DatabaseTests
-  databasetests.cpp
+  test_database.cpp
   ${CMAKE_SOURCE_DIR}/src/database/db.cpp
   ${CMAKE_SOURCE_DIR}/src/texts/text.cpp
   ${CMAKE_SOURCE_DIR}/src/generators/generate.cpp
@@ -31,7 +31,7 @@ target_link_libraries(DatabaseTests
 
 # Test Tests
 add_executable(TestTests
-  testtests.cpp
+  test_test.cpp
   ${CMAKE_SOURCE_DIR}/src/database/db.cpp
   ${CMAKE_SOURCE_DIR}/src/generators/generate.cpp
   ${CMAKE_SOURCE_DIR}/src/quizzer/test.cpp
@@ -42,3 +42,7 @@ target_link_libraries(TestTests
   Qt5::Test Qt5::Widgets sqlite3 qslog
   ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS}
 )
+
+set_target_properties(DatabaseTests PROPERTIES FOLDER "Tests")
+set_target_properties(UtilTests PROPERTIES FOLDER "Tests")
+set_target_properties(TestTests PROPERTIES FOLDER "Tests")

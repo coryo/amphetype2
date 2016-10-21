@@ -20,10 +20,10 @@
 #define SRC_TEXTS_LIBRARY_H_
 
 #include <QFile>
+#include <QItemSelection>
 #include <QMainWindow>
 #include <QModelIndex>
 #include <QProgressDialog>
-#include <QItemSelection>
 
 #include <memory>
 
@@ -45,17 +45,6 @@ class Library : public QMainWindow {
   explicit Library(QWidget* parent = Q_NULLPTR);
   ~Library();
 
- private:
-  Ui::Library* ui;
-  TextModel* text_model_;
-  SourceModel* source_model_;
-  QProgressDialog* progress_;
-  QStringList files;
-  LessonMinerController* lmc;
-  void textsTableDoubleClickHandler(const QModelIndex&);
-  void textsTableClickHandler(const QModelIndex&);
-  bool validateXml(QFile* file);
-
  signals:
   void setText(const std::shared_ptr<Text>&);
   void progress(int);
@@ -74,6 +63,9 @@ class Library : public QMainWindow {
   void sourceSelectionChanged(const QItemSelection&, const QItemSelection&);
 
  private slots:
+  void textsTableDoubleClickHandler(const QModelIndex&);
+  void textsTableClickHandler(const QModelIndex&);
+  bool validateXml(QFile* file);
   void addFiles();
   void processNextFile();
   void addSource();
@@ -83,13 +75,19 @@ class Library : public QMainWindow {
   void disableSource();
   void exportSource();
   void importSource();
-
   void actionDeleteTexts(bool checked);
   void actionEditText(bool checked);
   void actionSendToTyper(bool checked);
-
   void sourcesContextMenu(const QPoint& pos);
   void textsContextMenu(const QPoint& pos);
+
+ private:
+  Ui::Library* ui;
+  TextModel* text_model_;
+  SourceModel* source_model_;
+  QProgressDialog* progress_;
+  QStringList files_;
+  LessonMinerController* lmc_;
 };
 
 #endif  // SRC_TEXTS_LIBRARY_H_

@@ -40,13 +40,13 @@
 #include <QsLog.h>
 
 #include "database/db.h"
+#include "generators/lessongenwidget.h"
+#include "texts/edittextdialog.h"
 #include "texts/lessonminer.h"
 #include "texts/lessonminercontroller.h"
 #include "texts/sourcemodel.h"
 #include "texts/text.h"
 #include "texts/textmodel.h"
-#include "texts/edittextdialog.h"
-#include "generators/lessongenwidget.h"
 #include "ui_library.h"
 
 Library::Library(QWidget* parent)
@@ -405,33 +405,33 @@ void Library::selectSource(int source) {
 }
 
 void Library::addFiles() {
-  files = QFileDialog::getOpenFileNames(
+  files_ = QFileDialog::getOpenFileNames(
       this, tr("Import"), ".", tr("UTF-8 text files (*.txt);;All files (*)"));
-  if (files.isEmpty()) return;
+  if (files_.isEmpty()) return;
 
-  lmc = new LessonMinerController;
-  connect(lmc, SIGNAL(workDone()), this, SLOT(processNextFile()));
+  lmc_ = new LessonMinerController;
+  connect(lmc_, SIGNAL(workDone()), this, SLOT(processNextFile()));
 
   progress_ = new QProgressDialog("Importing...", "Abort", 0, 100);
   progress_->setMinimumDuration(0);
   progress_->setAutoClose(false);
-  connect(lmc, &LessonMinerController::progressUpdate, progress_,
+  connect(lmc_, &LessonMinerController::progressUpdate, progress_,
           &QProgressDialog::setValue);
 
   processNextFile();
 }
 
 void Library::processNextFile() {
-  if (files.isEmpty()) {
+  if (files_.isEmpty()) {
     refreshSources();
     emit sourcesChanged();
     delete progress_;
-    delete lmc;
+    delete lmc_;
     return;
   }
-  progress_->setLabelText(files.front());
-  lmc->operate(files.front());
-  files.pop_front();
+  progress_->setLabelText(files_.front());
+  lmc_->operate(files_.front());
+  files_.pop_front();
 }
 
 bool Library::validateXml(QFile* file) {

@@ -68,7 +68,7 @@ struct agg_median {
 
   std::vector<double> v;
 };
-};  // sqlite_extensions
+};  // namespace sqlite_extensions
 
 DBConnection::DBConnection(const QString& path) {
   db_ = std::make_unique<sqlite3pp::database>(path.toUtf8().data());
@@ -111,7 +111,6 @@ Database::Database(const QString& name) {
 }
 
 void Database::initDB() {
-  QLOG_DEBUG() << "sqlite3_threadsafe() =" << sqlite3_threadsafe();
   try {
     sqlite3pp::database& db = conn_->db();
     sqlite3pp::transaction xct(db);
@@ -196,8 +195,7 @@ void Database::initDB() {
     QMutexLocker locker(&db_lock);
     xct.commit();
   } catch (const std::exception& e) {
-    QLOG_DEBUG() << "cannot create database";
-    QLOG_DEBUG() << e.what();
+    QLOG_DEBUG() << "cannot create database" << e.what();
   }
 }
 
@@ -232,7 +230,6 @@ void Database::enableSource(const QList<int>& sources) {
 
 int Database::getSource(const QString& sourceName, int lesson, int type) {
   try {
-    QLOG_DEBUG() << sourceName;
     QVariantList row =
         getOneRow("select id from source where name = ? limit 1", sourceName);
 
@@ -240,17 +237,9 @@ int Database::getSource(const QString& sourceName, int lesson, int type) {
     if (!row.isEmpty()) return row[0].toInt();
 
     // source didn't exist. add it
-    QVariantList data;
-
-    data << sourceName;
-    if (lesson == -1)
-      data << QVariant();
-    else
-      data << lesson;
-
-    data << type;
-
-    bindAndRun("insert into source values (NULL, ?, NULL, ?, ?, 0)", data);
+    bindAndRun("insert into source values (NULL, ?, NULL, ?, ?, 0)",
+               QVariantList() << sourceName
+                              << (lesson == -1 ? QVariant() : lesson) << type);
     // try again now that it's in the db
     return getSource(sourceName, lesson);
   } catch (const std::exception& e) {
@@ -290,21 +279,14 @@ void Database::deleteResult(const QString& id, const QString& datetime) {
 }
 
 void Database::deleteStatistic(const QString& data) {
-  QLOG_DEBUG() << "deleteStatistic:"
-               << "deleting all statistics data for" << data;
   bindAndRun("DELETE FROM statistic WHERE data = ?", data);
 }
 
 void Database::addText(int source, const QString& text, int lesson,
                        bool update) {
-  int dis = ((lesson == 2) ? 1 : 0);
-  QVariantList items;
-  items << source << text;
-  if (dis == 0)
-    items << QVariant();  // null
-  else
-    items << dis;
-  bindAndRun("INSERT INTO text VALUES (NULL, ?, ?, ?)", items);
+  int dis = (lesson == 2) ? 1 : 0;
+  bindAndRun("INSERT INTO text VALUES (NULL, ?, ?, ?)",
+             QVariantList() << source << text << (dis == 0 ? QVariant() : dis));
 }
 
 void Database::addTexts(int source, const QStringList& lessons, int lesson,
@@ -316,13 +298,8 @@ void Database::addTexts(int source, const QStringList& lessons, int lesson,
     {
       sqlite3pp::command cmd(db, "INSERT INTO text VALUES (NULL, ?, ?, ?)");
       for (QString text : lessons) {
-        QVariantList items;
-        items << source << text;
-        if (dis == 0)
-          items << QVariant();  // null
-        else
-          items << dis;
-        bindAndRun(&cmd, items);
+        bindAndRun(&cmd, QVariantList() << source << text
+                                        << (dis == 0 ? QVariant() : dis));
       }
     }
     QMutexLocker locker(&db_lock);
@@ -787,10 +764,6 @@ QHash<QChar, QHash<QString, QVariant>> Database::getKeyFrequency() {
 
   return data;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// PRIVATE FUNCTIONS
-////////////////////////////////////////////////////////////////////////////////
 
 QVariantList Database::getOneRow(const QString& sql, const QVariant& args) {
   return getOneRow(conn_->db(), sql, args);

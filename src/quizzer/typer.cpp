@@ -19,7 +19,6 @@
 #include <QApplication>
 #include <QKeyEvent>
 #include <QSettings>
-#include <QUrl>
 
 #include <QsLog.h>
 
@@ -31,10 +30,6 @@ Typer::Typer(QWidget* parent) : QPlainTextEdit(parent), test_(nullptr) {
   this->setAcceptDrops(false);
   this->setFocusPolicy(Qt::StrongFocus);
   test_thread_.start();
-  errorSound.setSource(QUrl::fromLocalFile(":/sounds/error.wav"));
-  errorSound.setVolume(0.25f);
-  successSound.setSource(QUrl::fromLocalFile(":/sounds/success.wav"));
-  successSound.setVolume(0.25f);
 }
 
 Typer::~Typer() {
@@ -42,27 +37,16 @@ Typer::~Typer() {
   test_thread_.wait();
 }
 
-void Typer::toggleSounds(int state) {
-  errorSound.setMuted(state != Qt::Checked);
-  successSound.setMuted(state != Qt::Checked);
-}
-
 void Typer::handleResult(TestResult* result) {
-  QSettings s;
-  successSound.play();
-
   clearTest();
-
   QLOG_DEBUG() << result->wpm() << result->accuracy() << result->viscosity();
-
   emit done(result->wpm(), result->accuracy(), result->viscosity());
-
+  QSettings s;
   if (s.value("perf_logging", true).toBool()) {
     result->save();
     emit newResult(result->text().source());
     emit newStatistics();
   }
-
   delete result;
 }
 
@@ -74,16 +58,10 @@ void Typer::setTextTarget(const std::shared_ptr<Text>& text) {
   test_ = new Test(text);
   test_->moveToThread(&test_thread_);
   connect(this, &Typer::newInput, test_, &Test::handleInput);
-  connect(test_, &Test::mistake, &errorSound, &QSoundEffect::play);
-
+  connect(test_, &Test::mistake, this, &Typer::mistake);
   connect(test_, &Test::newWpm, this, &Typer::newWpm);
-  connect(test_, &Test::newApm, this, &Typer::newApm);
-  connect(test_, &Test::characterAdded, this, &Typer::characterAdded);
   connect(test_, &Test::testStarted, this, &Typer::testStarted);
-  connect(test_, &Test::newResult, this, &Typer::newResult);
-  connect(test_, &Test::newStatistics, this, &Typer::newStatistics);
   connect(test_, &Test::positionChanged, display_, &TyperDisplay::moveCursor);
-
   connect(test_, &Test::resultReady, this, &Typer::handleResult);
 
   if (!this->toPlainText().isEmpty()) {

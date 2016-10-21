@@ -30,55 +30,53 @@
 
 #include <sqlite3.h>
 
+#include "config.h"
 #include "database/db.h"
 #include "mainwindow/liveplot/liveplot.h"
 #include "quizzer/typer.h"
 #include "texts/library.h"
 #include "texts/text.h"
 #include "ui_mainwindow.h"
-#include "config.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
-      settingsWidget(new SettingsWidget),
-      statisticsWidget(new StatisticsWidget),
-      libraryWidget(new Library),
-      performanceWidget(new PerformanceHistory),
-      lessonGenerator(new LessonGenWidget),
-      trainingGenerator(new TrainingGenWidget),
+      settings_(std::make_unique<SettingsWidget>()),
+      statistics_(std::make_unique<StatisticsWidget>()),
+      library_(std::make_unique<Library>()),
+      performance_(std::make_unique<PerformanceHistory>()),
+      lesson_generator_(std::make_unique<LessonGenWidget>()),
+      training_generator_(std::make_unique<TrainingGenWidget>()),
       ui(new Ui::MainWindow) {
   ui->setupUi(this);
 
-  this->populateProfiles();
-  this->updateWindowTitle();
-
-  QSettings s;
+  populateProfiles();
+  updateWindowTitle();
 
   // Actions
   connect(ui->actionQuit, &QAction::triggered, this, &QWidget::close);
-  connect(ui->actionSettings, &QAction::triggered, this->settingsWidget,
+  connect(ui->actionSettings, &QAction::triggered, settings_.get(),
           &QWidget::show);
-  connect(ui->actionSettings, &QAction::triggered, this->settingsWidget,
+  connect(ui->actionSettings, &QAction::triggered, settings_.get(),
           &QWidget::activateWindow);
-  connect(ui->actionLibrary, &QAction::triggered, this->libraryWidget,
+  connect(ui->actionLibrary, &QAction::triggered, library_.get(),
           &QWidget::show);
-  connect(ui->actionLibrary, &QAction::triggered, this->libraryWidget,
+  connect(ui->actionLibrary, &QAction::triggered, library_.get(),
           &QWidget::activateWindow);
-  connect(ui->actionPerformance, &QAction::triggered, this->performanceWidget,
+  connect(ui->actionPerformance, &QAction::triggered, performance_.get(),
           &QWidget::show);
-  connect(ui->actionPerformance, &QAction::triggered, this->performanceWidget,
+  connect(ui->actionPerformance, &QAction::triggered, performance_.get(),
           &QWidget::activateWindow);
   connect(ui->actionLesson_Generator, &QAction::triggered,
-          this->lessonGenerator, &QWidget::show);
+          lesson_generator_.get(), &QWidget::show);
   connect(ui->actionLesson_Generator, &QAction::triggered,
-          this->lessonGenerator, &QWidget::activateWindow);
+          lesson_generator_.get(), &QWidget::activateWindow);
   connect(ui->actionTraining_Generator, &QAction::triggered,
-          this->trainingGenerator, &QWidget::show);
+          training_generator_.get(), &QWidget::show);
   connect(ui->actionTraining_Generator, &QAction::triggered,
-          this->trainingGenerator, &QWidget::activateWindow);
-  connect(ui->actionAnalysis, &QAction::triggered, this->statisticsWidget,
+          training_generator_.get(), &QWidget::activateWindow);
+  connect(ui->actionAnalysis, &QAction::triggered, statistics_.get(),
           &QWidget::show);
-  connect(ui->actionAnalysis, &QAction::triggered, this->statisticsWidget,
+  connect(ui->actionAnalysis, &QAction::triggered, statistics_.get(),
           &QWidget::activateWindow);
   connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::aboutDialog);
 
@@ -99,96 +97,90 @@ MainWindow::MainWindow(QWidget* parent)
   ui->menuView->addAction(ui->mapDock->toggleViewAction());
 
   // Typer
-  // connect(ui->quizzer, &Quizzer::wantText, this->libraryWidget,
-  //         &Library::nextText);
-  connect(ui->quizzer, &Quizzer::newResult, this->performanceWidget,
+  connect(ui->quizzer->typer(), &Typer::newResult, performance_.get(),
           &PerformanceHistory::refreshPerformance);
-  connect(ui->quizzer, &Quizzer::newResult, this->libraryWidget,
+  connect(ui->quizzer->typer(), &Typer::newResult, library_.get(),
           &Library::refreshSource);
-  connect(ui->quizzer, &Quizzer::newStatistics, this->statisticsWidget,
+  connect(ui->quizzer->typer(), &Typer::newStatistics, statistics_.get(),
           &StatisticsWidget::update);
-  connect(ui->quizzer, &Quizzer::newStatistics, ui->keyboardMap,
+  connect(ui->quizzer->typer(), &Typer::newStatistics, ui->keyboardMap,
           &KeyboardMap::updateData);
   // Live Plot
-  connect(ui->quizzer, &Quizzer::newWpm, ui->plot, &LivePlot::addWpm);
-  connect(ui->quizzer, &Quizzer::newApm, ui->plot, &LivePlot::addApm);
-  connect(ui->quizzer, &Quizzer::characterAdded, ui->plot,
-          &LivePlot::newKeyPress);
-  connect(ui->quizzer, &Quizzer::testStarted, ui->plot, &LivePlot::beginTest);
+  connect(ui->quizzer->typer(), &Typer::newWpm, ui->plot, &LivePlot::addWpm);
+  connect(ui->quizzer->typer(), &Typer::testStarted, ui->plot,
+          &LivePlot::beginTest);
 
   // Library
-  connect(this->libraryWidget, &Library::setText, ui->quizzer,
-          &Quizzer::setText);
-  connect(this->libraryWidget, &Library::sourcesChanged,
-          this->performanceWidget, &PerformanceHistory::refreshSources);
-  connect(this->libraryWidget, &Library::sourcesChanged,
-          this->performanceWidget, &PerformanceHistory::refreshPerformance);
-  connect(this->libraryWidget, &Library::sourcesDeleted, ui->quizzer,
+  connect(library_.get(), &Library::setText, ui->quizzer, &Quizzer::setText);
+  connect(library_.get(), &Library::sourcesChanged, performance_.get(),
+          &PerformanceHistory::refreshSources);
+  connect(library_.get(), &Library::sourcesChanged, performance_.get(),
+          &PerformanceHistory::refreshPerformance);
+  connect(library_.get(), &Library::sourcesDeleted, ui->quizzer,
           &Quizzer::checkSource);
-  connect(this->libraryWidget, &Library::textsDeleted, ui->quizzer,
+  connect(library_.get(), &Library::textsDeleted, ui->quizzer,
           &Quizzer::checkText);
-  connect(this->libraryWidget, &Library::textsChanged, ui->quizzer,
+  connect(library_.get(), &Library::textsChanged, ui->quizzer,
           &Quizzer::checkText);
 
   // Performance
-  connect(this->performanceWidget, &PerformanceHistory::setText, ui->quizzer,
+  connect(performance_.get(), &PerformanceHistory::setText, ui->quizzer,
           &Quizzer::setText);
-  connect(this->performanceWidget, &PerformanceHistory::settingsChanged,
-          ui->plot, &LivePlot::updatePlotTargetLine);
+  connect(performance_.get(), &PerformanceHistory::settingsChanged, ui->plot,
+          &LivePlot::updatePlotTargetLine);
 
   // Analysis
-  connect(this->statisticsWidget, &StatisticsWidget::newItems,
-          this->lessonGenerator, &LessonGenWidget::addItems);
-  connect(this->statisticsWidget, &StatisticsWidget::newItems,
-          this->lessonGenerator, &QWidget::show);
-  connect(this->statisticsWidget, &StatisticsWidget::newItems,
-          this->lessonGenerator, &QWidget::activateWindow);
+  connect(statistics_.get(), &StatisticsWidget::newItems,
+          lesson_generator_.get(), &LessonGenWidget::addItems);
+  connect(statistics_.get(), &StatisticsWidget::newItems,
+          lesson_generator_.get(), &QWidget::show);
+  connect(statistics_.get(), &StatisticsWidget::newItems,
+          lesson_generator_.get(), &QWidget::activateWindow);
 
   // Lesson Generator
-  connect(this->lessonGenerator, &LessonGenWidget::newLesson,
-          this->libraryWidget, &Library::refreshSources);
-  connect(this->lessonGenerator, &LessonGenWidget::newLesson,
-          this->lessonGenerator, &QWidget::close);
-  connect(this->lessonGenerator, &LessonGenWidget::newLesson,
-          this->libraryWidget, &QWidget::show);
-  connect(this->lessonGenerator, &LessonGenWidget::newLesson,
-          this->libraryWidget, &QWidget::activateWindow);
-  connect(this->lessonGenerator, &LessonGenWidget::newLesson,
-          this->libraryWidget, &Library::selectSource);
+  connect(lesson_generator_.get(), &LessonGenWidget::newLesson, library_.get(),
+          &Library::refreshSources);
+  connect(lesson_generator_.get(), &LessonGenWidget::newLesson,
+          lesson_generator_.get(), &QWidget::close);
+  connect(lesson_generator_.get(), &LessonGenWidget::newLesson, library_.get(),
+          &QWidget::show);
+  connect(lesson_generator_.get(), &LessonGenWidget::newLesson, library_.get(),
+          &QWidget::activateWindow);
+  connect(lesson_generator_.get(), &LessonGenWidget::newLesson, library_.get(),
+          &Library::selectSource);
 
   // Training Generator
-  connect(this->trainingGenerator, &TrainingGenWidget::newTraining,
-          this->libraryWidget, &Library::refreshSources);
-  connect(this->trainingGenerator, &TrainingGenWidget::newTraining,
-          this->libraryWidget, &QWidget::show);
-  connect(this->trainingGenerator, &TrainingGenWidget::newTraining,
-          this->libraryWidget, &QWidget::activateWindow);
-  connect(this->trainingGenerator, &TrainingGenWidget::newTraining,
-          this->trainingGenerator, &QWidget::close);
-  connect(this->trainingGenerator, &TrainingGenWidget::newTraining,
-          this->libraryWidget, &Library::selectSource);
+  connect(training_generator_.get(), &TrainingGenWidget::newTraining,
+          library_.get(), &Library::refreshSources);
+  connect(training_generator_.get(), &TrainingGenWidget::newTraining,
+          library_.get(), &QWidget::show);
+  connect(training_generator_.get(), &TrainingGenWidget::newTraining,
+          library_.get(), &QWidget::activateWindow);
+  connect(training_generator_.get(), &TrainingGenWidget::newTraining,
+          training_generator_.get(), &QWidget::close);
+  connect(training_generator_.get(), &TrainingGenWidget::newTraining,
+          library_.get(), &Library::selectSource);
 
   // Settings
-  connect(settingsWidget, &SettingsWidget::settingsChanged, ui->quizzer,
+  connect(settings_.get(), &SettingsWidget::settingsChanged, ui->quizzer,
           &Quizzer::loadSettings);
-  connect(settingsWidget, &SettingsWidget::settingsChanged, ui->plot,
+  connect(settings_.get(), &SettingsWidget::settingsChanged, ui->plot,
           &LivePlot::updatePlotTargetLine);
-  connect(settingsWidget, &SettingsWidget::settingsChanged,
-          this->performanceWidget, &PerformanceHistory::loadSettings);
-  connect(settingsWidget, &SettingsWidget::newKeyboard, ui->keyboardMap,
+  connect(settings_.get(), &SettingsWidget::settingsChanged, performance_.get(),
+          &PerformanceHistory::loadSettings);
+  connect(settings_.get(), &SettingsWidget::newKeyboard, ui->keyboardMap,
           &KeyboardMap::setKeyboard);
 
   connect(ui->menuProfiles, &QMenu::triggered, this,
           &MainWindow::changeProfile);
 
   // Profile Changed
-  connect(this, &MainWindow::profileChanged, this->libraryWidget,
-          &Library::reload);
-  connect(this, &MainWindow::profileChanged, this->performanceWidget,
+  connect(this, &MainWindow::profileChanged, library_.get(), &Library::reload);
+  connect(this, &MainWindow::profileChanged, performance_.get(),
           &PerformanceHistory::refreshPerformance);
-  connect(this, &MainWindow::profileChanged, this->performanceWidget,
+  connect(this, &MainWindow::profileChanged, performance_.get(),
           &PerformanceHistory::refreshSources);
-  connect(this, &MainWindow::profileChanged, this->statisticsWidget,
+  connect(this, &MainWindow::profileChanged, statistics_.get(),
           &StatisticsWidget::update);
   connect(this, &MainWindow::profileChanged, ui->keyboardMap,
           &KeyboardMap::updateData);
@@ -197,15 +189,15 @@ MainWindow::MainWindow(QWidget* parent)
   connect(this, &MainWindow::profileChanged, this,
           &MainWindow::populateProfiles);
 
-  this->restoreState(s.value("mainWindow/windowState").toByteArray());
-  this->restoreGeometry(s.value("mainWindow/windowGeometry").toByteArray());
-  performanceWidget->restoreState(
+  QSettings s;
+  restoreState(s.value("mainWindow/windowState").toByteArray());
+  restoreGeometry(s.value("mainWindow/windowGeometry").toByteArray());
+  performance_->restoreState(
       s.value("performanceWindow/windowState").toByteArray());
-  performanceWidget->restoreGeometry(
+  performance_->restoreGeometry(
       s.value("performanceWindow/windowGeometry").toByteArray());
-  libraryWidget->restoreState(
-      s.value("libraryWindow/windowState").toByteArray());
-  libraryWidget->restoreGeometry(
+  library_->restoreState(s.value("libraryWindow/windowState").toByteArray());
+  library_->restoreGeometry(
       s.value("libraryWindow/windowGeometry").toByteArray());
 
   ui->quizzer->setText(Text::selectText(static_cast<amphetype::SelectionMethod>(
@@ -214,12 +206,6 @@ MainWindow::MainWindow(QWidget* parent)
 
 MainWindow::~MainWindow() {
   delete ui;
-  delete this->settingsWidget;
-  delete this->statisticsWidget;
-  delete this->libraryWidget;
-  delete this->performanceWidget;
-  delete this->lessonGenerator;
-  delete this->trainingGenerator;
   Database db;
   db.compress();
 }
@@ -279,17 +265,16 @@ void MainWindow::changeProfile(QAction* action) {
 void MainWindow::closeEvent(QCloseEvent* event) {
   QSettings s;
   QSize size = this->size();
-  s.setValue("mainWindow/windowState", this->saveState());
-  s.setValue("mainWindow/windowGeometry", this->saveGeometry());
-  s.setValue("performanceWindow/windowState", performanceWidget->saveState());
-  s.setValue("performanceWindow/windowGeometry",
-             performanceWidget->saveGeometry());
-  s.setValue("libraryWindow/windowState", libraryWidget->saveState());
-  s.setValue("libraryWindow/windowGeometry", libraryWidget->saveGeometry());
-  settingsWidget->saveSettings();
+  s.setValue("mainWindow/windowState", saveState());
+  s.setValue("mainWindow/windowGeometry", saveGeometry());
+  s.setValue("performanceWindow/windowState", performance_->saveState());
+  s.setValue("performanceWindow/windowGeometry", performance_->saveGeometry());
+  s.setValue("libraryWindow/windowState", library_->saveState());
+  s.setValue("libraryWindow/windowGeometry", library_->saveGeometry());
+  settings_->saveSettings();
   ui->quizzer->saveSettings();
-  performanceWidget->saveSettings();
-  statisticsWidget->saveSettings();
+  performance_->saveSettings();
+  statistics_->saveSettings();
   qApp->quit();
 }
 

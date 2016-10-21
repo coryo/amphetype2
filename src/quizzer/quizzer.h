@@ -19,7 +19,9 @@
 #ifndef SRC_QUIZZER_QUIZZER_H_
 #define SRC_QUIZZER_QUIZZER_H_
 
+#include <QColor>
 #include <QFocusEvent>
+#include <QSoundEffect>
 #include <QString>
 #include <QThread>
 #include <QTime>
@@ -40,37 +42,13 @@ class Quizzer;
 
 class Quizzer : public QWidget {
   Q_OBJECT
-  Q_PROPERTY(QString goColor MEMBER goColor NOTIFY colorChanged)
-  Q_PROPERTY(QString stopColor MEMBER stopColor NOTIFY colorChanged)
+  Q_PROPERTY(QColor goColor MEMBER go_color_ NOTIFY colorChanged)
+  Q_PROPERTY(QColor stopColor MEMBER stop_color_ NOTIFY colorChanged)
 
  public:
   explicit Quizzer(QWidget *parent = Q_NULLPTR);
   ~Quizzer();
-  Typer *getTyper() const;
-
- protected:
-  void focusInEvent(QFocusEvent *event);
-  void focusOutEvent(QFocusEvent *event);
-
- private:
-  Ui::Quizzer *ui;
-  std::shared_ptr<Text> text;
-  QTimer lessonTimer;
-  QTime lessonTime;
-  QString goColor;
-  QString stopColor;
-  int target_wpm_;
-  double target_acc_;
-  double target_vis_;
-
- signals:
-  void colorChanged();
-  void newResult(int);
-  void newStatistics();
-  void newWpm(double, double);
-  void newApm(double, double);
-  void characterAdded();
-  void testStarted(int);
+  Typer *typer() const;
 
  public slots:
   void loadSettings();
@@ -82,20 +60,39 @@ class Quizzer : public QWidget {
   void actionGrindViscWords();
   void actionGrindInaccurateWords();
   void actionGrindDamagingWords();
+  void toggleSounds(int state);
 
  private slots:
   void alertText(const QString &);
   void beginTest(int);
   void done(double, double, double);
-
   void setPreviousResultText(double, double);
   void cancelled();
   void restart();
-
   void timerLabelUpdate();
   void timerLabelReset();
   void timerLabelGo();
   void timerLabelStop();
+
+ signals:
+  void colorChanged();
+
+ protected:
+  void focusInEvent(QFocusEvent *event);
+  void focusOutEvent(QFocusEvent *event);
+
+ private:
+  Ui::Quizzer *ui;
+  std::shared_ptr<Text> text_;
+  QTimer lesson_timer_;
+  QTime lesson_time_;
+  QColor go_color_;
+  QColor stop_color_;
+  int target_wpm_;
+  double target_acc_;
+  double target_vis_;
+  QSoundEffect error_sound_;
+  QSoundEffect success_sound_;
 };
 
 #endif  // SRC_QUIZZER_QUIZZER_H_

@@ -95,48 +95,50 @@ class Test : public QObject {
   int mistakeCount() const;
   int msElapsed() const;
   double secondsElapsed() const;
-  void handleInput(QString, int, int);
+  void handleInput(const QString&, int, int);
   void cancelTest();
   void restartTest();
   void abort();
-
- private:
-  QHash<QPair<QChar, QChar>, int> getMistakes() const;
-  void finish();
-  void addMistake(int, const QChar&, const QChar&);
-  void prepareResult();
-
- private:
-  std::shared_ptr<Text> text;
-  bool started;
-  bool finished;
-  int currentPos;
-  QDateTime startTime;
-  int totalMs;
-  QVector<int> msBetween;
-  QVector<int> timeAt;
-  QVector<double> wpm;
-  QSet<int> mistakes;
-  QList<QPair<QChar, QChar>> mistakeList;
-  QElapsedTimer timer;
-  int apmWindow;
 
  signals:
   void testStarted(int);
   void done(double, double, double);
   void cancelled();
   void restarted();
-  void saveResult(Test*, double, double, double);
   void resultReady(TestResult*);
-
-  void newResult(int);
-  void newStatistics();
-
   void mistake(int);
-  void newWpm(double, double);
-  void newApm(double, double);
-  void characterAdded();
+  void newWpm(double, double, double);
   void positionChanged(int, int);
+
+ private:
+  void processMistakes(QHash<QPair<QChar, QChar>, int>*);
+  void finish();
+  void addMistake(int, const QChar&, const QChar&);
+  void prepareResult();
+  void processCharacters(QMultiHash<QStringRef, int>*,
+                         QMultiHash<QStringRef, double>*,
+                         QMultiHash<QStringRef, double>*);
+  void processTrigrams(QMultiHash<QStringRef, int>*,
+                       QMultiHash<QStringRef, double>*,
+                       QMultiHash<QStringRef, double>*);
+  void processWords(QMultiHash<QStringRef, int>*,
+                    QMultiHash<QStringRef, double>*,
+                    QMultiHash<QStringRef, double>*);
+
+ private:
+  std::shared_ptr<Text> text_;
+  bool started_;
+  bool finished_;
+  int current_pos_;
+  QDateTime start_time_;
+  int total_ms_;
+  QVector<int> ms_between_;
+  QVector<int> time_at_;
+  QVector<double> wpm_;
+  QSet<int> mistakes_;
+  QList<QPair<QChar, QChar>> mistake_list_;
+  QElapsedTimer timer_;
+  int apm_window_;
 };
 
 #endif  // SRC_QUIZZER_TEST_H_

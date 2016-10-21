@@ -17,16 +17,22 @@ A cross-platform program to help you practice typing. based on [amphetype](https
 * CMake>=3.2.2
 
 
-## Windows
+## Windows (Visual Studio 2015)
 
-See `build.bat`.
+With `C:\Qt\5.7\msvc2015\bin` and `C:\Program Files\CMake\bin` added to `Path`:
 
+```bash
+git clone https://github.com/coryo/amphetype2.git
+cd amphetype2
+md build & cd build
+cmake .. -DQTROOT=C:\Qt\5.7\msvc2015 -G "Visual Studio 14 2015"
+```
 
 ## Linux / OSX
 
 ```bash
 git clone https://github.com/coryo/amphetype2.git
 cd amphetype2
-cmake . -DQTROOT=$QT
+cmake . -DQTROOT=$QTDIR
 make
 ```

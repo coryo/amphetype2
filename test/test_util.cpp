@@ -54,4 +54,4 @@ class UtilTests : public QObject {
 };
 
 QTEST_MAIN(UtilTests)
-#include "utiltests.moc"
+#include "test_util.moc"

@@ -103,9 +103,6 @@ class Database : public QObject {
   void compress();
 
  private:
-  QString db_path_;
-  std::unique_ptr<DBConnection> conn_;
-
   // general functions for executing commands
   void bindAndRun(sqlite3pp::command*, const QVariant& = QVariant());
   void bindAndRun(const QString&, const QVariant& = QVariant());
@@ -114,6 +111,10 @@ class Database : public QObject {
   // create a text object with a given query
   std::shared_ptr<Text> getTextWithQuery(const QString&,
                                          const QVariant& = QVariant());
+
+ private:
+  QString db_path_;
+  std::unique_ptr<DBConnection> conn_;
 };
 
 #endif  // SRC_DATABASE_DB_H_

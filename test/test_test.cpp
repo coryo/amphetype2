@@ -105,4 +105,4 @@ void TestTests::testMistake() {
 }
 
 QTEST_MAIN(TestTests)
-#include "testtests.moc"
+#include "test_test.moc"

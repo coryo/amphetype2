@@ -96,4 +96,4 @@ void DatabaseTests::testPowFunction() {
 void DatabaseTests::cleanupTestCase() { delete db_; }
 
 QTEST_MAIN(DatabaseTests)
-#include "databasetests.moc"
+#include "test_database.moc"

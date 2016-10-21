@@ -20,7 +20,6 @@
 #define SRC_QUIZZER_TYPER_H_
 
 #include <QPlainTextEdit>
-#include <QSoundEffect>
 #include <QThread>
 
 #include <memory>
@@ -34,35 +33,32 @@ class Typer : public QPlainTextEdit {
  public:
   explicit Typer(QWidget* parent = Q_NULLPTR);
   ~Typer();
-  void setTextTarget(const std::shared_ptr<Text>&);
-  void cancel();
-  void setDisplay(TyperDisplay*);
-  void toggleSounds(int state);
-
- signals:
-  void newInput(QString, int, int);
-  void cancelled();
-  void restarted();
-
-  void newResult(int);
-  void newStatistics();
-  void newWpm(double, double);
-  void newApm(double, double);
-  void characterAdded();
-  void testStarted(int);
-  void done(double, double, double);
 
  public slots:
   void handleResult(TestResult*);
+  void setTextTarget(const std::shared_ptr<Text>&);
+  void cancel();
+  void setDisplay(TyperDisplay*);
+
+ signals:
+  void newInput(QString, int, int);
+  void mistake();
+  void cancelled();
+  void restarted();
+  void newResult(int);
+  void newStatistics();
+  void newWpm(double, double, double);
+  void testStarted(int);
+  void done(double, double, double);
 
  private:
   void keyPressEvent(QKeyEvent* e);
   void clearTest();
+
+ private:
   Test* test_;
   QThread test_thread_;
   TyperDisplay* display_;
-  QSoundEffect errorSound;
-  QSoundEffect successSound;
 };
 
 #endif  // SRC_QUIZZER_TYPER_H_

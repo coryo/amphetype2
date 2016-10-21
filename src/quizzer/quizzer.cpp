@@ -22,6 +22,7 @@
 #include <QFontDatabase>
 #include <QPainter>
 #include <QSettings>
+#include <QUrl>
 
 #include <QsLog.h>
 
@@ -43,31 +44,31 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
   // set defaults for ui stuff
   this->timerLabelReset();
   this->setPreviousResultText(0, 0);
-  this->lessonTimer.setInterval(1000);
+  lesson_timer_.setInterval(1000);
+
+  error_sound_.setSource(QUrl::fromLocalFile(":/sounds/error.wav"));
+  error_sound_.setVolume(0.25f);
+  success_sound_.setSource(QUrl::fromLocalFile(":/sounds/success.wav"));
+  success_sound_.setVolume(0.25f);
 
   connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), ui->typerDisplay,
           SLOT(setCols(int)));
   connect(ui->typerColsSpinBox, SIGNAL(valueChanged(int)), this,
           SLOT(saveSettings()));
   connect(ui->soundsCheckBox, &QCheckBox::stateChanged, this,
+          &Quizzer::toggleSounds);
+  connect(ui->soundsCheckBox, &QCheckBox::stateChanged, this,
           &Quizzer::saveSettings);
-  connect(ui->soundsCheckBox, &QCheckBox::stateChanged, ui->typer,
-          &Typer::toggleSounds);
 
   connect(this, &Quizzer::colorChanged, this, &Quizzer::timerLabelStop);
-  connect(&lessonTimer, &QTimer::timeout, this, &Quizzer::timerLabelUpdate);
+  connect(&lesson_timer_, &QTimer::timeout, this, &Quizzer::timerLabelUpdate);
 
   connect(ui->typer, &Typer::cancelled, this, &Quizzer::cancelled);
   connect(ui->typer, &Typer::restarted, this, &Quizzer::restart);
-
-  connect(ui->typer, &Typer::newWpm, this, &Quizzer::newWpm);
-  connect(ui->typer, &Typer::newApm, this, &Quizzer::newApm);
-  connect(ui->typer, &Typer::characterAdded, this, &Quizzer::characterAdded);
-  connect(ui->typer, &Typer::testStarted, this, &Quizzer::testStarted);
   connect(ui->typer, &Typer::testStarted, this, &Quizzer::beginTest);
+  connect(ui->typer, &Typer::done, &success_sound_, &QSoundEffect::play);
   connect(ui->typer, &Typer::done, this, &Quizzer::done);
-  connect(ui->typer, &Typer::newResult, this, &Quizzer::newResult);
-  connect(ui->typer, &Typer::newStatistics, this, &Quizzer::newStatistics);
+  connect(ui->typer, &Typer::mistake, &error_sound_, &QSoundEffect::play);
 }
 
 Quizzer::~Quizzer() { delete ui; }
@@ -132,7 +133,7 @@ void Quizzer::focusOutEvent(QFocusEvent* event) {
 
 void Quizzer::checkSource(const QList<int>& sources) {
   for (const auto& source : sources) {
-    if (this->text->source() == source) {
+    if (text_->source() == source) {
       ui->typer->cancel();
       return;
     }
@@ -141,16 +142,16 @@ void Quizzer::checkSource(const QList<int>& sources) {
 
 void Quizzer::checkText(const QList<int>& texts) {
   for (const auto& text : texts) {
-    if (this->text->id() == text) {
+    if (text_->id() == text) {
       ui->typer->cancel();
       return;
     }
   }
 }
 
-Typer* Quizzer::getTyper() const { return this->ui->typer; }
+Typer* Quizzer::typer() const { return ui->typer; }
 
-void Quizzer::restart() { this->setText(this->text); }
+void Quizzer::restart() { this->setText(text_); }
 
 void Quizzer::cancelled() {
   this->setText(Text::selectText(amphetype::SelectionMethod::Random));
@@ -167,44 +168,44 @@ void Quizzer::done(double wpm, double acc, double vis) {
   // repeat if targets not met, otherwise get next text
   if (acc < target_acc_ / 100.0) {
     this->alertText("Failed Accuracy Target");
-    this->setText(this->text);
+    this->setText(text_);
   } else if (wpm < target_wpm_) {
     this->alertText("Failed WPM Target");
-    this->setText(this->text);
+    this->setText(text_);
   } else if (vis > target_vis_) {
     this->alertText("Failed Viscosity Target");
-    this->setText(this->text);
+    this->setText(text_);
   } else {
     ui->alertLabel->hide();
-    this->setText(this->text->nextText());
+    this->setText(text_->nextText());
   }
 }
 
 void Quizzer::beginTest(int length) {
-  lessonTimer.start();
+  lesson_timer_.start();
   this->timerLabelReset();
   this->timerLabelGo();
 }
 
 void Quizzer::timerLabelUpdate() {
-  lessonTime = lessonTime.addSecs(1);
-  ui->timerLabel->setText(lessonTime.toString("mm:ss"));
+  lesson_time_ = lesson_time_.addSecs(1);
+  ui->timerLabel->setText(lesson_time_.toString("mm:ss"));
 }
 
 void Quizzer::timerLabelGo() {
-  ui->timerLabel->setStyleSheet("QLabel { background-color : " + goColor +
-                                "; }");
+  ui->timerLabel->setStyleSheet("QLabel { background-color : " +
+                                go_color_.name() + "; }");
 }
 
 void Quizzer::timerLabelStop() {
-  ui->timerLabel->setStyleSheet("QLabel { background-color : " + stopColor +
-                                "; }");
+  ui->timerLabel->setStyleSheet("QLabel { background-color : " +
+                                stop_color_.name() + "; }");
 }
 
 void Quizzer::timerLabelReset() {
   timerLabelStop();
-  lessonTime = QTime(0, 0, 0, 0);
-  ui->timerLabel->setText(lessonTime.toString("mm:ss"));
+  lesson_time_ = QTime(0, 0, 0, 0);
+  ui->timerLabel->setText(lesson_time_.toString("mm:ss"));
 }
 
 void Quizzer::setPreviousResultText(double lastWpm, double lastAcc) {
@@ -220,17 +221,21 @@ void Quizzer::setPreviousResultText(double lastWpm, double lastAcc) {
 }
 
 void Quizzer::setText(const std::shared_ptr<Text>& t) {
-  this->text = t;
-  ui->typerDisplay->setTextTarget(text->text());
+  text_ = t;
+  ui->typerDisplay->setTextTarget(text_->text());
   ui->typer->setTextTarget(t);
-  ui->typer->toggleSounds(ui->soundsCheckBox->checkState());
 
   this->timerLabelStop();
-  this->lessonTimer.stop();
+  lesson_timer_.stop();
 
   QString info_text;
-  info_text.append(text->sourceName());
-  if (text->textNumber() >= 0)
-    info_text += " #" + QString::number(text->textNumber());
+  info_text.append(text_->sourceName());
+  if (text_->textNumber() >= 0)
+    info_text += " #" + QString::number(text_->textNumber());
   ui->textInfoLabel->setText(info_text);
+}
+
+void Quizzer::toggleSounds(int state) {
+  error_sound_.setMuted(state != Qt::Checked);
+  success_sound_.setMuted(state != Qt::Checked);
 }

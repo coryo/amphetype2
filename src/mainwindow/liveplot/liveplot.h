@@ -38,21 +38,16 @@ class LivePlot : public QCustomPlot {
   explicit LivePlot(QWidget* parent = 0);
 
  private:
-  // colors
   QColor wpmLineColor;
   QColor apmLineColor;
   QColor targetLineColor;
   QColor plotBackgroundColor;
   QColor plotForegroundColor;
-  QString goColor;
-  QString stopColor;
 
  public slots:
   void beginTest(int);
-  void newKeyPress();
   void updatePlotRangeY();
-  void addWpm(double, double);
-  void addApm(double, double);
+  void addWpm(double, double, double);
   void clearPlotData();
   void showGraphs();
   void setPlotVisible(int);
