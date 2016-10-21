@@ -59,7 +59,7 @@ void Typer::handleResult(TestResult* result) {
 
   if (s.value("perf_logging", true).toBool()) {
     result->save();
-    emit newResult(result->text().getSource());
+    emit newResult(result->text().source());
     emit newStatistics();
   }
 

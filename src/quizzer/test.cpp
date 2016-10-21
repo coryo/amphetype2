@@ -39,9 +39,9 @@ Test::Test(const std::shared_ptr<Text>& t, QObject* parent)
       currentPos(0),
       apmWindow(5),
       totalMs(0) {
-  msBetween.resize(t->getText().length() + 1);
-  timeAt.resize(t->getText().length() + 1);
-  wpm.resize(t->getText().length() + 1);
+  msBetween.resize(t->text().length() + 1);
+  timeAt.resize(t->text().length() + 1);
+  wpm.resize(t->text().length() + 1);
 }
 
 Test::~Test() { QLOG_DEBUG() << "deleting test"; }
@@ -57,7 +57,7 @@ void Test::start() {
   this->startTime = QDateTime::currentDateTime();
   this->timer.start();
   this->started = true;
-  emit testStarted(this->text->getText().length());
+  emit testStarted(this->text->text().length());
 }
 
 void Test::abort() {
@@ -82,7 +82,7 @@ void Test::finish() {
 }
 
 void Test::handleInput(QString currentText, int ms, int direction) {
-  if (this->text->getText().isEmpty() || this->finished) return;
+  if (this->text->text().isEmpty() || this->finished) return;
 
   if (!this->started && !this->finished) {
     QLOG_DEBUG() << "Test Starting.";
@@ -90,11 +90,11 @@ void Test::handleInput(QString currentText, int ms, int direction) {
   }
 
   this->currentPos =
-      std::min(currentText.length(), this->text->getText().length());
+      std::min(currentText.length(), this->text->text().length());
 
   for (this->currentPos; this->currentPos >= -1; this->currentPos--) {
     if (QStringRef(&currentText, 0, this->currentPos) ==
-        QStringRef(&this->text->getText(), 0, this->currentPos)) {
+        QStringRef(&this->text->text(), 0, this->currentPos)) {
       break;
     }
   }
@@ -121,13 +121,13 @@ void Test::handleInput(QString currentText, int ms, int direction) {
 
       double apm = 12.0 * (this->apmWindow / (t / 1000.0));
 
-      emit newWpm(this->currentPos - 1, this->wpm.last());
+      emit newWpm(this->currentPos - 1, this->wpm[currentPos]);
       emit newApm(this->currentPos - 1, apm);
       emit characterAdded();
     }
   }
 
-  if (lcd == QStringRef(&this->text->getText())) {
+  if (lcd == QStringRef(&this->text->text())) {
     this->finish();
     QLOG_DEBUG() << "totalms: " << this->totalMs;
     return;
@@ -135,7 +135,7 @@ void Test::handleInput(QString currentText, int ms, int direction) {
 
   // Mistake handling
   if (this->currentPos < currentText.length() &&
-      this->currentPos < this->text->getText().length()) {
+      this->currentPos < this->text->text().length()) {
     if (direction < 0) {
       QLOG_DEBUG() << "ignoring backspace.";
       return;
@@ -146,9 +146,9 @@ void Test::handleInput(QString currentText, int ms, int direction) {
       return;
     }
     QLOG_DEBUG() << "Mistake" << currentText[this->currentPos] << "for"
-                 << this->text->getText()[this->currentPos] << "at"
+                 << this->text->text()[this->currentPos] << "at"
                  << this->currentPos;
-    this->addMistake(this->currentPos, this->text->getText()[this->currentPos],
+    this->addMistake(this->currentPos, this->text->text()[this->currentPos],
                      currentText[this->currentPos]);
     emit mistake(this->currentPos);
   }
@@ -180,17 +180,17 @@ void Test::prepareResult() {
   int mistakes = this->mistakeCount();
   // calc accuracy
   double accuracy =
-      1.0 - mistakes / static_cast<double>(this->text->getText().length());
+      1.0 - mistakes / static_cast<double>(this->text->text().length());
   // viscocity
   double spc = (this->totalMs / 1000.0) /
-               this->text->getText().length();  // seconds per character
+               this->text->text().length();  // seconds per character
   QVector<double> v;
   for (int i = 0; i < this->msBetween.size(); ++i) {
     v << qPow((((this->msBetween.at(i) / 1000.0) - spc) / spc), 2);
   }
   double sum = 0.0;
   for (const auto& x : v) sum += x;
-  double viscosity = sum / this->text->getText().length();
+  double viscosity = sum / this->text->text().length();
 
   // Generate statistics, the key is character/word/trigram
   // stats are the time values, visc viscosity, mistakeCount values are
@@ -204,9 +204,9 @@ void Test::prepareResult() {
   QMultiHash<QStringRef, int> mistakeCount;
 
   // characters
-  for (int i = 0; i < this->text->getText().length(); ++i) {
+  for (int i = 0; i < this->text->text().length(); ++i) {
     // the character as a qstringref
-    QStringRef c(&(this->text->getText()), i, 1);
+    QStringRef c(&(this->text->text()), i, 1);
 
     // add a time value and visc value for the key,
     // time isn't valid for char 0
@@ -218,9 +218,9 @@ void Test::prepareResult() {
     if (this->mistakes.contains(i)) mistakeCount.insert(c, i);
   }
   // trigrams
-  for (int i = 0; i < this->text->getText().length() - 2; ++i) {
+  for (int i = 0; i < this->text->text().length() - 2; ++i) {
     // the trigram as a qstringref
-    QStringRef tri(&(this->text->getText()), i, 3);
+    QStringRef tri(&(this->text->text()), i, 3);
     start = i;
     end = i + 3;
 
@@ -250,7 +250,7 @@ void Test::prepareResult() {
   // words
   QRegularExpression re("(\\w|'(?![A-Z]))+(-\\w(\\w|')*)*",
                         QRegularExpression::UseUnicodePropertiesOption);
-  QRegularExpressionMatchIterator i = re.globalMatch(this->text->getText());
+  QRegularExpressionMatchIterator i = re.globalMatch(this->text->text());
   QRegularExpressionMatch match;
   while (i.hasNext()) {
     match = i.next();
@@ -264,7 +264,7 @@ void Test::prepareResult() {
     end = match.capturedEnd();
 
     // the word as a qstringref
-    QStringRef word = QStringRef(&(this->text->getText()), start, length);
+    QStringRef word = QStringRef(&(this->text->text()), start, length);
 
     perch = 0;
     visco = 0;
@@ -294,16 +294,16 @@ void Test::prepareResult() {
 
 void TestResult::save() {
   Database db;
-  if (text_->saveFlags() & Amphetype::SaveFlags::SaveResults) {
+  if (text_->saveFlags() & amphetype::SaveFlags::SaveResults) {
     QLOG_DEBUG() << "Saving results";
     db.addResult(now_.toString(Qt::ISODate), text_, wpm_, accuracy_,
                  viscosity_);
   }
-  if (text_->saveFlags() & Amphetype::SaveFlags::SaveStatistics) {
+  if (text_->saveFlags() & amphetype::SaveFlags::SaveStatistics) {
     QLOG_DEBUG() << "Saving statistics";
     db.addStatistics(stats_values_, viscosity_values_, mistake_counts_);
   }
-  if (text_->saveFlags() & Amphetype::SaveFlags::SaveMistakes) {
+  if (text_->saveFlags() & amphetype::SaveFlags::SaveMistakes) {
     QLOG_DEBUG() << "Saving mistakes";
     db.addMistakes(mistakes_);
   }

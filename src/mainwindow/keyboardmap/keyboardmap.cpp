@@ -47,8 +47,8 @@ KeyboardMap::KeyboardMap(QWidget* parent)
       keyboardScene(new QGraphicsScene) {
   QSettings s;
   this->setKeyboard(
-      static_cast<Amphetype::Layout>(s.value("keyboard_layout", 0).toInt()),
-      static_cast<Amphetype::Standard>(
+      static_cast<amphetype::Layout>(s.value("keyboard_layout", 0).toInt()),
+      static_cast<amphetype::Standard>(
           s.value("keyboard_standard", 0).toInt()));
   this->setScene(this->keyboardScene);
   connect(this, &KeyboardMap::dataChanged, this, &KeyboardMap::addKeys);
@@ -62,21 +62,21 @@ void KeyboardMap::resizeEvent(QResizeEvent* event) {
   this->fitInView(this->scene()->sceneRect(), Qt::KeepAspectRatio);
 }
 
-void KeyboardMap::setKeyboard(Amphetype::Layout layout,
-                              Amphetype::Standard standard) {
+void KeyboardMap::setKeyboard(amphetype::Layout layout,
+                              amphetype::Standard standard) {
   this->keyboardLayout = layout;
   this->keyboardStandard = standard;
   this->loadLayout(layout);
   emit dataChanged();
 }
 
-void KeyboardMap::setLayout(Amphetype::Layout layout) {
+void KeyboardMap::setLayout(amphetype::Layout layout) {
   this->keyboardLayout = layout;
   this->loadLayout(layout);
   emit dataChanged();
 }
 
-void KeyboardMap::setStandard(Amphetype::Standard standard) {
+void KeyboardMap::setStandard(amphetype::Standard standard) {
   this->keyboardStandard = standard;
   emit dataChanged();
 }
@@ -94,18 +94,18 @@ void KeyboardMap::updateData() {
 
 void KeyboardMap::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton)
-    this->drawKeyboard(Amphetype::Modifier::Shift);
+    this->drawKeyboard(amphetype::Modifier::Shift);
   else
-    this->drawKeyboard(Amphetype::Modifier::AltGr);
+    this->drawKeyboard(amphetype::Modifier::AltGr);
 }
 
 void KeyboardMap::mouseReleaseEvent(QMouseEvent* event) {
-  this->drawKeyboard(Amphetype::Modifier::None);
+  this->drawKeyboard(amphetype::Modifier::None);
 }
 
-void KeyboardMap::addKeys() { this->drawKeyboard(Amphetype::Modifier::None); }
+void KeyboardMap::addKeys() { this->drawKeyboard(amphetype::Modifier::None); }
 
-void KeyboardMap::drawKeyboard(Amphetype::Modifier modifier) {
+void KeyboardMap::drawKeyboard(amphetype::Modifier modifier) {
   this->keyboardScene->clear();
 
   double max = 0;
@@ -122,16 +122,16 @@ void KeyboardMap::drawKeyboard(Amphetype::Modifier modifier) {
 
 void KeyboardMap::drawKeyboard(
     const QHash<QChar, QHash<QString, QVariant>>& data,
-    Amphetype::Modifier modifier, qreal min, qreal max, qreal x, qreal y) {
+    amphetype::Modifier modifier, qreal min, qreal max, qreal x, qreal y) {
   QStringList* keys;
   switch (modifier) {
-    case Amphetype::Modifier::Shift:
+    case amphetype::Modifier::Shift:
       keys = &(this->keyboardKeys[1]);
       break;
-    case Amphetype::Modifier::AltGr:
+    case amphetype::Modifier::AltGr:
       keys = &(this->keyboardKeys[2]);
       break;
-    case Amphetype::Modifier::None:
+    case amphetype::Modifier::None:
     default:
       keys = &(this->keyboardKeys[0]);
       break;
@@ -144,13 +144,13 @@ void KeyboardMap::drawKeyboard(
 
       int column_offset;
       switch (this->keyboardStandard) {
-        case Amphetype::Standard::ANSI:
-          column_offset = Amphetype::Standards::ansi_offset[row];
-          key_size = Amphetype::Standards::ansi_keys[row][column];
+        case amphetype::Standard::ANSI:
+          column_offset = amphetype::standards::ansi_offset[row];
+          key_size = amphetype::standards::ansi_keys[row][column];
           break;
-        case Amphetype::Standard::ISO:
-          column_offset = Amphetype::Standards::iso_offset[row];
-          key_size = Amphetype::Standards::iso_keys[row][column];
+        case amphetype::Standard::ISO:
+          column_offset = amphetype::standards::iso_offset[row];
+          key_size = amphetype::standards::iso_keys[row][column];
           break;
       }
       if (key_size <= 0) continue;
@@ -233,25 +233,25 @@ qreal KeyboardMap::scaleToRange2(qreal x, qreal range, qreal min, qreal max,
          ((qPow(factor, qAbs(x - min) / qAbs(max - min)) - 1) / (factor - 1));
 }
 
-void KeyboardMap::loadLayout(Amphetype::Layout layout) {
+void KeyboardMap::loadLayout(amphetype::Layout layout) {
   QString filename;
   switch (this->keyboardLayout) {
-    case Amphetype::Layout::QWERTY:
+    case amphetype::Layout::QWERTY:
       filename = ":/keyboard_layouts/qwerty.layout";
       break;
-    case Amphetype::Layout::QWERTZ:
+    case amphetype::Layout::QWERTZ:
       filename = ":/keyboard_layouts/qwertz.layout";
       break;
-    case Amphetype::Layout::AZERTY:
+    case amphetype::Layout::AZERTY:
       filename = ":/keyboard_layouts/azerty.layout";
       break;
-    case Amphetype::Layout::WORKMAN:
+    case amphetype::Layout::WORKMAN:
       filename = ":/keyboard_layouts/workman.layout";
       break;
-    case Amphetype::Layout::COLEMAK:
+    case amphetype::Layout::COLEMAK:
       filename = ":/keyboard_layouts/colemak.layout";
       break;
-    case Amphetype::Layout::DVORAK:
+    case amphetype::Layout::DVORAK:
       filename = ":/keyboard_layouts/dvorak.layout";
       break;
   }

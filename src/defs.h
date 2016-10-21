@@ -21,7 +21,7 @@
 
 #include <QMetaType>
 
-namespace Amphetype {
+namespace amphetype {
 
 enum class SelectionMethod {
   None = -1,
@@ -44,9 +44,9 @@ enum SaveFlags {
   SaveMistakes = 0x4
 };
 
-enum class TextType { Standard = 0, Lesson, GeneratedFromStatistics };
+enum class text_type { Standard = 0, Lesson, GeneratedFromStatistics };
 
-namespace Statistics {
+namespace statistics {
 enum class Order {
   Slow = 0,
   Fast,
@@ -60,7 +60,7 @@ enum class Order {
 };
 
 enum class Type { Keys = 0, Trigrams, Words };
-};  // Statistics
+};  // namespace statistics
 
 enum class Layout {
   QWERTY = 0,
@@ -81,7 +81,7 @@ enum class KeyboardRow { UPPER, MIDDLE, LOWER };
 enum class Finger { INDEX_INNER, INDEX, MIDDLE, RING, PINKY, PINKY_EXTRA };
 
 // The sizes of the key caps in the standard 5x15 area on most keyboards.
-namespace Standards {
+namespace standards {
 static constexpr const double ansi_keys[][15] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0},
     {1.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 0},
@@ -98,18 +98,18 @@ static constexpr const double iso_keys[][15] = {
     {1.25, 1.25, 1.25, 6.25, 1.25, 1.25, 1.25, 1.25, 0, 0, 0, 0, 0, 0, 0}};
 static constexpr const int iso_offset[5] = {0, 1, 1, 1, 3};
 
-}  // Standards
-}  // Amphetype
+}  // namespace standards
+}  // namespace amphetype
 
-Q_DECLARE_METATYPE(Amphetype::SelectionMethod);
-Q_DECLARE_METATYPE(Amphetype::TextType);
-Q_DECLARE_METATYPE(Amphetype::Statistics::Order);
-Q_DECLARE_METATYPE(Amphetype::Statistics::Type);
-Q_DECLARE_METATYPE(Amphetype::Layout);
-Q_DECLARE_METATYPE(Amphetype::Standard);
-Q_DECLARE_METATYPE(Amphetype::Modifier);
+Q_DECLARE_METATYPE(amphetype::SelectionMethod);
+Q_DECLARE_METATYPE(amphetype::text_type);
+Q_DECLARE_METATYPE(amphetype::statistics::Order);
+Q_DECLARE_METATYPE(amphetype::statistics::Type);
+Q_DECLARE_METATYPE(amphetype::Layout);
+Q_DECLARE_METATYPE(amphetype::Standard);
+Q_DECLARE_METATYPE(amphetype::Modifier);
 
-Q_DECLARE_METATYPE(Amphetype::KeyboardRow);
-Q_DECLARE_METATYPE(Amphetype::Finger);
+Q_DECLARE_METATYPE(amphetype::KeyboardRow);
+Q_DECLARE_METATYPE(amphetype::Finger);
 
 #endif  // SRC_DEFS_H_

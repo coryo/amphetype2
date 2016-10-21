@@ -31,48 +31,48 @@ class Text {
        int source = 0, const QString& sName = QString(), int tNum = -1);
   Text(const Text& other);
 
-  int getId() const;
-  int getSource() const;
-  const QString& getText() const;
-  const QString& getSourceName() const;
-  int getTextNumber() const;
+  int id() const;
+  int source() const;
+  const QString& text() const;
+  const QString& sourceName() const;
+  int textNumber() const;
 
   std::shared_ptr<Text> nextText();
 
   static std::shared_ptr<Text> selectText(
-      Amphetype::SelectionMethod method = Amphetype::SelectionMethod::Random,
+      amphetype::SelectionMethod method = amphetype::SelectionMethod::Random,
       const Text* last = nullptr);
 
-  virtual Amphetype::TextType getType() const;
-  virtual Amphetype::SelectionMethod nextTextSelectionPreference() const;
+  virtual amphetype::text_type type() const;
+  virtual amphetype::SelectionMethod nextTextSelectionPreference() const;
   virtual int saveFlags() const;
 
  private:
-  int id;
-  int source;
-  QString text;
-  QString sourceName;
-  int textNumber;
+  int id_;
+  int source_;
+  QString text_;
+  QString source_name_;
+  int text_number_;
 };
 
 class Lesson : public Text {
  public:
   Lesson(const QString&, int, int, const QString&, int);
-  Amphetype::TextType getType() const;
-  Amphetype::SelectionMethod nextTextSelectionPreference() const;
+  amphetype::text_type type() const;
+  amphetype::SelectionMethod nextTextSelectionPreference() const;
   int saveFlags() const;
 };
 
 class TextFromStats : public Text {
  public:
-  TextFromStats(Amphetype::Statistics::Order statsType, const QString& text);
+  TextFromStats(amphetype::statistics::Order statsType, const QString& text);
   TextFromStats(const TextFromStats& other);
-  Amphetype::TextType getType() const;
-  Amphetype::SelectionMethod nextTextSelectionPreference() const;
+  amphetype::text_type type() const;
+  amphetype::SelectionMethod nextTextSelectionPreference() const;
   int saveFlags() const;
 
  private:
-  Amphetype::Statistics::Order stats_type_;
+  amphetype::statistics::Order stats_type_;
 };
 
 #endif  // SRC_TEXTS_TEXT_H_

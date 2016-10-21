@@ -282,7 +282,7 @@ void Library::actionEditText(bool checked) {
   Database db;
   auto t = db.getText(id);
 
-  EditTextDialog dialog(tr("Edit Text:"), t->getText());
+  EditTextDialog dialog(tr("Edit Text:"), t->text());
 
   if (dialog.exec() == QDialog::Accepted) {
     db.updateText(id, dialog.text());

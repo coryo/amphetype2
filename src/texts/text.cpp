@@ -26,9 +26,9 @@
 
 Text::Text(const QString& text, int id, int source, const QString& sName,
            int tNum)
-    : id(id), source(source), sourceName(sName), textNumber(tNum) {
+    : id_(id), source_(source), source_name_(sName), text_number_(tNum) {
   if (text.isEmpty() && id == -1 && source == 0) {
-    this->text =
+    this->text_ =
         "Welcome to Amphetype!\nA "
         "typing program that not only measures your speed and "
         "progress, but also gives you detailed statistics about"
@@ -41,30 +41,30 @@ Text::Text(const QString& text, int id, int source, const QString& sName,
         "\"Library\" window and try adding some texts from the "
         "\"txt\" directory.";
   } else {
-    this->text = text;
+    this->text_ = text;
   }
 }
 
 Text::Text(const Text& other)
-    : id(other.id),
-      source(other.source),
-      text(other.text),
-      sourceName(other.sourceName),
-      textNumber(other.textNumber) {}
+    : id_(other.id_),
+      source_(other.source_),
+      text_(other.text_),
+      source_name_(other.source_name_),
+      text_number_(other.text_number_) {}
 
-int Text::getId() const { return id; }
-int Text::getSource() const { return source; }
-const QString& Text::getText() const { return text; }
-const QString& Text::getSourceName() const { return sourceName; }
-int Text::getTextNumber() const { return textNumber; }
+int Text::id() const { return id_; }
+int Text::source() const { return source_; }
+const QString& Text::text() const { return text_; }
+const QString& Text::sourceName() const { return source_name_; }
+int Text::textNumber() const { return text_number_; }
 
-Amphetype::TextType Text::getType() const {
-  return Amphetype::TextType::Standard;
+amphetype::text_type Text::type() const {
+  return amphetype::text_type::Standard;
 }
 
-Amphetype::SelectionMethod Text::nextTextSelectionPreference() const {
+amphetype::SelectionMethod Text::nextTextSelectionPreference() const {
   QSettings s;
-  return static_cast<Amphetype::SelectionMethod>(
+  return static_cast<amphetype::SelectionMethod>(
       s.value("select_method", 0).toInt());
 }
 
@@ -72,31 +72,31 @@ std::shared_ptr<Text> Text::nextText() {
   return Text::selectText(this->nextTextSelectionPreference(), this);
 }
 
-std::shared_ptr<Text> Text::selectText(Amphetype::SelectionMethod method,
+std::shared_ptr<Text> Text::selectText(amphetype::SelectionMethod method,
                                        const Text* last) {
   Database db;
   switch (method) {
-    case Amphetype::SelectionMethod::Random:
+    case amphetype::SelectionMethod::Random:
       return db.getRandomText();
-    case Amphetype::SelectionMethod::InOrder:
+    case amphetype::SelectionMethod::InOrder:
       return last == nullptr ? db.getNextText() : db.getNextText(*last);
-    case Amphetype::SelectionMethod::Repeat:
+    case amphetype::SelectionMethod::Repeat:
       return last == nullptr ? std::make_shared<Text>()
                              : std::make_shared<Text>(*last);
-    case Amphetype::SelectionMethod::SlowWords:
-      return db.textFromStats(Amphetype::Statistics::Order::Slow);
-    case Amphetype::SelectionMethod::FastWords:
-      return db.textFromStats(Amphetype::Statistics::Order::Fast);
-    case Amphetype::SelectionMethod::ViscousWords:
-      return db.textFromStats(Amphetype::Statistics::Order::Viscous);
-    case Amphetype::SelectionMethod::FluidWords:
-      return db.textFromStats(Amphetype::Statistics::Order::Fluid);
-    case Amphetype::SelectionMethod::InaccurateWords:
-      return db.textFromStats(Amphetype::Statistics::Order::Inaccurate);
-    case Amphetype::SelectionMethod::AccurateWords:
-      return db.textFromStats(Amphetype::Statistics::Order::Accurate);
-    case Amphetype::SelectionMethod::DamagingWords:
-      return db.textFromStats(Amphetype::Statistics::Order::Damaging);
+    case amphetype::SelectionMethod::SlowWords:
+      return db.textFromStats(amphetype::statistics::Order::Slow);
+    case amphetype::SelectionMethod::FastWords:
+      return db.textFromStats(amphetype::statistics::Order::Fast);
+    case amphetype::SelectionMethod::ViscousWords:
+      return db.textFromStats(amphetype::statistics::Order::Viscous);
+    case amphetype::SelectionMethod::FluidWords:
+      return db.textFromStats(amphetype::statistics::Order::Fluid);
+    case amphetype::SelectionMethod::InaccurateWords:
+      return db.textFromStats(amphetype::statistics::Order::Inaccurate);
+    case amphetype::SelectionMethod::AccurateWords:
+      return db.textFromStats(amphetype::statistics::Order::Accurate);
+    case amphetype::SelectionMethod::DamagingWords:
+      return db.textFromStats(amphetype::statistics::Order::Damaging);
     default:
       Q_ASSERT(false);
       return db.getRandomText();
@@ -104,9 +104,9 @@ std::shared_ptr<Text> Text::selectText(Amphetype::SelectionMethod method,
 }
 
 int Text::saveFlags() const {
-  return (Amphetype::SaveFlags::SaveResults |
-          Amphetype::SaveFlags::SaveStatistics |
-          Amphetype::SaveFlags::SaveMistakes);
+  return (amphetype::SaveFlags::SaveResults |
+          amphetype::SaveFlags::SaveStatistics |
+          amphetype::SaveFlags::SaveMistakes);
 }
 
 
@@ -114,52 +114,52 @@ Lesson::Lesson(const QString& text, int id, int source, const QString& sName,
                int tNum)
     : Text(text, id, source, sName, tNum) {}
 
-Amphetype::TextType Lesson::getType() const {
-  return Amphetype::TextType::Lesson;
+amphetype::text_type Lesson::type() const {
+  return amphetype::text_type::Lesson;
 }
 
-Amphetype::SelectionMethod Lesson::nextTextSelectionPreference() const {
-  return Amphetype::SelectionMethod::InOrder;
+amphetype::SelectionMethod Lesson::nextTextSelectionPreference() const {
+  return amphetype::SelectionMethod::InOrder;
 }
 
 int Lesson::saveFlags() const {
-  return (Amphetype::SaveFlags::SaveResults |
-          Amphetype::SaveFlags::SaveMistakes);
+  return (amphetype::SaveFlags::SaveResults |
+          amphetype::SaveFlags::SaveMistakes);
 }
 
 
-TextFromStats::TextFromStats(Amphetype::Statistics::Order statsType,
+TextFromStats::TextFromStats(amphetype::statistics::Order statsType,
                              const QString& text)
     : Text(text, -1, 0, "Text From Stats", -1), stats_type_(statsType) {}
-Amphetype::TextType TextFromStats::getType() const {
-  return Amphetype::TextType::GeneratedFromStatistics;
+amphetype::text_type TextFromStats::type() const {
+  return amphetype::text_type::GeneratedFromStatistics;
 }
 
 TextFromStats::TextFromStats(const TextFromStats& other)
     : Text(other), stats_type_(other.stats_type_) {}
 
-Amphetype::SelectionMethod TextFromStats::nextTextSelectionPreference() const {
+amphetype::SelectionMethod TextFromStats::nextTextSelectionPreference() const {
   switch (stats_type_) {
-    case Amphetype::Statistics::Order::Slow:
-      return Amphetype::SelectionMethod::SlowWords;
-    case Amphetype::Statistics::Order::Fast:
-      return Amphetype::SelectionMethod::FastWords;
-    case Amphetype::Statistics::Order::Viscous:
-      return Amphetype::SelectionMethod::ViscousWords;
-    case Amphetype::Statistics::Order::Fluid:
-      return Amphetype::SelectionMethod::FluidWords;
-    case Amphetype::Statistics::Order::Inaccurate:
-      return Amphetype::SelectionMethod::InaccurateWords;
-    case Amphetype::Statistics::Order::Accurate:
-      return Amphetype::SelectionMethod::AccurateWords;
-    case Amphetype::Statistics::Order::Damaging:
-      return Amphetype::SelectionMethod::DamagingWords;
+    case amphetype::statistics::Order::Slow:
+      return amphetype::SelectionMethod::SlowWords;
+    case amphetype::statistics::Order::Fast:
+      return amphetype::SelectionMethod::FastWords;
+    case amphetype::statistics::Order::Viscous:
+      return amphetype::SelectionMethod::ViscousWords;
+    case amphetype::statistics::Order::Fluid:
+      return amphetype::SelectionMethod::FluidWords;
+    case amphetype::statistics::Order::Inaccurate:
+      return amphetype::SelectionMethod::InaccurateWords;
+    case amphetype::statistics::Order::Accurate:
+      return amphetype::SelectionMethod::AccurateWords;
+    case amphetype::statistics::Order::Damaging:
+      return amphetype::SelectionMethod::DamagingWords;
     default:
-      return Amphetype::SelectionMethod::SlowWords;
+      return amphetype::SelectionMethod::SlowWords;
   };
 }
 
 int TextFromStats::saveFlags() const {
-  return (Amphetype::SaveFlags::SaveStatistics |
-          Amphetype::SaveFlags::SaveMistakes);
+  return (amphetype::SaveFlags::SaveStatistics |
+          amphetype::SaveFlags::SaveMistakes);
 }

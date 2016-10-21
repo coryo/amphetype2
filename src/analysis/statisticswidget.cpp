@@ -149,9 +149,9 @@ void StatisticsWidget::populateStatistics() {
   Database db;
   QList<QVariantList> rows = db.getStatisticsData(
       QDateTime::currentDateTime().addDays(-history_).toString(Qt::ISODate),
-      static_cast<Amphetype::Statistics::Type>(
+      static_cast<amphetype::statistics::Type>(
           ui->typeComboBox->currentIndex()),
-      ui->minCountSpinBox->value(), static_cast<Amphetype::Statistics::Order>(
+      ui->minCountSpinBox->value(), static_cast<amphetype::statistics::Order>(
                                         ui->orderComboBox->currentIndex()),
       ui->limitSpinBox->value());
   for (const QVariantList& row : rows) {

@@ -35,24 +35,24 @@ TrainingGenWidget::TrainingGenWidget(QWidget* parent)
   connect(ui->generateButton, SIGNAL(clicked()), this, SLOT(generate()));
 
   ui->layoutComboBox->addItem("QWERTY",
-                              QVariant::fromValue(Amphetype::Layout::QWERTY));
+                              QVariant::fromValue(amphetype::Layout::QWERTY));
   ui->layoutComboBox->addItem("AZERTY",
-                              QVariant::fromValue(Amphetype::Layout::AZERTY));
+                              QVariant::fromValue(amphetype::Layout::AZERTY));
   ui->layoutComboBox->addItem("QWERTZ",
-                              QVariant::fromValue(Amphetype::Layout::QWERTZ));
+                              QVariant::fromValue(amphetype::Layout::QWERTZ));
   ui->layoutComboBox->addItem("DVORAK",
-                              QVariant::fromValue(Amphetype::Layout::DVORAK));
+                              QVariant::fromValue(amphetype::Layout::DVORAK));
   ui->layoutComboBox->addItem("COLEMAK",
-                              QVariant::fromValue(Amphetype::Layout::COLEMAK));
+                              QVariant::fromValue(amphetype::Layout::COLEMAK));
   ui->layoutComboBox->addItem("WORKMAN",
-                              QVariant::fromValue(Amphetype::Layout::WORKMAN));
+                              QVariant::fromValue(amphetype::Layout::WORKMAN));
 }
 
 TrainingGenWidget::~TrainingGenWidget() { delete ui; }
 
 void TrainingGenWidget::generate() {
-  Amphetype::Layout layout =
-      ui->layoutComboBox->currentData().value<Amphetype::Layout>();
+  amphetype::Layout layout =
+      ui->layoutComboBox->currentData().value<amphetype::Layout>();
   int lessonLength = ui->lessonLengthSpinBox->value();
   int lessonsPerStage = ui->lessonsPerStageSpinBox->value();
 
@@ -66,22 +66,22 @@ void TrainingGenWidget::generate() {
 
   QString layoutName;
   switch (layout) {
-    case Amphetype::Layout::QWERTY:
+    case amphetype::Layout::QWERTY:
       layoutName = "QWERTY";
       break;
-    case Amphetype::Layout::AZERTY:
+    case amphetype::Layout::AZERTY:
       layoutName = "AZERTY";
       break;
-    case Amphetype::Layout::QWERTZ:
+    case amphetype::Layout::QWERTZ:
       layoutName = "QWERTZ";
       break;
-    case Amphetype::Layout::COLEMAK:
+    case amphetype::Layout::COLEMAK:
       layoutName = "COLEMAK";
       break;
-    case Amphetype::Layout::DVORAK:
+    case amphetype::Layout::DVORAK:
       layoutName = "DVORAK";
       break;
-    case Amphetype::Layout::WORKMAN:
+    case amphetype::Layout::WORKMAN:
       layoutName = "WORKMAN";
       break;
     default:

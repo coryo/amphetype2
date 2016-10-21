@@ -39,7 +39,7 @@ class SettingsWidget : public QWidget {
 
  signals:
   void settingsChanged();
-  void newKeyboard(Amphetype::Layout, Amphetype::Standard);
+  void newKeyboard(amphetype::Layout, amphetype::Standard);
 
  public slots:
   void loadSettings();

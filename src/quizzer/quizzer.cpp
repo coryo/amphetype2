@@ -73,19 +73,19 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
 Quizzer::~Quizzer() { delete ui; }
 
 void Quizzer::actionGrindWords() {
-  this->setText(Text::selectText(Amphetype::SelectionMethod::SlowWords));
+  this->setText(Text::selectText(amphetype::SelectionMethod::SlowWords));
 }
 
 void Quizzer::actionGrindViscWords() {
-  this->setText(Text::selectText(Amphetype::SelectionMethod::ViscousWords));
+  this->setText(Text::selectText(amphetype::SelectionMethod::ViscousWords));
 }
 
 void Quizzer::actionGrindInaccurateWords() {
-  this->setText(Text::selectText(Amphetype::SelectionMethod::InaccurateWords));
+  this->setText(Text::selectText(amphetype::SelectionMethod::InaccurateWords));
 }
 
 void Quizzer::actionGrindDamagingWords() {
-  this->setText(Text::selectText(Amphetype::SelectionMethod::DamagingWords));
+  this->setText(Text::selectText(amphetype::SelectionMethod::DamagingWords));
 }
 
 void Quizzer::loadSettings() {
@@ -132,7 +132,7 @@ void Quizzer::focusOutEvent(QFocusEvent* event) {
 
 void Quizzer::checkSource(const QList<int>& sources) {
   for (const auto& source : sources) {
-    if (this->text->getSource() == source) {
+    if (this->text->source() == source) {
       ui->typer->cancel();
       return;
     }
@@ -141,7 +141,7 @@ void Quizzer::checkSource(const QList<int>& sources) {
 
 void Quizzer::checkText(const QList<int>& texts) {
   for (const auto& text : texts) {
-    if (this->text->getId() == text) {
+    if (this->text->id() == text) {
       ui->typer->cancel();
       return;
     }
@@ -153,7 +153,7 @@ Typer* Quizzer::getTyper() const { return this->ui->typer; }
 void Quizzer::restart() { this->setText(this->text); }
 
 void Quizzer::cancelled() {
-  this->setText(Text::selectText(Amphetype::SelectionMethod::Random));
+  this->setText(Text::selectText(amphetype::SelectionMethod::Random));
 }
 
 void Quizzer::alertText(const QString& text) {
@@ -221,7 +221,7 @@ void Quizzer::setPreviousResultText(double lastWpm, double lastAcc) {
 
 void Quizzer::setText(const std::shared_ptr<Text>& t) {
   this->text = t;
-  ui->typerDisplay->setTextTarget(text->getText());
+  ui->typerDisplay->setTextTarget(text->text());
   ui->typer->setTextTarget(t);
   ui->typer->toggleSounds(ui->soundsCheckBox->checkState());
 
@@ -229,8 +229,8 @@ void Quizzer::setText(const std::shared_ptr<Text>& t) {
   this->lessonTimer.stop();
 
   QString info_text;
-  info_text.append(text->getSourceName());
-  if (text->getTextNumber() >= 0)
-    info_text += " #" + QString::number(text->getTextNumber());
+  info_text.append(text->sourceName());
+  if (text->textNumber() >= 0)
+    info_text += " #" + QString::number(text->textNumber());
   ui->textInfoLabel->setText(info_text);
 }

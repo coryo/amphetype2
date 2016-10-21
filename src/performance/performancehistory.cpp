@@ -362,7 +362,7 @@ void PerformanceHistory::refreshPerformance() {
     items << new QStandardItem(row[0].toString());
     // add time. convert it to nicer display first
     t = QDateTime::fromString(row[1].toString(), Qt::ISODate);
-    auto timeItem = new QStandardItem(Util::Date::PrettyTimeDelta(t, now));
+    auto timeItem = new QStandardItem(util::date::PrettyTimeDelta(t, now));
     timeItem->setData(t);
     timeItem->setToolTip(t.toString(Qt::SystemLocaleLongDate));
     items << timeItem;
@@ -413,8 +413,8 @@ void PerformanceHistory::refreshPerformance() {
             .arg(best[1].toDouble())
             .arg(worst_time.toString("MMM d, yyyy"))
             .arg(worst[1].toDouble())
-            .arg(Util::Date::PrettyTimeDelta(best_time, now))
-            .arg(Util::Date::PrettyTimeDelta(worst_time, now)));
+            .arg(util::date::PrettyTimeDelta(best_time, now))
+            .arg(util::date::PrettyTimeDelta(worst_time, now)));
   } else {
     ui->bestLabel->clear();
   }

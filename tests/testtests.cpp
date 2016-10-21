@@ -41,16 +41,16 @@ void TestTests::testWPM() {
   QSignalSpy resultSpy(&test, SIGNAL(resultReady(TestResult*)));
 
   int total_ms = 0;
-  for (int i = 0; i < text->getText().length(); ++i) {
-    test.handleInput(text->getText().left(i + 1), total_ms, 0);
-    if (i != text->getText().length() - 1) total_ms += qrand() % 500 + 20;
+  for (int i = 0; i < text->text().length(); ++i) {
+    test.handleInput(text->text().left(i + 1), total_ms, 0);
+    if (i != text->text().length() - 1) total_ms += qrand() % 500 + 20;
   }
 
   QCOMPARE(resultSpy.count(), 1);
 
   TestResult* result = qvariant_cast<TestResult*>(resultSpy.at(0).at(0));
 
-  double wpm = (text->getText().length() / 5.0) / (total_ms / 1000.0 / 60.0);
+  double wpm = (text->text().length() / 5.0) / (total_ms / 1000.0 / 60.0);
 
   QCOMPARE(result->wpm(), wpm);
   QCOMPARE(result->accuracy(), 1.0);
@@ -75,15 +75,15 @@ void TestTests::testMistake() {
   total_ms += qrand() % 500 + 20;
   test.handleInput("th", total_ms, -1);
   total_ms += qrand() % 500 + 20;
-  for (int i = 2; i < text->getText().length(); ++i) {
-    test.handleInput(text->getText().left(i + 1), total_ms, 0);
-    if (i != text->getText().length() - 1) total_ms += qrand() % 500 + 20;
+  for (int i = 2; i < text->text().length(); ++i) {
+    test.handleInput(text->text().left(i + 1), total_ms, 0);
+    if (i != text->text().length() - 1) total_ms += qrand() % 500 + 20;
   }
 
   QCOMPARE(resultSpy.count(), 1);
 
   TestResult* result = qvariant_cast<TestResult*>(resultSpy.at(0).at(0));
-  double wpm = (text->getText().length() / 5.0) / (total_ms / 1000.0 / 60.0);
+  double wpm = (text->text().length() / 5.0) / (total_ms / 1000.0 / 60.0);
 
   QCOMPARE(result->wpm(), wpm);
 

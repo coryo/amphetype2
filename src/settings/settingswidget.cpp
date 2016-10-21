@@ -142,13 +142,13 @@ void SettingsWidget::selectFont() {
 }
 
 void SettingsWidget::changeKeyboardLayout(int index) {
-  emit newKeyboard(static_cast<Amphetype::Layout>(index),
-                   static_cast<Amphetype::Standard>(
+  emit newKeyboard(static_cast<amphetype::Layout>(index),
+                   static_cast<amphetype::Standard>(
                        ui->keyboardStandardComboBox->currentIndex()));
 }
 
 void SettingsWidget::changeKeyboardStandard(int index) {
-  emit newKeyboard(static_cast<Amphetype::Layout>(
+  emit newKeyboard(static_cast<amphetype::Layout>(
                        ui->keyboardLayoutComboBox->currentIndex()),
-                   static_cast<Amphetype::Standard>(index));
+                   static_cast<amphetype::Standard>(index));
 }

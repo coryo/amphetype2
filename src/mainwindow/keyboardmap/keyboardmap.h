@@ -39,12 +39,12 @@ class KeyboardMap : public QGraphicsView {
  public:
   explicit KeyboardMap(QWidget* parent = Q_NULLPTR);
   ~KeyboardMap();
-  void setKeyboard(Amphetype::Layout, Amphetype::Standard);
-  void setLayout(Amphetype::Layout);
-  void setStandard(Amphetype::Standard);
+  void setKeyboard(amphetype::Layout, amphetype::Standard);
+  void setLayout(amphetype::Layout);
+  void setStandard(amphetype::Standard);
   void setData(const QString&);
   void addKeys();
-  void drawKeyboard(Amphetype::Modifier modifier = Amphetype::Modifier::None);
+  void drawKeyboard(amphetype::Modifier modifier = amphetype::Modifier::None);
   void updateData();
 
  protected:
@@ -57,15 +57,15 @@ class KeyboardMap : public QGraphicsView {
   qreal scaleToRange2(qreal, qreal, qreal min = 0, qreal max = 1,
                       qreal factor = 10);
   void drawKeyboard(const QHash<QChar, QHash<QString, QVariant>>&,
-                    Amphetype::Modifier modifier, qreal min = 0.0,
+                    amphetype::Modifier modifier, qreal min = 0.0,
                     qreal max = 100.0, qreal x = 0, qreal y = 0);
-  void loadLayout(Amphetype::Layout);
+  void loadLayout(amphetype::Layout);
 
  private:
   QHash<QChar, QHash<QString, QVariant>> statsData;
   QGraphicsScene* keyboardScene;
-  Amphetype::Layout keyboardLayout;
-  Amphetype::Standard keyboardStandard;
+  amphetype::Layout keyboardLayout;
+  amphetype::Standard keyboardStandard;
   QList<QStringList> keyboardKeys;
   int keySpacing;
   int keySize;

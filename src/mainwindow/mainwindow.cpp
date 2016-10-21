@@ -208,7 +208,7 @@ MainWindow::MainWindow(QWidget* parent)
   libraryWidget->restoreGeometry(
       s.value("libraryWindow/windowGeometry").toByteArray());
 
-  ui->quizzer->setText(Text::selectText(static_cast<Amphetype::SelectionMethod>(
+  ui->quizzer->setText(Text::selectText(static_cast<amphetype::SelectionMethod>(
       s.value("select_method", 0).toInt())));
 }
 
@@ -272,7 +272,7 @@ void MainWindow::changeProfile(QAction* action) {
   Database db(name);
   db.initDB();
   emit profileChanged(name);
-  ui->quizzer->setText(Text::selectText(static_cast<Amphetype::SelectionMethod>(
+  ui->quizzer->setText(Text::selectText(static_cast<amphetype::SelectionMethod>(
       s.value("select_method", 0).toInt())));
 }
 

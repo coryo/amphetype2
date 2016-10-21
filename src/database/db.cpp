@@ -342,8 +342,8 @@ void Database::addResult(const QString& time, const std::shared_ptr<Text>& text,
           db,
           "insert into result (w, text_id, source, wpm, accuracy, viscosity) "
           "values (?, ?, ?, ?, ?, ?)");
-      bindAndRun(&cmd, QVariantList() << time << text->getId()
-                                      << text->getSource() << wpm << acc
+      bindAndRun(&cmd, QVariantList() << time << text->id()
+                                      << text->source() << wpm << acc
                                       << vis);
     }
     QMutexLocker locker(&db_lock);
@@ -399,11 +399,11 @@ void Database::addStatistics(const QMultiHash<QStringRef, double>& stats,
         items << mistakeCount.count(k);
 
         if (k.length() == 1) {
-          items << static_cast<int>(Amphetype::Statistics::Type::Keys);
+          items << static_cast<int>(amphetype::statistics::Type::Keys);
         } else if (k.length() == 3) {
-          items << static_cast<int>(Amphetype::Statistics::Type::Trigrams);
+          items << static_cast<int>(amphetype::statistics::Type::Trigrams);
         } else {
-          items << static_cast<int>(Amphetype::Statistics::Type::Words);
+          items << static_cast<int>(amphetype::statistics::Type::Words);
         }
 
         items << k.toString();
@@ -564,32 +564,32 @@ QList<QVariantList> Database::getPerformanceData(int w, int source, int limit,
 }
 
 QList<QVariantList> Database::getStatisticsData(
-    const QString& when, Amphetype::Statistics::Type type, int count,
-    Amphetype::Statistics::Order stype, int limit) {
+    const QString& when, amphetype::statistics::Type type, int count,
+    amphetype::statistics::Order stype, int limit) {
   QString order, dir;
   switch (stype) {
-    case Amphetype::Statistics::Order::Slow:
+    case amphetype::statistics::Order::Slow:
       order = "wpm asc";
       break;
-    case Amphetype::Statistics::Order::Fast:
+    case amphetype::statistics::Order::Fast:
       order = "wpm desc";
       break;
-    case Amphetype::Statistics::Order::Viscous:
+    case amphetype::statistics::Order::Viscous:
       order = "viscosity desc";
       break;
-    case Amphetype::Statistics::Order::Fluid:
+    case amphetype::statistics::Order::Fluid:
       order = "viscosity asc";
       break;
-    case Amphetype::Statistics::Order::Inaccurate:
+    case amphetype::statistics::Order::Inaccurate:
       order = "accuracy asc";
       break;
-    case Amphetype::Statistics::Order::Accurate:
+    case amphetype::statistics::Order::Accurate:
       order = "mistakes desc";
       break;
-    case Amphetype::Statistics::Order::Total:
+    case amphetype::statistics::Order::Total:
       order = "total desc";
       break;
-    case Amphetype::Statistics::Order::Damaging:
+    case amphetype::statistics::Order::Damaging:
       order = "damage desc";
       break;
     default:
@@ -659,7 +659,7 @@ std::shared_ptr<Text> Database::getNextText() {
 }
 
 std::shared_ptr<Text> Database::getNextText(const Text& lastText) {
-  return getNextText(lastText.getId());
+  return getNextText(lastText.id());
 }
 
 std::shared_ptr<Text> Database::getNextText(int text_id) {
@@ -674,13 +674,13 @@ std::shared_ptr<Text> Database::getNextText(int text_id) {
 }
 
 std::shared_ptr<Text> Database::textFromStats(
-    Amphetype::Statistics::Order type) {
+    amphetype::statistics::Order type) {
   QSettings s;
   QList<QVariantList> rows = getStatisticsData(
       QDateTime::currentDateTime()
           .addDays(-s.value("statisticsWidget/days", 30).toInt())
           .toString(Qt::ISODate),
-      Amphetype::Statistics::Type::Words, 0, type, 10);
+      amphetype::statistics::Type::Words, 0, type, 10);
   if (rows.isEmpty()) {
     return std::make_shared<Text>();
   }
@@ -909,14 +909,14 @@ std::shared_ptr<Text> Database::getTextWithQuery(const QString& query,
 
   int offset = row2.isEmpty() ? 0 : row2[0].toInt() - 1;
 
-  Amphetype::TextType type = static_cast<Amphetype::TextType>(row[4].toInt());
+  amphetype::text_type type = static_cast<amphetype::text_type>(row[4].toInt());
 
   switch (type) {
-    case Amphetype::TextType::Standard:
+    case amphetype::text_type::Standard:
       return std::make_shared<Text>(row[2].toString(), row[0].toInt(),
                                     row[1].toInt(), row[3].toString(),
                                     row[0].toInt() - offset);
-    case Amphetype::TextType::Lesson:
+    case amphetype::text_type::Lesson:
       return std::make_shared<Lesson>(row[2].toString(), row[0].toInt(),
                                       row[1].toInt(), row[3].toString(),
                                       row[0].toInt() - offset);
