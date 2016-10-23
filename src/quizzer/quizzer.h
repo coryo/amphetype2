@@ -27,11 +27,12 @@
 #include <QTime>
 #include <QTimer>
 #include <QWidget>
+#include <QPlainTextEdit>
 
 #include <memory>
 
 #include "quizzer/test.h"
-#include "quizzer/typer.h"
+#include "quizzer/testresult.h"
 #include "quizzer/typerdisplay.h"
 #include "texts/library.h"
 #include "texts/text.h"
@@ -48,12 +49,11 @@ class Quizzer : public QWidget {
  public:
   explicit Quizzer(QWidget *parent = Q_NULLPTR);
   ~Quizzer();
-  Typer *typer() const;
 
  public slots:
   void loadSettings();
   void saveSettings();
-  void setText(const std::shared_ptr<Text> &);
+  void setText(std::shared_ptr<Text>);
   void checkSource(const QList<int> &);
   void checkText(const QList<int> &);
   void actionGrindWords();
@@ -61,29 +61,37 @@ class Quizzer : public QWidget {
   void actionGrindInaccurateWords();
   void actionGrindDamagingWords();
   void toggleSounds(int state);
+  void loadNewText();
 
  private slots:
   void alertText(const QString &);
   void beginTest(int);
-  void done(double, double, double);
   void setPreviousResultText(double, double);
-  void cancelled();
-  void restart();
   void timerLabelUpdate();
   void timerLabelReset();
   void timerLabelGo();
   void timerLabelStop();
+  void handleResult(std::shared_ptr<TestResult>);
 
  signals:
   void colorChanged();
+  void newInput(QString, int, int);
+  void newWpm(double, double, double);
+  void newResult(int);
+  void newStatistics();
+  void testStarted(int);
 
  protected:
   void focusInEvent(QFocusEvent *event);
   void focusOutEvent(QFocusEvent *event);
+  void keyPressEvent(QKeyEvent* event);
 
  private:
-  Ui::Quizzer *ui;
-  std::shared_ptr<Text> text_;
+  std::unique_ptr<Ui::Quizzer> ui;
+  std::unique_ptr<Test> test_;
+  QThread test_thread_;
+  //! A text edit not added to the UI that will handle key events.
+  QPlainTextEdit text_edit_;
   QTimer lesson_timer_;
   QTime lesson_time_;
   QColor go_color_;
@@ -91,6 +99,7 @@ class Quizzer : public QWidget {
   int target_wpm_;
   double target_acc_;
   double target_vis_;
+  bool performance_logging_;
   QSoundEffect error_sound_;
   QSoundEffect success_sound_;
 };

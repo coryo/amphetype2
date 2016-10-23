@@ -49,10 +49,12 @@ class MainWindow : public QMainWindow {
   void profileChanged(QString);
 
  private slots:
-  void changeProfile(QAction*);
+  void createProfile();
+  void changeProfile(const QString& = QString());
   void updateWindowTitle();
   void aboutDialog();
   void populateProfiles();
+  void compressDb();
 
  protected:
   void closeEvent(QCloseEvent* event);

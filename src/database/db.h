@@ -19,16 +19,21 @@
 #ifndef SRC_DATABASE_DB_H_
 #define SRC_DATABASE_DB_H_
 
+#include <QChar>
 #include <QHash>
+#include <QList>
 #include <QObject>
+#include <QPair>
 #include <QString>
-#include <QThread>
+#include <QVariant>
 #include <QVariantList>
+
+#include <memory>
 
 #include <sqlite3pp.h>
 #include <sqlite3ppext.h>
 
-#include "quizzer/test.h"
+#include "quizzer/testresult.h"
 #include "texts/text.h"
 
 class DBConnection {
@@ -47,29 +52,41 @@ class Database : public QObject {
 
  public:
   explicit Database(const QString& name = QString());
+  //! creates the database schema if necessary.
   void initDB();
 
-  // specific insertion functions
-  void addText(int, const QString&, int = -1, bool = true);
-  void addTexts(int, const QStringList&, int = -1, bool = true);
-  void addResult(const QString&, const std::shared_ptr<Text>&, double, double,
-                 double);
-  void addStatistics(const QMultiHash<QStringRef, double>&,
-                     const QMultiHash<QStringRef, double>&,
-                     const QMultiHash<QStringRef, int>&);
-  void addMistakes(const QHash<QPair<QChar, QChar>, int>& mistakes);
+  //! add a text to a source id.
+  void addText(int source, const QString&);
+  //! and many texts to a source id.
+  void addTexts(int source, const QStringList&);
+  //! save the result of a test to the db.
+  void addResult(TestResult*);
+  //! save the statistics of a test to the db.
+  void addStatistics(TestResult*);
+  //! save the mistakes of a test to the db.
+  void addMistakes(TestResult*);
 
-  // removal/modification
+  //! Delete the sources with the given ids
   void deleteSource(const QList<int>& sources);
+  //! Delete the texts with the given ids
   void deleteText(const QList<int>& text_ids);
+  //! Delete the result for the given text id at the given time.
   void deleteResult(const QString& id, const QString& datetime);
+  //! Set the given source ids to disabled.
   void disableSource(const QList<int>& sources);
+  //! Set the given source ids to enabled.
   void enableSource(const QList<int>& sources);
-  void updateText(int, const QString&);
+  //! Set the text for the given text id.
+  void updateText(int id, const QString& newText);
+  //! Delete all statistics for data.
   void deleteStatistic(const QString& data);
 
-  // specific query functions
+  /*! Get a source id for the given source name.
+    The source is created if it doesn't exist.*/
   int getSource(const QString&, int lesson = -1, int type = 0);
+
+  //! Get the best and worst WPM results and their times.
+  QList<QPair<QDateTime, double>> resultsWpmRange();
   QPair<double, double> getMedianStats(int);
   QVariantList getSourceData(int source);
   QList<QVariantList> getSourcesData();
@@ -84,31 +101,43 @@ class Database : public QObject {
                                         amphetype::statistics::Order, int);
   QHash<QChar, QHash<QString, QVariant>> getKeyFrequency();
 
-  // general functions for retrieving data with a given query
+  //! Get one row with the given SQL and bind values.
   QVariantList getOneRow(const QString&, const QVariant& = QVariant());
-  QVariantList getOneRow(sqlite3pp::database&, const QString&,
-                         const QVariant& = QVariant());
+
+  //! Get multiple rows with the given SQL and bind values.
   QList<QVariantList> getRows(const QString&, const QVariant& = QVariant());
 
-  // get the text that follows the last completed text
+  //! get the text that follows the last completed text
   std::shared_ptr<Text> getNextText();
-  // get the text that follows the given text
+  //! get the text that follows the given text
   std::shared_ptr<Text> getNextText(int);
   std::shared_ptr<Text> getNextText(const Text&);
+  //! Get a random Standard text.
   std::shared_ptr<Text> getRandomText();
-  // get a text with a given id
+  //! get a text with a given id
   std::shared_ptr<Text> getText(int);
-  std::shared_ptr<Text> textFromStats(amphetype::statistics::Order);
-
+  /*! Get a text generated from statistics data.
+    \param order the statistics order to use.
+    \param count the number of words to get.
+    \param days the number of days back to get statistics for.
+    \param length the approximate length of the resulting text.
+  */
+  std::shared_ptr<Text> textFromStats(amphetype::statistics::Order order,
+                                      int count = 10, int days = 30,
+                                      int length = 80);
+  //! compress the statistics data in the database.
   void compress();
 
  private:
-  // general functions for executing commands
+  QVariantList getOneRow(sqlite3pp::database&, const QString&,
+                         const QVariant& = QVariant());
+  //! bind values to a command and execute it.
   void bindAndRun(sqlite3pp::command*, const QVariant& = QVariant());
+  //! bind values to a sql query and execute it.
   void bindAndRun(const QString&, const QVariant& = QVariant());
   void binder(sqlite3pp::statement*, const QVariant&);
   void bind_value(sqlite3pp::statement*, int, const QVariant&);
-  // create a text object with a given query
+  //! create a text object with a given query with optional bound values.
   std::shared_ptr<Text> getTextWithQuery(const QString&,
                                          const QVariant& = QVariant());
 

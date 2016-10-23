@@ -78,8 +78,6 @@ StatisticsWidget::StatisticsWidget(QWidget* parent)
 
   connect(ui->tableView, &QWidget::customContextMenuRequested, this,
           &StatisticsWidget::contextMenu);
-
-  populateStatistics();
 }
 
 StatisticsWidget::~StatisticsWidget() {

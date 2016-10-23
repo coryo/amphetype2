@@ -28,12 +28,9 @@
 
 #include <QsLog.h>
 
-#include <sqlite3.h>
-
 #include "config.h"
 #include "database/db.h"
 #include "mainwindow/liveplot/liveplot.h"
-#include "quizzer/typer.h"
 #include "texts/library.h"
 #include "texts/text.h"
 #include "ui_mainwindow.h"
@@ -97,17 +94,17 @@ MainWindow::MainWindow(QWidget* parent)
   ui->menuView->addAction(ui->mapDock->toggleViewAction());
 
   // Typer
-  connect(ui->quizzer->typer(), &Typer::newResult, performance_.get(),
+  connect(ui->quizzer, &Quizzer::newResult, performance_.get(),
           &PerformanceHistory::refreshPerformance);
-  connect(ui->quizzer->typer(), &Typer::newResult, library_.get(),
+  connect(ui->quizzer, &Quizzer::newResult, library_.get(),
           &Library::refreshSource);
-  connect(ui->quizzer->typer(), &Typer::newStatistics, statistics_.get(),
+  connect(ui->quizzer, &Quizzer::newStatistics, statistics_.get(),
           &StatisticsWidget::update);
-  connect(ui->quizzer->typer(), &Typer::newStatistics, ui->keyboardMap,
+  connect(ui->quizzer, &Quizzer::newStatistics, ui->keyboardMap,
           &KeyboardMap::updateData);
   // Live Plot
-  connect(ui->quizzer->typer(), &Typer::newWpm, ui->plot, &LivePlot::addWpm);
-  connect(ui->quizzer->typer(), &Typer::testStarted, ui->plot,
+  connect(ui->quizzer, &Quizzer::newWpm, ui->plot, &LivePlot::addWpm);
+  connect(ui->quizzer, &Quizzer::testStarted, ui->plot,
           &LivePlot::beginTest);
 
   // Library
@@ -171,10 +168,8 @@ MainWindow::MainWindow(QWidget* parent)
   connect(settings_.get(), &SettingsWidget::newKeyboard, ui->keyboardMap,
           &KeyboardMap::setKeyboard);
 
-  connect(ui->menuProfiles, &QMenu::triggered, this,
-          &MainWindow::changeProfile);
-
   // Profile Changed
+  connect(this, &MainWindow::profileChanged, ui->quizzer, &Quizzer::loadNewText);
   connect(this, &MainWindow::profileChanged, library_.get(), &Library::reload);
   connect(this, &MainWindow::profileChanged, performance_.get(),
           &PerformanceHistory::refreshPerformance);
@@ -200,32 +195,38 @@ MainWindow::MainWindow(QWidget* parent)
   library_->restoreGeometry(
       s.value("libraryWindow/windowGeometry").toByteArray());
 
-  ui->quizzer->setText(Text::selectText(static_cast<amphetype::SelectionMethod>(
-      s.value("select_method", 0).toInt())));
+  changeProfile(s.value("profile", "default").toString());
 }
 
-MainWindow::~MainWindow() {
-  delete ui;
-  Database db;
-  db.compress();
-}
+MainWindow::~MainWindow() { delete ui; }
 
 void MainWindow::populateProfiles() {
   ui->menuProfiles->clear();
-  QAction* create = new QAction("Create New Profile", this);
-  create->setData(true);
-  ui->menuProfiles->addAction(create);
+
+  auto create = ui->menuProfiles->addAction("Create New Profile");
+  connect(create, &QAction::triggered, this, &MainWindow::createProfile);
+
+  auto compress = ui->menuProfiles->addAction("Compress database");
+  connect(compress, &QAction::triggered, this, &MainWindow::compressDb);
+
   ui->menuProfiles->addSeparator();
+
   QDirIterator it(
       QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
   while (it.hasNext()) {
     it.next();
     QString file(it.fileName());
     if (file.endsWith(".profile")) {
-      QAction* profile = new QAction(file.split(".profile")[0], this);
-      ui->menuProfiles->addAction(profile);
+      auto profile = ui->menuProfiles->addAction(file.split(".profile")[0]);
+      connect(profile, &QAction::triggered, this,
+              [this, profile] { changeProfile(profile->text()); });
     }
   }
+}
+
+void MainWindow::compressDb() {
+  Database db;
+  db.compress();
 }
 
 void MainWindow::updateWindowTitle() {
@@ -234,32 +235,28 @@ void MainWindow::updateWindowTitle() {
       QString("amphetype2 - %1").arg(s.value("profile", "default").toString()));
 }
 
-void MainWindow::changeProfile(QAction* action) {
-  QString name;
-  if (!action->data().isNull()) {
-    QLOG_DEBUG() << "new profile";
-    bool ok;
-    QString newName = QInputDialog::getText(
-        this, tr("Create Profile"), tr("Name:"), QLineEdit::Normal, "", &ok);
+void MainWindow::createProfile() {
+  QAction* action = qobject_cast<QAction*>(sender());
+  if (!action) return;
 
-    if (ok && !newName.isEmpty()) {
-      name = newName;
-    } else {
-      return;
-    }
-  } else {
-    name = action->text();
+  QLOG_DEBUG() << "new profile";
+  bool ok;
+  QString newName = QInputDialog::getText(
+      this, tr("Create Profile"), tr("Name:"), QLineEdit::Normal, "", &ok);
+
+  if (ok && !newName.isEmpty()) {
+    changeProfile(newName);
   }
 
+}
+void MainWindow::changeProfile(const QString& name) {
   QLOG_DEBUG() << "changeProfile" << name;
   QSettings s;
-  if (s.value("profile", "default").toString() == name) return;
+  //if (s.value("profile", "default").toString() == name) return;
   s.setValue("profile", name);
   Database db(name);
   db.initDB();
   emit profileChanged(name);
-  ui->quizzer->setText(Text::selectText(static_cast<amphetype::SelectionMethod>(
-      s.value("select_method", 0).toInt())));
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
@@ -280,8 +277,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 
 void MainWindow::aboutDialog() {
   QMessageBox::about(this, QCoreApplication::applicationName(),
-                     QString("Version %1\nQt %2\nSQLite %3")
+                     QString("Version %1\nQt %2")
                          .arg(amphetype2_VERSION_STRING_FULL)
-                         .arg(QT_VERSION_STR)
-                         .arg(SQLITE_VERSION));
+                         .arg(QT_VERSION_STR));
 }

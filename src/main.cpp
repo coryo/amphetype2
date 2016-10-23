@@ -33,7 +33,6 @@
 #include <QsLogDest.h>
 
 #include "config.h"
-#include "database/db.h"
 #include "mainwindow/mainwindow.h"
 #include "util/RunGuard.h"
 
@@ -110,10 +109,6 @@ int main(int argc, char *argv[]) {
     QsLogging::Logger::instance().setLoggingLevel(QsLogging::Level::InfoLevel);
     QLOG_INFO() << "Debug Logging disabled.";
   }
-
-  Database* db = new Database;
-  db->initDB();
-  delete db;
 
   QFile file(":/stylesheets/" + s.value("stylesheet", "basic").toString() +
              ".qss");

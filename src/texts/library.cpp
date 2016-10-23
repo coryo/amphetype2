@@ -52,26 +52,16 @@
 Library::Library(QWidget* parent)
     : QMainWindow(parent),
       ui(new Ui::Library),
-      text_model_(new TextModel),
-      source_model_(new SourceModel) {
+      text_model_(new TextModel(this)),
+      source_model_(new SourceModel(this)) {
   ui->setupUi(this);
 
-  QSettings s;
+  //QSettings s;
 
   ui->actionAdd_Text->setEnabled(false);
 
-  ui->sourcesTable->setModel(source_model_);
-  ui->textsTable->setModel(text_model_);
-
-  // Set resize mode on both tables, stretch 1st col, resize the rest
-  auto sourceHeader = ui->sourcesTable->horizontalHeader();
-  auto textHeader = ui->textsTable->horizontalHeader();
-  sourceHeader->setSectionResizeMode(0, QHeaderView::Stretch);
-  for (int col = 1; col < sourceHeader->count(); col++)
-    sourceHeader->setSectionResizeMode(col, QHeaderView::ResizeToContents);
-  textHeader->setSectionResizeMode(0, QHeaderView::Stretch);
-  for (int col = 1; col < textHeader->count(); col++)
-    textHeader->setSectionResizeMode(col, QHeaderView::ResizeToContents);
+  //ui->sourcesTable->setModel(source_model_);
+  //ui->textsTable->setModel(text_model_);
 
   connect(ui->actionImport_Texts, &QAction::triggered, this,
           &Library::addFiles);
@@ -95,17 +85,17 @@ Library::Library(QWidget* parent)
 
   connect(ui->actionClose, &QAction::triggered, this, &QWidget::close);
 
-  connect(ui->sourcesTable->selectionModel(),
-          &QItemSelectionModel::selectionChanged, this,
-          &Library::sourceSelectionChanged);
+  //connect(ui->sourcesTable->selectionModel(),
+  //        &QItemSelectionModel::selectionChanged, this,
+  //        &Library::sourceSelectionChanged);
 
-  source_model_->refresh();
+  //source_model_->refresh();
 }
 
 Library::~Library() {
   delete ui;
-  delete text_model_;
-  delete source_model_;
+  //delete text_model_;
+  //delete source_model_;
 }
 
 void Library::sourceSelectionChanged(const QItemSelection& a,
@@ -128,12 +118,22 @@ void Library::sourceSelectionChanged(const QItemSelection& a,
 void Library::reload() {
   TextModel* old_tm = text_model_;
   SourceModel* old_sm = source_model_;
-  text_model_ = new TextModel;
-  source_model_ = new SourceModel;
+  text_model_ = new TextModel(this);
+  source_model_ = new SourceModel(this);
   ui->sourcesTable->setModel(source_model_);
   ui->textsTable->setModel(text_model_);
   delete old_tm;
   delete old_sm;
+
+  // Set resize mode on both tables, stretch 1st col, resize the rest
+  auto sourceHeader = ui->sourcesTable->horizontalHeader();
+  auto textHeader = ui->textsTable->horizontalHeader();
+  sourceHeader->setSectionResizeMode(0, QHeaderView::Stretch);
+  for (int col = 1; col < sourceHeader->count(); col++)
+    sourceHeader->setSectionResizeMode(col, QHeaderView::ResizeToContents);
+  textHeader->setSectionResizeMode(0, QHeaderView::Stretch);
+  for (int col = 1; col < textHeader->count(); col++)
+    textHeader->setSectionResizeMode(col, QHeaderView::ResizeToContents);
 
   connect(ui->sourcesTable->selectionModel(),
           &QItemSelectionModel::selectionChanged, this,
@@ -361,7 +361,7 @@ void Library::addText() {
   if (ok && !text.isEmpty()) {
     int source = indexes[0].data(Qt::UserRole).toInt();
     Database db;
-    db.addText(source, text, -1, false);
+    db.addText(source, text);
     source_model_->refreshSource(indexes[0]);
     text_model_->refresh();
   }

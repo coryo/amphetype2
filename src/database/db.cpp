@@ -28,7 +28,6 @@
 #include <QSettings>
 #include <QStandardPaths>
 
-#include <sqlite3.h>
 #include <sqlite3pp.h>
 
 #include <algorithm>
@@ -282,24 +281,19 @@ void Database::deleteStatistic(const QString& data) {
   bindAndRun("DELETE FROM statistic WHERE data = ?", data);
 }
 
-void Database::addText(int source, const QString& text, int lesson,
-                       bool update) {
-  int dis = (lesson == 2) ? 1 : 0;
-  bindAndRun("INSERT INTO text VALUES (NULL, ?, ?, ?)",
-             QVariantList() << source << text << (dis == 0 ? QVariant() : dis));
+void Database::addText(int source, const QString& text) {
+  bindAndRun("INSERT INTO text VALUES (NULL, ?, ?, NULL)",
+             QVariantList() << source << text);
 }
 
-void Database::addTexts(int source, const QStringList& lessons, int lesson,
-                        bool update) {
-  int dis = ((lesson == 2) ? 1 : 0);
+void Database::addTexts(int source, const QStringList& texts) {
   try {
     sqlite3pp::database& db = conn_->db();
     sqlite3pp::transaction xct(db);
     {
-      sqlite3pp::command cmd(db, "INSERT INTO text VALUES (NULL, ?, ?, ?)");
-      for (QString text : lessons) {
-        bindAndRun(&cmd, QVariantList() << source << text
-                                        << (dis == 0 ? QVariant() : dis));
+      sqlite3pp::command cmd(db, "INSERT INTO text VALUES (NULL, ?, ?, NULL)");
+      for (const QString& text : texts) {
+        bindAndRun(&cmd, QVariantList() << source << text);
       }
     }
     QMutexLocker locker(&db_lock);
@@ -309,8 +303,8 @@ void Database::addTexts(int source, const QStringList& lessons, int lesson,
   }
 }
 
-void Database::addResult(const QString& time, const std::shared_ptr<Text>& text,
-                         double wpm, double acc, double vis) {
+void Database::addResult(TestResult* result) {
+  QLOG_DEBUG() << "saving result";
   try {
     sqlite3pp::database& db = conn_->db();
     sqlite3pp::transaction resultTransaction(db);
@@ -319,69 +313,74 @@ void Database::addResult(const QString& time, const std::shared_ptr<Text>& text,
           db,
           "insert into result (w, text_id, source, wpm, accuracy, viscosity) "
           "values (?, ?, ?, ?, ?, ?)");
-      bindAndRun(&cmd, QVariantList() << time << text->id()
-                                      << text->source() << wpm << acc
-                                      << vis);
+      bindAndRun(&cmd, QVariantList() << result->when().toString(Qt::ISODate)
+                                      << result->text()->id()
+                                      << result->text()->source()
+                                      << result->wpm() << result->accuracy()
+                                      << result->viscosity());
     }
     QMutexLocker locker(&db_lock);
     resultTransaction.commit();
-  } catch (const std::exception& e) {
+  }
+  catch (const std::exception& e) {
     QLOG_DEBUG() << "error adding result" << e.what();
   }
 }
 
-void Database::addStatistics(const QMultiHash<QStringRef, double>& stats,
-                             const QMultiHash<QStringRef, double>& visc,
-                             const QMultiHash<QStringRef, int>& mistakeCount) {
-  QString now = QDateTime::currentDateTime().toString(Qt::ISODate);
+void Database::addStatistics(TestResult* result) {
+  QLOG_DEBUG() << "saving statistics";
+  QString now = result->when().toString(Qt::ISODate);
   try {
     sqlite3pp::database& db = conn_->db();
     db.execute("PRAGMA journal_mode = MEMORY");
     sqlite3pp::transaction statisticsTransaction(db);
     {
       sqlite3pp::command cmd(
-          db,
-          "insert into statistic (time,viscosity,w,count,mistakes,"
-          "type,data) values (?, ?, ?, ?, ?, ?, ?)");
-      QList<QStringRef> keys = stats.uniqueKeys();
+        db,
+        "insert into statistic (time,viscosity,w,count,mistakes,"
+        "type,data) values (?, ?, ?, ?, ?, ?, ?)");
+      QList<QStringRef> keys = result->statsValues().uniqueKeys();
       for (const auto& k : keys) {
         QVariantList items;
         // median time
-        const QList<double>& timeValues = stats.values(k);
+        const QList<double>& timeValues = result->statsValues().values(k);
         if (timeValues.length() > 1) {
           items << (timeValues[timeValues.length() / 2] +
-                    (timeValues[timeValues.length() / 2 - 1])) /
-                       2.0;
-        } else if (timeValues.length() == 1) {
+            (timeValues[timeValues.length() / 2 - 1])) /
+            2.0;
+        }
+        else if (timeValues.length() == 1) {
           items << timeValues[timeValues.length() / 2];
-        } else {
+        }
+        else {
           items << timeValues.first();
         }
 
         // get the median viscosity
-        const QList<double>& viscValues = visc.values(k);
+        const QList<double>& viscValues = result->viscosityValues().values(k);
         if (viscValues.length() > 1) {
           items << ((viscValues[viscValues.length() / 2] +
-                     viscValues[viscValues.length() / 2 - 1]) /
-                    2.0) *
-                       100.0;
-        } else if (viscValues.length() == 1) {
+            viscValues[viscValues.length() / 2 - 1]) /
+            2.0) *
+            100.0;
+        }
+        else if (viscValues.length() == 1) {
           items << viscValues[viscValues.length() / 2] * 100.0;
-        } else {
+        }
+        else {
           items << viscValues.first() * 100.0;
         }
 
         items << now;
-        items << stats.count(k);
-        items << mistakeCount.count(k);
+        items << result->statsValues().count(k);
+        items << result->mistakeCounts().count(k);
 
-        if (k.length() == 1) {
+        if (k.length() == 1)
           items << static_cast<int>(amphetype::statistics::Type::Keys);
-        } else if (k.length() == 3) {
+        else if (k.length() == 3)
           items << static_cast<int>(amphetype::statistics::Type::Trigrams);
-        } else {
+        else
           items << static_cast<int>(amphetype::statistics::Type::Words);
-        }
 
         items << k.toString();
         bindAndRun(&cmd, items);
@@ -389,30 +388,48 @@ void Database::addStatistics(const QMultiHash<QStringRef, double>& stats,
     }
     QMutexLocker locker(&db_lock);
     statisticsTransaction.commit();
-  } catch (const std::exception& e) {
+  }
+  catch (const std::exception& e) {
     QLOG_DEBUG() << "error adding statistics" << e.what();
   }
 }
 
-void Database::addMistakes(const QHash<QPair<QChar, QChar>, int>& mistakes) {
-  QString now = QDateTime::currentDateTime().toString(Qt::ISODate);
+void Database::addMistakes(TestResult* result) {
+  QLOG_DEBUG() << "saving mistakes";
+  QString now = result->when().toString(Qt::ISODate);
   try {
     sqlite3pp::database& db = conn_->db();
     sqlite3pp::transaction mistakesTransaction(db);
     {
       sqlite3pp::command cmd(db,
-                             "insert into mistake (w,target,mistake,count) "
-                             "values (?, ?, ?, ?)");
-      for (auto it = mistakes.constBegin(); it != mistakes.constEnd(); ++it) {
+        "insert into mistake (w,target,mistake,count) "
+        "values (?, ?, ?, ?)");
+      for (auto it = result->mistakes().constBegin();
+           it != result->mistakes().constEnd(); ++it) {
         bindAndRun(&cmd, QVariantList() << now << it.key().first
                                         << it.key().second << it.value());
       }
     }
     QMutexLocker locker(&db_lock);
     mistakesTransaction.commit();
-  } catch (const std::exception& e) {
+  }
+  catch (const std::exception& e) {
     QLOG_DEBUG() << "error adding mistakes" << e.what();
   }
+}
+
+QList<QPair<QDateTime, double>> Database::resultsWpmRange() {
+  auto data = getOneRow(
+      "select * from(select w, wpm from result order by wpm desc limit 1) "
+      "left join(select w, wpm from result order by wpm asc limit 1)");
+  return data.isEmpty() ? QList<QPair<QDateTime, double>>()
+                        : QList<QPair<QDateTime, double>>()
+                              << qMakePair(QDateTime::fromString(
+                                               data[0].toString(), Qt::ISODate),
+                                           data[1].toDouble())
+                              << qMakePair(QDateTime::fromString(
+                                               data[2].toString(), Qt::ISODate),
+                                           data[3].toDouble());
 }
 
 QPair<double, double> Database::getMedianStats(int n) {
@@ -420,7 +437,9 @@ QPair<double, double> Database::getMedianStats(int n) {
       "SELECT agg_median(wpm), 100.0 * agg_median(accuracy) "
       "FROM result ORDER BY w DESC LIMIT ?",
       n);
-  return QPair<double, double>(cols[0].toDouble(), cols[1].toDouble());
+  return cols.isEmpty()
+             ? QPair<double, double>()
+             : QPair<double, double>(cols[0].toDouble(), cols[1].toDouble());
 }
 
 QVariantList Database::getSourceData(int source) {
@@ -612,17 +631,18 @@ std::shared_ptr<Text> Database::getRandomText() {
       "SELECT text.id, source, text, name, type "
       "FROM text "
       "LEFT JOIN source ON (text.source = source.id) "
-      "WHERE text.disabled IS NULL "
+      "WHERE text.disabled IS NULL and source.type is 0 "
       "LIMIT 1 "
-      "OFFSET abs(random()) % max((SELECT COUNT(*) FROM text where "
-      "                            text.disabled is NULL), 1)");
+      "OFFSET abs(random()) % max("
+      " (SELECT COUNT(*) FROM text LEFT JOIN source "
+      "  ON (text.source = source.id) where "
+      "  text.disabled is NULL and source.type is 0), 1)");
 }
 
 std::shared_ptr<Text> Database::getNextText() {
   QVariantList row = getOneRow(
       "SELECT text_id FROM result "
       "LEFT JOIN source ON (result.source = source.id) "
-      "WHERE source.discount IS NULL OR source.discount = 1 "
       "ORDER BY result.w DESC limit 1");
 
   if (row.isEmpty()) return std::make_shared<Text>();
@@ -650,21 +670,18 @@ std::shared_ptr<Text> Database::getNextText(int text_id) {
       text_id);
 }
 
-std::shared_ptr<Text> Database::textFromStats(
-    amphetype::statistics::Order type) {
-  QSettings s;
+std::shared_ptr<Text> Database::textFromStats(amphetype::statistics::Order type,
+                                              int count, int days, int length) {
   QList<QVariantList> rows = getStatisticsData(
-      QDateTime::currentDateTime()
-          .addDays(-s.value("statisticsWidget/days", 30).toInt())
-          .toString(Qt::ISODate),
-      amphetype::statistics::Type::Words, 0, type, 10);
+      QDateTime::currentDateTime().addDays(-days).toString(Qt::ISODate),
+      amphetype::statistics::Type::Words, 0, type, count);
   if (rows.isEmpty()) {
     return std::make_shared<Text>();
   }
   QStringList words;
   for (const auto& row : rows) words.append(row[0].toString());
-  return std::make_shared<TextFromStats>(type,
-                                         Generators::generateText(words, 80));
+  return std::make_shared<TextFromStats>(
+      type, Generators::generateText(words, length));
 }
 
 void Database::updateText(int id, const QString& newText) {
@@ -673,9 +690,9 @@ void Database::updateText(int id, const QString& newText) {
 }
 
 void Database::compress() {
-  QLOG_DEBUG() << "Database::compress"
-               << "initial count:"
-               << getOneRow("SELECT count(), sum(count) from statistic");
+  QLOG_DEBUG() << "Database::compress - initial count : "
+               << qvariant_cast<QStringList>(
+                      getOneRow("SELECT count(), sum(count) from statistic"));
   QDateTime now = QDateTime::currentDateTime();
   QList<QPair<QString, int>> groupings;
   int dayInSecs = 86400;
@@ -719,26 +736,22 @@ void Database::compress() {
         bindAndRun(&insertCmd, row);
       }
     }
-    db_lock.lock();
+    QMutexLocker locker(&db_lock);
     xct.commit();
-    db_lock.unlock();
   }
-  QLOG_DEBUG() << "Database::compress"
-               << "final count:"
-               << getOneRow("SELECT count(), sum(count) from statistic");
+  QLOG_DEBUG() << "Database::compress - final count:"
+               << qvariant_cast<QStringList>(
+                      getOneRow("SELECT count(), sum(count) from statistic"));
 
   if (groupCount >= 3) {
-    db_lock.lock();
-    QLOG_DEBUG() << "Database::compress"
-                 << "vacuuming";
+    QLOG_DEBUG() << "Database::compress - vacuuming";
+    QMutexLocker locker(&db_lock);
     sqlite3pp::command cmd(conn_->db(), "vacuum");
     cmd.execute();
-    db_lock.unlock();
   }
 }
 
 QHash<QChar, QHash<QString, QVariant>> Database::getKeyFrequency() {
-  QHash<QChar, QHash<QString, QVariant>> data;
   auto rows = Database::getRows(
       "select data, "
       "agg_median(time) as speed, "
@@ -752,6 +765,7 @@ QHash<QChar, QHash<QString, QVariant>> Database::getKeyFrequency() {
       "from statistic "
       "where type is 0 group by data");
 
+  QHash<QChar, QHash<QString, QVariant>> data;
   for (const auto& row : rows) {
     QChar c = row[0].toString().at(0);
     data[c]["speed"] = row[1].toDouble();

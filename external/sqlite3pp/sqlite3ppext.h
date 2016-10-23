@@ -228,6 +228,4 @@ namespace sqlite3pp
 
 } // namespace sqlite3pp
 
-#include "sqlite3ppext.ipp"
-
 #endif

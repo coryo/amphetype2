@@ -39,7 +39,7 @@
 PerformanceHistory::PerformanceHistory(QWidget* parent)
     : QMainWindow(parent),
       ui(new Ui::PerformanceHistory),
-      model_(new QStandardItemModel) {
+      model_(new QStandardItemModel(this)) {
   ui->setupUi(this);
 
   ui->menuView->addAction(ui->plotDock->toggleViewAction());
@@ -73,9 +73,9 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
   loadSettings();
 
   // populate sources combobox
-  this->refreshSources();
+  //this->refreshSources();
   this->updateColors();
-  this->refreshPerformance();
+  //this->refreshPerformance();
 
   // double clicking an item in the list
   connect(ui->tableView, &QTableView::doubleClicked, this,
@@ -138,7 +138,6 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
 
 PerformanceHistory::~PerformanceHistory() {
   delete ui;
-  delete model_;
 }
 
 void PerformanceHistory::loadSettings() {
@@ -397,22 +396,17 @@ void PerformanceHistory::refreshPerformance() {
   ui->avgACC->setText(QString::number(avgACC, 'f', 1));
   ui->avgVIS->setText(QString::number(avgVIS, 'f', 1));
 
-  auto best =
-      db.getOneRow("select w, wpm from result order by wpm desc limit 1");
-  auto worst =
-      db.getOneRow("select w, wpm from result order by wpm asc limit 1");
-  if (!best.isEmpty() && !worst.isEmpty()) {
-    auto best_time = QDateTime::fromString(best[0].toString(), Qt::ISODate);
-    auto worst_time = QDateTime::fromString(worst[0].toString(), Qt::ISODate);
+  auto range = db.resultsWpmRange();
+  if (!range.isEmpty()) {
     ui->bestLabel->setText(
         QString("Best: <b>%2</b> wpm on %1 (%5)<br/>Worst: <b>%4</b> wpm on %3 "
                 "(%6)")
-            .arg(best_time.toString("MMM d, yyyy"))
-            .arg(best[1].toDouble())
-            .arg(worst_time.toString("MMM d, yyyy"))
-            .arg(worst[1].toDouble())
-            .arg(util::date::PrettyTimeDelta(best_time, now))
-            .arg(util::date::PrettyTimeDelta(worst_time, now)));
+            .arg(range[0].first.toString("MMM d, yyyy"))
+            .arg(range[0].second)
+            .arg(range[1].first.toString("MMM d, yyyy"))
+            .arg(range[1].second)
+            .arg(util::date::PrettyTimeDelta(range[0].first, now))
+            .arg(util::date::PrettyTimeDelta(range[1].first, now)));
   } else {
     ui->bestLabel->clear();
   }

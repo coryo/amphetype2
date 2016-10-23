@@ -2,7 +2,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 include_directories(
 	${CMAKE_SOURCE_DIR}/external/qcustomplot
-	${CMAKE_SOURCE_DIR}/external/sqlite
+  ${CMAKE_SOURCE_DIR}/external/sqlite
   ${CMAKE_SOURCE_DIR}/external/sqlite3pp
 	${CMAKE_SOURCE_DIR}/external/qslog
 )
@@ -29,7 +29,7 @@ set(amphetype2_SOURCES
 	performance/performancehistory.cpp
 	quizzer/quizzer.cpp
 	quizzer/test.cpp
-	quizzer/typer.cpp
+  quizzer/testresult.cpp
 	quizzer/typerdisplay.cpp
 	settings/settingswidget.cpp
 	texts/text.cpp
@@ -56,7 +56,7 @@ set(amphetype2_HEADERS
 	performance/performancehistory.h
 	quizzer/quizzer.h
 	quizzer/test.h
-	quizzer/typer.h
+  quizzer/testresult.h
 	quizzer/typerdisplay.h
 	settings/settingswidget.h
 	texts/edittextdialog.h
@@ -118,12 +118,9 @@ target_link_libraries(amphetype2
 	Qt5::Widgets
   Qt5::XmlPatterns
   Qt5::Multimedia
-	sqlite3
+	sqlite3pp
 	qcustomplot
 	qslog
-	${CMAKE_THREAD_LIBS_INIT}
-	${CMAKE_DL_LIBS}
-  ${OS_LIBS}
 )
 
 if(APPLE)

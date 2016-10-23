@@ -18,8 +18,6 @@
 
 #include "quizzer/typerdisplay.h"
 
-#include <QSettings>
-
 #include <utility>
 
 TyperDisplay::TyperDisplay(QWidget* parent)
@@ -42,8 +40,10 @@ QSize TyperDisplay::minimumSizeHint() const {
 }
 
 void TyperDisplay::setCols(int cols) {
-  this->cols = cols;
-  this->wordWrap(cols);
+  if (this->cols != cols) {
+    this->cols = cols;
+    this->wordWrap(cols);
+  }
 }
 
 void TyperDisplay::setTextTarget(const QString& t) {

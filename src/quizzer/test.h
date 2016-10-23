@@ -29,68 +29,19 @@
 #include <QSet>
 #include <QString>
 #include <QVector>
+#include <QMetaType>
 
 #include <memory>
 
 #include "texts/text.h"
-
-class TestResult : public QObject {
-  Q_OBJECT
-
- public:
-  TestResult(const std::shared_ptr<Text>& text, const QDateTime& when,
-             double wpm, double accuracy, double viscosity,
-             const QMultiHash<QStringRef, double>& statsValues,
-             const QMultiHash<QStringRef, double>& viscValues,
-             const QMultiHash<QStringRef, int>& mistakeCounts,
-             const QHash<QPair<QChar, QChar>, int>& mistakes,
-             QObject* parent = Q_NULLPTR)
-      : QObject(parent),
-        text_(text),
-        now_(when),
-        wpm_(wpm),
-        accuracy_(accuracy),
-        viscosity_(viscosity),
-        stats_values_(statsValues),
-        viscosity_values_(viscValues),
-        mistake_counts_(mistakeCounts),
-        mistakes_(mistakes) {}
-
-  void save();
-
-  double wpm() const { return wpm_; }
-  double accuracy() const { return accuracy_; }
-  double viscosity() const { return viscosity_; }
-  const QMultiHash<QStringRef, double> statsValues() const {
-    return stats_values_;
-  }
-  const QMultiHash<QStringRef, double> viscosityValues() const {
-    return viscosity_values_;
-  }
-  const QMultiHash<QStringRef, int> mistakeCounts() const {
-    return mistake_counts_;
-  }
-  const QHash<QPair<QChar, QChar>, int> mistakes() const { return mistakes_; }
-  const Text& text() const { return *text_; }
-
- private:
-  QDateTime now_;
-  std::shared_ptr<Text> text_;
-  double wpm_;
-  double viscosity_;
-  double accuracy_;
-  QMultiHash<QStringRef, double> stats_values_;
-  QMultiHash<QStringRef, double> viscosity_values_;
-  QMultiHash<QStringRef, int> mistake_counts_;
-  QHash<QPair<QChar, QChar>, int> mistakes_;
-};
+#include "quizzer/testresult.h"
 
 class Test : public QObject {
   Q_OBJECT
 
  public:
   Test(const std::shared_ptr<Text>&, QObject* parent = Q_NULLPTR);
-  ~Test();
+
   void start();
   int mistakeCount() const;
   int msElapsed() const;
@@ -99,13 +50,15 @@ class Test : public QObject {
   void cancelTest();
   void restartTest();
   void abort();
+  const std::shared_ptr<Text>& text() const;
 
  signals:
   void testStarted(int);
   void done(double, double, double);
   void cancelled();
   void restarted();
-  void resultReady(TestResult*);
+
+  void resultReady(std::shared_ptr<TestResult>);
   void mistake(int);
   void newWpm(double, double, double);
   void positionChanged(int, int);

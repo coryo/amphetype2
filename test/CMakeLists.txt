@@ -21,13 +21,11 @@ add_executable(DatabaseTests
   test_database.cpp
   ${CMAKE_SOURCE_DIR}/src/database/db.cpp
   ${CMAKE_SOURCE_DIR}/src/texts/text.cpp
+  ${CMAKE_SOURCE_DIR}/src/quizzer/testresult.cpp
   ${CMAKE_SOURCE_DIR}/src/generators/generate.cpp
 )
 add_test(DatabaseTests DatabaseTests)
-target_link_libraries(DatabaseTests
-  Qt5::Test Qt5::Widgets sqlite3 qslog
-  ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS}
-)
+target_link_libraries(DatabaseTests Qt5::Test Qt5::Widgets sqlite3pp qslog)
 
 # Test Tests
 add_executable(TestTests
@@ -35,13 +33,11 @@ add_executable(TestTests
   ${CMAKE_SOURCE_DIR}/src/database/db.cpp
   ${CMAKE_SOURCE_DIR}/src/generators/generate.cpp
   ${CMAKE_SOURCE_DIR}/src/quizzer/test.cpp
+  ${CMAKE_SOURCE_DIR}/src/quizzer/testresult.cpp
   ${CMAKE_SOURCE_DIR}/src/texts/text.cpp
 )
 add_test(TestTests TestTests)
-target_link_libraries(TestTests
-  Qt5::Test Qt5::Widgets sqlite3 qslog
-  ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS}
-)
+target_link_libraries(TestTests Qt5::Test Qt5::Widgets sqlite3pp qslog)
 
 set_target_properties(DatabaseTests PROPERTIES FOLDER "Tests")
 set_target_properties(UtilTests PROPERTIES FOLDER "Tests")

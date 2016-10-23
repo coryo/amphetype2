@@ -28,22 +28,19 @@
 
 #include "database/db.h"
 #include "quizzer/test.h"
-#include "quizzer/typer.h"
 #include "texts/text.h"
 #include "ui_quizzer.h"
 
-Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
+Quizzer::Quizzer(QWidget* parent)
+    : QWidget(parent), ui(std::make_unique<Ui::Quizzer>()) {
   ui->setupUi(this);
 
-  this->setFocusPolicy(Qt::StrongFocus);
+  setFocusPolicy(Qt::StrongFocus);
 
   loadSettings();
 
-  ui->typer->setDisplay(ui->typerDisplay);
-
-  // set defaults for ui stuff
-  this->timerLabelReset();
-  this->setPreviousResultText(0, 0);
+  timerLabelReset();
+  setPreviousResultText(0, 0);
   lesson_timer_.setInterval(1000);
 
   error_sound_.setSource(QUrl::fromLocalFile(":/sounds/error.wav"));
@@ -63,30 +60,33 @@ Quizzer::Quizzer(QWidget* parent) : QWidget(parent), ui(new Ui::Quizzer) {
   connect(this, &Quizzer::colorChanged, this, &Quizzer::timerLabelStop);
   connect(&lesson_timer_, &QTimer::timeout, this, &Quizzer::timerLabelUpdate);
 
-  connect(ui->typer, &Typer::cancelled, this, &Quizzer::cancelled);
-  connect(ui->typer, &Typer::restarted, this, &Quizzer::restart);
-  connect(ui->typer, &Typer::testStarted, this, &Quizzer::beginTest);
-  connect(ui->typer, &Typer::done, &success_sound_, &QSoundEffect::play);
-  connect(ui->typer, &Typer::done, this, &Quizzer::done);
-  connect(ui->typer, &Typer::mistake, &error_sound_, &QSoundEffect::play);
+  test_thread_.start();
 }
 
-Quizzer::~Quizzer() { delete ui; }
+Quizzer::~Quizzer() {
+  test_thread_.quit();
+  test_thread_.wait();
+}
 
+void Quizzer::loadNewText() {
+  QSettings s;
+  setText(Text::selectText(static_cast<amphetype::SelectionMethod>(
+      s.value("select_method", 0).toInt())));
+}
 void Quizzer::actionGrindWords() {
-  this->setText(Text::selectText(amphetype::SelectionMethod::SlowWords));
+  setText(Text::selectText(amphetype::SelectionMethod::SlowWords));
 }
 
 void Quizzer::actionGrindViscWords() {
-  this->setText(Text::selectText(amphetype::SelectionMethod::ViscousWords));
+  setText(Text::selectText(amphetype::SelectionMethod::ViscousWords));
 }
 
 void Quizzer::actionGrindInaccurateWords() {
-  this->setText(Text::selectText(amphetype::SelectionMethod::InaccurateWords));
+  setText(Text::selectText(amphetype::SelectionMethod::InaccurateWords));
 }
 
 void Quizzer::actionGrindDamagingWords() {
-  this->setText(Text::selectText(amphetype::SelectionMethod::DamagingWords));
+  setText(Text::selectText(amphetype::SelectionMethod::DamagingWords));
 }
 
 void Quizzer::loadSettings() {
@@ -96,6 +96,7 @@ void Quizzer::loadSettings() {
   target_wpm_ = s.value("target_wpm", 50).toInt();
   target_acc_ = s.value("target_acc", 97).toDouble();
   target_vis_ = s.value("target_vis", 2).toDouble();
+  performance_logging_ = s.value("perf_logging", true).toBool();
 
   ui->result->setVisible(s.value("Quizzer/show_last", true).toBool());
   ui->typerColsSpinBox->setValue(s.value("Quizzer/typer_cols", 80).toInt());
@@ -111,6 +112,7 @@ void Quizzer::loadSettings() {
     f.setPointSize(14);
     f.setStyleHint(QFont::Monospace);
   }
+
   ui->typerDisplay->setCols(ui->typerColsSpinBox->value());
   ui->typerDisplay->setFont(f);
   ui->typerDisplay->updateDisplay();
@@ -125,16 +127,13 @@ void Quizzer::saveSettings() {
   // s.setValue("Quizzer/typer_font", ui->typerDisplay->currentFont());
 }
 
-void Quizzer::focusInEvent(QFocusEvent* event) { ui->typer->grabKeyboard(); }
-
-void Quizzer::focusOutEvent(QFocusEvent* event) {
-  ui->typer->releaseKeyboard();
-}
+void Quizzer::focusInEvent(QFocusEvent* event) { grabKeyboard(); }
+void Quizzer::focusOutEvent(QFocusEvent* event) { releaseKeyboard(); }
 
 void Quizzer::checkSource(const QList<int>& sources) {
   for (const auto& source : sources) {
-    if (text_->source() == source) {
-      ui->typer->cancel();
+    if (test_->text()->source() == source) {
+      setText(Text::selectText(amphetype::SelectionMethod::Random));
       return;
     }
   }
@@ -142,19 +141,11 @@ void Quizzer::checkSource(const QList<int>& sources) {
 
 void Quizzer::checkText(const QList<int>& texts) {
   for (const auto& text : texts) {
-    if (text_->id() == text) {
-      ui->typer->cancel();
+    if (test_->text()->id() == text) {
+      setText(Text::selectText(amphetype::SelectionMethod::Random));
       return;
     }
   }
-}
-
-Typer* Quizzer::typer() const { return ui->typer; }
-
-void Quizzer::restart() { this->setText(text_); }
-
-void Quizzer::cancelled() {
-  this->setText(Text::selectText(amphetype::SelectionMethod::Random));
 }
 
 void Quizzer::alertText(const QString& text) {
@@ -162,29 +153,10 @@ void Quizzer::alertText(const QString& text) {
   ui->alertLabel->show();
 }
 
-void Quizzer::done(double wpm, double acc, double vis) {
-  this->setPreviousResultText(wpm, acc);
-
-  // repeat if targets not met, otherwise get next text
-  if (acc < target_acc_ / 100.0) {
-    this->alertText("Failed Accuracy Target");
-    this->setText(text_);
-  } else if (wpm < target_wpm_) {
-    this->alertText("Failed WPM Target");
-    this->setText(text_);
-  } else if (vis > target_vis_) {
-    this->alertText("Failed Viscosity Target");
-    this->setText(text_);
-  } else {
-    ui->alertLabel->hide();
-    this->setText(text_->nextText());
-  }
-}
-
 void Quizzer::beginTest(int length) {
   lesson_timer_.start();
-  this->timerLabelReset();
-  this->timerLabelGo();
+  timerLabelReset();
+  timerLabelGo();
 }
 
 void Quizzer::timerLabelUpdate() {
@@ -220,22 +192,78 @@ void Quizzer::setPreviousResultText(double lastWpm, double lastAcc) {
                       QString::number(stats.second, 'f', 1) + "%)");
 }
 
-void Quizzer::setText(const std::shared_ptr<Text>& t) {
-  text_ = t;
-  ui->typerDisplay->setTextTarget(text_->text());
-  ui->typer->setTextTarget(t);
+void Quizzer::setText(std::shared_ptr<Text> t) {
+  ui->typerDisplay->setTextTarget(t->text());
+  test_.reset(new Test(t));
+  test_->moveToThread(&test_thread_);
+  connect(this, &Quizzer::newInput, test_.get(), &Test::handleInput);
+  connect(test_.get(), &Test::mistake, &error_sound_, &QSoundEffect::play);
+  connect(test_.get(), &Test::newWpm, this, &Quizzer::newWpm);
+  connect(test_.get(), &Test::testStarted, this, &Quizzer::testStarted);
+  connect(test_.get(), &Test::testStarted, this, &Quizzer::beginTest);
+  connect(test_.get(), &Test::positionChanged, ui->typerDisplay,
+          &TyperDisplay::moveCursor);
+  connect(test_.get(), &Test::resultReady, this, &Quizzer::handleResult);
 
-  this->timerLabelStop();
+  text_edit_.clear();
+
+  timerLabelStop();
   lesson_timer_.stop();
 
-  QString info_text;
-  info_text.append(text_->sourceName());
-  if (text_->textNumber() >= 0)
-    info_text += " #" + QString::number(text_->textNumber());
+  QString info_text(t->sourceName());
+  if (t->textNumber() >= 0)
+    info_text += " #" + QString::number(t->textNumber());
   ui->textInfoLabel->setText(info_text);
 }
 
 void Quizzer::toggleSounds(int state) {
   error_sound_.setMuted(state != Qt::Checked);
   success_sound_.setMuted(state != Qt::Checked);
+}
+
+void Quizzer::keyPressEvent(QKeyEvent* event) {
+  if (event->matches(QKeySequence::Copy) || event->matches(QKeySequence::Cut) ||
+      event->matches(QKeySequence::Paste)) {
+    event->ignore();
+  } else if (event->matches(QKeySequence::Cancel)) {
+    event->ignore();
+    setText(test_->text());
+  } else if (event->key() == Qt::Key_F1 ||
+             ((event->key() == Qt::Key_1 || event->key() == Qt::Key_Space) &&
+              event->modifiers() == Qt::ControlModifier)) {
+    event->ignore();
+    setText(Text::selectText(amphetype::SelectionMethod::Random));
+  } else {
+    int pos1 = text_edit_.textCursor().position();
+    QApplication::sendEvent(&text_edit_, event);
+    int pos2 = text_edit_.textCursor().position();
+    if (pos1 != pos2)
+      emit newInput(text_edit_.toPlainText(), test_->msElapsed(), pos2 - pos1);
+  }
+}
+
+void Quizzer::handleResult(std::shared_ptr<TestResult> result) {
+  QLOG_DEBUG() << "wpm:" << result->wpm() << "acc:" << result->accuracy()
+               << "vis:" << result->viscosity();
+  if (performance_logging_) {
+    result->save();
+    emit newResult(result->text()->source());
+    emit newStatistics();
+  }
+  setPreviousResultText(result->wpm(), result->accuracy());
+
+  // repeat if targets not met, otherwise get next text
+  if (result->accuracy() < target_acc_ / 100.0) {
+    alertText("Failed Accuracy Target");
+    setText(result->text());
+  } else if (result->wpm() < target_wpm_) {
+    alertText("Failed WPM Target");
+    setText(result->text());
+  } else if (result->viscosity() > target_vis_) {
+    alertText("Failed Viscosity Target");
+    setText(result->text());
+  } else {
+    ui->alertLabel->hide();
+    setText(result->text()->nextText());
+  }
 }

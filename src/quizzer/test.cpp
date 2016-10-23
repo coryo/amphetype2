@@ -22,6 +22,7 @@
 #include <QRegularExpression>
 #include <QSettings>
 #include <QtMath>
+#include <QMetaType>
 
 #include <algorithm>
 #include <numeric>
@@ -31,6 +32,7 @@
 #include "database/db.h"
 #include "defs.h"
 #include "texts/text.h"
+#include "quizzer/testresult.h"
 
 Test::Test(const std::shared_ptr<Text>& t, QObject* parent)
     : QObject(parent),
@@ -40,12 +42,13 @@ Test::Test(const std::shared_ptr<Text>& t, QObject* parent)
       current_pos_(0),
       apm_window_(5),
       total_ms_(0) {
+  qRegisterMetaType<std::shared_ptr<TestResult>>();
   ms_between_.resize(t->text().length() + 1);
   time_at_.resize(t->text().length() + 1);
   wpm_.resize(t->text().length() + 1);
 }
 
-Test::~Test() { QLOG_DEBUG() << "deleting test"; }
+const std::shared_ptr<Text>& Test::text() const { return text_; }
 
 int Test::msElapsed() const {
   if (!timer_.isValid()) return 0;
@@ -190,9 +193,9 @@ void Test::prepareResult() {
   processWords(&mistakeCount, &stats, &visc);
   processMistakes(&mistakes);
 
-  TestResult* result =
-      new TestResult(text_, QDateTime::currentDateTime(), wpm, accuracy,
-                     viscosity, stats, visc, mistakeCount, mistakes);
+  auto result = std::make_shared<TestResult>(
+      text_, QDateTime::currentDateTime(), wpm, accuracy, viscosity, stats,
+      visc, mistakeCount, mistakes);
   emit resultReady(result);
 }
 
@@ -276,22 +279,5 @@ void Test::processWords(QMultiHash<QStringRef, int>* mistakes,
 
     stats->insert(word, avg_time);
     visc->insert(word, viscosity_sum / (end - start));
-  }
-}
-
-void TestResult::save() {
-  Database db;
-  if (text_->saveFlags() & amphetype::SaveFlags::SaveResults) {
-    QLOG_DEBUG() << "Saving results";
-    db.addResult(now_.toString(Qt::ISODate), text_, wpm_, accuracy_,
-                 viscosity_);
-  }
-  if (text_->saveFlags() & amphetype::SaveFlags::SaveStatistics) {
-    QLOG_DEBUG() << "Saving statistics";
-    db.addStatistics(stats_values_, viscosity_values_, mistake_counts_);
-  }
-  if (text_->saveFlags() & amphetype::SaveFlags::SaveMistakes) {
-    QLOG_DEBUG() << "Saving mistakes";
-    db.addMistakes(mistakes_);
   }
 }

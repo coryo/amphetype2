@@ -94,7 +94,7 @@ void TrainingGenWidget::generate() {
 
   Database db;
   int sourceId = db.getSource(sourceName, 1, 1);
-  db.addTexts(sourceId, bigList, 1);
+  db.addTexts(sourceId, bigList);
   bigList.clear();
 
   delete x;

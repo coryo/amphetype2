@@ -216,7 +216,7 @@ void LessonMiner::doWork(const QString& fname) {
 
   Database db;
   int id = db.getSource(fi.fileName(), -1);
-  db.addTexts(id, lessons, -1, false);
+  db.addTexts(id, lessons);
 
   // done
   emit resultReady();
