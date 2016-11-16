@@ -394,7 +394,8 @@ void Database::addStatistics(TestResult* result) {
         items.push_back(median(result->stats_values[item.first]));
         items.push_back(median(result->viscosity_values[item.first]));
         items.push_back(now);
-        items.push_back(result->stats_values[item.first].size());
+        items.push_back(
+            static_cast<int>(result->stats_values[item.first].size()));
         items.push_back(result->mistake_counts[item.first]);
 
         if (item.first.length() == 1)
