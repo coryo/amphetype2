@@ -68,7 +68,7 @@ class DatabaseModel : public QAbstractTableModel {
 
   virtual void clear();
   //! remove the given row numbers from the model AND from the database
-  void DatabaseModel::setWhere(const QString& where);
+  void setWhere(const QString& where);
   void rowAdded();
   void removeRows(QList<int>& rows);
   void removeIndexes(const QModelIndexList& indexes);
