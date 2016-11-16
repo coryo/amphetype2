@@ -21,8 +21,10 @@
 #include <QRegularExpression>
 
 #include <algorithm>
-#include <numeric>
+#include <cmath>
 #include <iterator>
+#include <memory>
+#include <numeric>
 
 #include <QsLog.h>
 
@@ -88,8 +90,7 @@ void Test::handleInput(const QString& input, int ms) {
         start();
       }
       return;
-    }
-    else {
+    } else {
       start();
     }
   }
@@ -102,7 +103,6 @@ void Test::handleInput(const QString& input, int ms) {
   emit positionChanged(pos + 1, input.length());
   if (direction < 0 || mistake_count > 1) return;
   if (!mistake_count && !input.isEmpty()) {
-    
     time_at_[pos] = ms < 0 ? msElapsed() : ms;
     if (pos > apm_window_) {
       auto window_ms = time_at_[pos] - time_at_[pos - apm_window_];
@@ -147,10 +147,10 @@ void Test::prepareResult() {
 }
 
 pair<double, double> Test::time_and_viscosity_for_range(int start,
-                                                             int end) const {
-  double n = static_cast<double>(max(1,abs(end - start)));
-  double total_time = accumulate(ms_between_.begin() + start,
-                                      ms_between_.begin() + end, 0.0);
+                                                        int end) const {
+  double n = static_cast<double>(max(1, abs(end - start)));
+  double total_time =
+      accumulate(ms_between_.begin() + start, ms_between_.begin() + end, 0.0);
   double avg_ms = total_time / n;
   double visc_sum = accumulate(
       ms_between_.begin() + start, ms_between_.begin() + end, 0.0,
