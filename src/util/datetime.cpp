@@ -18,6 +18,10 @@
 
 #include "util/datetime.h"
 
+#include <QDateTime>
+#include <QString>
+#include <QtGlobal>
+
 namespace util {
 namespace date {
 

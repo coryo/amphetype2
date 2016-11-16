@@ -30,7 +30,6 @@
 #include <QStringList>
 #include <QVariant>
 #include <QVariantList>
-#include <QtGlobal>
 
 #include "database/db.h"
 

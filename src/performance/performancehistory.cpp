@@ -35,6 +35,8 @@
 #include "util/datetime.h"
 
 using std::make_unique;
+using std::min;
+using std::max;
 
 PerformanceHistory::PerformanceHistory(QWidget* parent)
     : QMainWindow(parent), ui(make_unique<Ui::PerformanceHistory>()) {
@@ -58,10 +60,9 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
 
   // Model setup
   ui->tableView->setModel(&model_);
-  model_.setHorizontalHeaderLabels(
-      QStringList() << "id"
-                    << "text_id" << tr("Date") << tr("Source") << tr("WPM")
-                    << tr("Accuracy (%)") << tr("Viscosity"));
+  model_.setHorizontalHeaderLabels({"id", "text_id", tr("Date"), tr("Source"),
+                                    tr("WPM"), tr("Accuracy (%)"),
+                                    tr("Viscosity")});
   ui->tableView->setSortingEnabled(false);
   ui->tableView->setColumnHidden(0, true);
   ui->tableView->setColumnHidden(1, true);
@@ -288,7 +289,7 @@ void PerformanceHistory::dampen(QCPGraph* graph, int n, QCPGraph* out) {
       s += graph->dataMainValue(i) - graph->dataMainValue(i - n);
     else
       s += graph->dataMainValue(i);
-    out->addData(graph->dataMainKey(i), s / std::min(i + 1, n));
+    out->addData(graph->dataMainKey(i), s / min(i + 1, n));
   }
 }
 
@@ -373,13 +374,13 @@ QList<QStandardItem*> PerformanceHistory::make_row(
     const QDateTime& now) {
   auto timeItem = new QStandardItem(util::date::PrettyTimeDelta(when, now));
   timeItem->setToolTip(when.toString(Qt::SystemLocaleLongDate));
-  return QList<QStandardItem*>()
-         << new QStandardItem(id.toString())
-         << new QStandardItem(text_id.toString()) << timeItem
-         << new QStandardItem(source_name.toString())
-         << new QStandardItem(QString::number(wpm, 'f', 1))
-         << new QStandardItem(QString::number(acc, 'f', 1))
-         << new QStandardItem(QString::number(vis, 'f', 1));
+  return {new QStandardItem(id.toString()),
+          new QStandardItem(text_id.toString()),
+          timeItem,
+          new QStandardItem(source_name.toString()),
+          new QStandardItem(QString::number(wpm, 'f', 1)),
+          new QStandardItem(QString::number(acc, 'f', 1)),
+          new QStandardItem(QString::number(vis, 'f', 1))};
 }
 
 void PerformanceHistory::refreshCurrentPlot() {
@@ -447,7 +448,7 @@ void PerformanceHistory::set_target_line(int state) {
 
 void PerformanceHistory::set_axis_ranges(performance::plot plot) {
   ui->performancePlot->yAxis->setRangeUpper(
-      std::max(target_wpm_, ui->performancePlot->yAxis->range().upper));
+      max(target_wpm_, ui->performancePlot->yAxis->range().upper));
   switch (plot) {
     case performance::plot::wpm:
       ui->performancePlot->yAxis2->setVisible(false);
@@ -459,8 +460,7 @@ void PerformanceHistory::set_axis_ranges(performance::plot plot) {
       auto range = ui->performancePlot->graph(performance::plot::accuracy)
                        ->valueAxis()
                        ->range();
-      ui->performancePlot->yAxis2->setRangeLower(
-          std::max(0.0, range.lower - 2));
+      ui->performancePlot->yAxis2->setRangeLower(max(0.0, range.lower - 2));
       break;
     }
     case performance::plot::viscosity: {

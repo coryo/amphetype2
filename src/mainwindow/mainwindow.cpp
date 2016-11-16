@@ -35,8 +35,10 @@
 #include "texts/text.h"
 #include "ui_mainwindow.h"
 
+using std::make_unique;
+
 MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent), ui(std::make_unique<Ui::MainWindow>()) {
+    : QMainWindow(parent), ui(make_unique<Ui::MainWindow>()) {
   ui->setupUi(this);
   ui->menuView->addAction(ui->plotDock->toggleViewAction());
   ui->menuTest->addAction(ui->quizzer->restartAction());
@@ -251,4 +253,3 @@ void MainWindow::aboutDialog() {
                          .arg(amphetype2_VERSION_STRING_FULL)
                          .arg(QT_VERSION_STR));
 }
-    

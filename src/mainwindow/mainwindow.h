@@ -36,6 +36,8 @@
 #include "database/db.h"
 #include "defs.h"
 
+using std::unique_ptr;
+
 namespace Ui {
 class MainWindow;
 }
@@ -65,8 +67,8 @@ class MainWindow : public QMainWindow, public AmphetypeWindow {
   void closeEvent(QCloseEvent* event) override;
 
  private:
-  std::unique_ptr<Ui::MainWindow> ui;
-  std::unique_ptr<Database> db_;
+  unique_ptr<Ui::MainWindow> ui;
+  unique_ptr<Database> db_;
   SettingsWidget settings_;
   StatisticsWidget statistics_;
   PerformanceHistory performance_;

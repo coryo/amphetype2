@@ -258,7 +258,6 @@ void Quizzer::keyPressEvent(QKeyEvent* event) {
   int pos1 = text_edit_.textCursor().position();
   QApplication::sendEvent(&text_edit_, event);
   int pos2 = text_edit_.textCursor().position();
-
   if (pos1 != pos2) emit newInput(text_edit_.toPlainText());
 }
 

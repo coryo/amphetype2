@@ -29,7 +29,6 @@
 #include <QStringList>
 #include <QVariant>
 #include <QVariantList>
-#include <QtGlobal>
 
 #include <algorithm>
 #include <cmath>
@@ -38,6 +37,9 @@
 
 #include "database/db.h"
 #include "texts/edittextdialog.h"
+
+using std::abs;
+using std::max;
 
 DatabaseItem::DatabaseItem(const vector<QVariant>& row) : data_(row) {}
 const vector<QVariant>& DatabaseItem::data() const { return data_; }
@@ -210,7 +212,7 @@ void DatabaseModel::removeRows(QList<int>& rows) {
     auto group_end = group_start;
     ++group_end;
     while (group_end != rows.end()) {
-      if (std::abs(*(group_end - 1) - *group_end) > 1) break;
+      if (abs(*(group_end - 1) - *group_end) > 1) break;
       group.push_back(*group_end);
       ++group_end;
     }
@@ -328,5 +330,5 @@ void DatabaseItemDelegate::updateEditorGeometry(
     QWidget* editor, const QStyleOptionViewItem& option,
     const QModelIndex& index) const {
   auto new_pos = QCursor::pos() - QPoint(0, editor->sizeHint().height());
-  editor->move(new_pos.x(), qMax(0, new_pos.y()));
+  editor->move(new_pos.x(), max(0, new_pos.y()));
 }
