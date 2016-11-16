@@ -19,41 +19,53 @@
 #ifndef SRC_QUIZZER_QUIZZER_H_
 #define SRC_QUIZZER_QUIZZER_H_
 
+#include <QAction>
 #include <QColor>
 #include <QFocusEvent>
+#include <QPlainTextEdit>
+#include <QPoint>
+#include <QRunnable>
 #include <QSoundEffect>
 #include <QString>
 #include <QThread>
 #include <QTime>
 #include <QTimer>
 #include <QWidget>
-#include <QPlainTextEdit>
 
 #include <memory>
 
+#include "database/db.h"
+#include "defs.h"
 #include "quizzer/test.h"
 #include "quizzer/testresult.h"
 #include "quizzer/typerdisplay.h"
 #include "texts/library.h"
 #include "texts/text.h"
 
+using std::shared_ptr;
+using std::unique_ptr;
+
 namespace Ui {
 class Quizzer;
 }
 
-class Quizzer : public QWidget {
+class Quizzer : public QWidget, public AmphetypeWindow {
   Q_OBJECT
+  Q_INTERFACES(AmphetypeWindow)
   Q_PROPERTY(QColor goColor MEMBER go_color_ NOTIFY colorChanged)
   Q_PROPERTY(QColor stopColor MEMBER stop_color_ NOTIFY colorChanged)
 
  public:
   explicit Quizzer(QWidget *parent = Q_NULLPTR);
   ~Quizzer();
+  QAction *restartAction();
+  QAction *cancelAction();
 
  public slots:
-  void loadSettings();
-  void saveSettings();
-  void setText(std::shared_ptr<Text>);
+  void onProfileChange() override;
+  void loadSettings() override;
+  void saveSettings() override;
+  void setText(shared_ptr<Text>);
   void checkSource(const QList<int> &);
   void checkText(const QList<int> &);
   void actionGrindWords();
@@ -71,24 +83,25 @@ class Quizzer : public QWidget {
   void timerLabelReset();
   void timerLabelGo();
   void timerLabelStop();
-  void handleResult(std::shared_ptr<TestResult>);
+  void handleResult(shared_ptr<TestResult>);
 
  signals:
   void colorChanged();
-  void newInput(QString, int, int);
-  void newWpm(double, double, double);
+  void newInput(const QString &, int = -1);
+  void newWpm(const QPoint &, const QPoint &);
   void newResult(int);
   void newStatistics();
   void testStarted(int);
 
  protected:
-  void focusInEvent(QFocusEvent *event);
-  void focusOutEvent(QFocusEvent *event);
-  void keyPressEvent(QKeyEvent* event);
+  void keyPressEvent(QKeyEvent *event) override;
 
  private:
-  std::unique_ptr<Ui::Quizzer> ui;
-  std::unique_ptr<Test> test_;
+  unique_ptr<Ui::Quizzer> ui;
+  unique_ptr<Database> db_;
+  unique_ptr<Test> test_;
+  QAction action_restart_;
+  QAction action_cancel_;
   QThread test_thread_;
   //! A text edit not added to the UI that will handle key events.
   QPlainTextEdit text_edit_;
@@ -100,8 +113,18 @@ class Quizzer : public QWidget {
   double target_acc_;
   double target_vis_;
   bool performance_logging_;
+  bool require_space_;
   QSoundEffect error_sound_;
   QSoundEffect success_sound_;
+};
+
+class TestSaver : public QRunnable {
+ public:
+  TestSaver(const shared_ptr<TestResult> &);
+  void run();
+
+ private:
+  shared_ptr<TestResult> result_;
 };
 
 #endif  // SRC_QUIZZER_QUIZZER_H_

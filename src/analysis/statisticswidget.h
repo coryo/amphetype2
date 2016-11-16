@@ -20,41 +20,47 @@
 #define SRC_ANALYSIS_STATISTICSWIDGET_H_
 
 #include <QMainWindow>
-#include <QStringList>
-#include <QStandardItemModel>
 #include <QPoint>
+#include <QStandardItemModel>
+#include <QStringList>
+
+#include <memory>
 
 #include "mainwindow/keyboardmap/keyboardmap.h"
+#include "database/db.h"
+#include "defs.h"
 
 namespace Ui {
 class StatisticsWidget;
 }
 
-class StatisticsWidget : public QMainWindow {
+class StatisticsWidget : public QMainWindow, public AmphetypeWindow {
   Q_OBJECT
+  Q_INTERFACES(AmphetypeWindow)
 
  public:
-  explicit StatisticsWidget(QWidget* parent = 0);
+  explicit StatisticsWidget(QWidget* parent = Q_NULLPTR);
   ~StatisticsWidget();
-
- private:
-  void contextMenu(const QPoint&);
-  Ui::StatisticsWidget* ui;
-  QStandardItemModel* model;
-  int history_;
 
  signals:
   void newItems(QStringList&);
 
  public slots:
-  void update();
+  void onProfileChange() override;
+  void loadSettings() override;
+  void saveSettings() override;
   void populateStatistics();
-  void loadSettings();
-  void saveSettings();
 
  private slots:
+  void contextMenu(const QPoint&);
   void generateList();
   void deleteItem();
+
+ private:
+  std::unique_ptr<Ui::StatisticsWidget> ui;
+  std::unique_ptr<Database> db_;
+  std::unique_ptr<QStandardItemModel> model_;
+  int history_;
 };
 
 #endif  // SRC_ANALYSIS_STATISTICSWIDGET_H_

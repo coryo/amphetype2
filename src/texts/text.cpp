@@ -109,7 +109,6 @@ int Text::saveFlags() const {
           amphetype::SaveFlags::SaveMistakes);
 }
 
-
 Lesson::Lesson(const QString& text, int id, int source, const QString& sName,
                int tNum)
     : Text(text, id, source, sName, tNum) {}
@@ -126,7 +125,6 @@ int Lesson::saveFlags() const {
   return (amphetype::SaveFlags::SaveResults |
           amphetype::SaveFlags::SaveMistakes);
 }
-
 
 TextFromStats::TextFromStats(amphetype::statistics::Order statsType,
                              const QString& text)

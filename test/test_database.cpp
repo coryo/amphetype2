@@ -33,14 +33,14 @@ void DatabaseTests::initTestCase() {
 }
 
 void DatabaseTests::testGetSource() {
-  int source = db_->getSource("a test source", -1, 0);
+  int source = db_->getSource("a test source");
   QVERIFY(source == 1);
   db_->deleteSource(QList<int>() << source);
 }
 
 void DatabaseTests::testGetSourcesData() {
-  int source1 = db_->getSource("a", -1, 0);
-  int source2 = db_->getSource("b", -1, 0);
+  int source1 = db_->getSource("a");
+  int source2 = db_->getSource("b");
   auto data = db_->getSourcesData();
 
   QVERIFY(data.size() == 2);
@@ -53,7 +53,7 @@ void DatabaseTests::testGetSourcesData() {
   db_->deleteSource(QList<int>() << source1 << source2);
 
   data = db_->getSourcesData();
-  QVERIFY(data.isEmpty());
+  QVERIFY(data.empty());
 }
 
 void DatabaseTests::testMedianFunction() {

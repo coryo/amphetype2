@@ -19,6 +19,7 @@ set(amphetype2_SOURCES
   main.cpp
 	analysis/statisticswidget.cpp
 	database/db.cpp
+  database/databasemodel.cpp
 	generators/traininggenerator.cpp
 	generators/traininggenwidget.cpp
 	generators/lessongenwidget.cpp
@@ -35,8 +36,6 @@ set(amphetype2_SOURCES
 	texts/text.cpp
 	texts/library.cpp
 	texts/lessonminer.cpp
-	texts/textmodel.cpp
-	texts/sourcemodel.cpp
 	texts/edittextdialog.cpp
 	util/RunGuard.cpp
 	util/datetime.cpp
@@ -46,6 +45,7 @@ set(amphetype2_HEADERS
 	defs.h
 	analysis/statisticswidget.h
 	database/db.h
+  database/databasemodel.h
 	generators/generate.h
 	generators/lessongenwidget.h
 	generators/traininggenerator.h
@@ -63,9 +63,7 @@ set(amphetype2_HEADERS
 	texts/lessonminer.h
 	texts/lessonminercontroller.h
 	texts/library.h
-	texts/sourcemodel.h
 	texts/text.h
-	texts/textmodel.h
 	util/datetime.h
 	util/RunGuard.h
 )

@@ -20,13 +20,13 @@
 
 #include <QVBoxLayout>
 
-EditTextDialog::EditTextDialog(const QString& title, const QString& text,
-                               QWidget* parent)
-    : QDialog(parent) {
+EditTextDialog::EditTextDialog(const QString& title,
+                               QWidget* parent, Qt::WindowFlags f)
+    : QDialog(parent, f) {
   text_label_ = new QLabel(tr("Text:"));
 
   text_edit_ = new QPlainTextEdit;
-  text_edit_->setPlainText(text);
+  //text_edit_->setPlainText(text);
 
   button_box_ =
       new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -44,5 +44,6 @@ EditTextDialog::EditTextDialog(const QString& title, const QString& text,
 }
 
 QString EditTextDialog::text() const { return text_edit_->toPlainText(); }
+void EditTextDialog::setText(const QString& text) { text_edit_->setPlainText(text); }
 
 void EditTextDialog::verify() { accept(); }

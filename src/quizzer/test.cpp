@@ -18,266 +18,196 @@
 
 #include "quizzer/test.h"
 
-#include <QKeyEvent>
 #include <QRegularExpression>
-#include <QSettings>
-#include <QtMath>
-#include <QMetaType>
 
 #include <algorithm>
 #include <numeric>
+#include <iterator>
 
 #include <QsLog.h>
 
 #include "database/db.h"
 #include "defs.h"
-#include "texts/text.h"
 #include "quizzer/testresult.h"
+#include "texts/text.h"
 
-Test::Test(const std::shared_ptr<Text>& t, QObject* parent)
-    : QObject(parent),
-      text_(t),
-      started_(false),
-      finished_(false),
-      current_pos_(0),
-      apm_window_(5),
-      total_ms_(0) {
-  qRegisterMetaType<std::shared_ptr<TestResult>>();
-  ms_between_.resize(t->text().length() + 1);
-  time_at_.resize(t->text().length() + 1);
-  wpm_.resize(t->text().length() + 1);
+using std::min;
+using std::max;
+using std::pow;
+using std::accumulate;
+using std::abs;
+using std::make_pair;
+using std::make_shared;
+
+double Test::wpm(int nchars, int ms) {
+  return 12000.0 * (nchars / static_cast<double>(ms));
 }
 
-const std::shared_ptr<Text>& Test::text() const { return text_; }
-
-int Test::msElapsed() const {
-  if (!timer_.isValid()) return 0;
-  return timer_.elapsed();
+double Test::viscosity(double x, double avg) {
+  return 100.0 * pow((x / avg) - 1, 2);
 }
+
+Test::Test(const shared_ptr<Text>& t, bool require_space, QObject* parent)
+    : QObject(parent), text_(t), require_space_(require_space) {
+  time_at_.resize(t->text().length());
+}
+
+const shared_ptr<Text>& Test::text() const { return text_; }
+int Test::msElapsed() const { return timer_.isValid() ? timer_.elapsed() : 0; }
 double Test::secondsElapsed() const { return msElapsed() / 1000.0; }
-int Test::mistakeCount() const { return mistakes_.size(); }
 
 void Test::start() {
+  QLOG_INFO() << "Test Starting." << text_->sourceName() << text_->textNumber();
   start_time_ = QDateTime::currentDateTime();
-  timer_.start();
   started_ = true;
+  timer_.start();
   emit testStarted(text_->text().length());
 }
 
-void Test::abort() {
-  finished_ = true;
-  deleteLater();
-}
-
-void Test::cancelTest() {
-  abort();
-  emit cancelled();
-}
-
-void Test::restartTest() {
-  abort();
-  emit restarted();
-}
-
 void Test::finish() {
+  QLOG_INFO() << "Test Finished in " << time_at_.back() / 1000.0 << "seconds.";
   finished_ = true;
-  total_ms_ = time_at_.last();
   prepareResult();
 }
 
-void Test::handleInput(const QString& currentText, int ms, int direction) {
-  if (text_->text().isEmpty() || finished_) return;
-
-  if (!started_ && !finished_) {
-    QLOG_DEBUG() << "Test Starting.";
-    start();
+int Test::last_equal_position(const QString& a, const QString& b) {
+  int pos = -1;
+  for (int n = min(a.length(), b.length()); n >= 1; --n) {
+    if (a.leftRef(n) == b.leftRef(n)) return n - 1;
   }
-
-  current_pos_ = std::min(currentText.length(), text_->text().length());
-
-  for (current_pos_; current_pos_ >= -1; current_pos_--) {
-    if (QStringRef(&currentText, 0, current_pos_) ==
-        QStringRef(&text_->text(), 0, current_pos_)) {
-      break;
-    }
-  }
-  QStringRef lcd(&currentText, 0, current_pos_);
-
-  emit positionChanged(current_pos_, currentText.length());
-
-  if (current_pos_ == currentText.length()) {
-    time_at_[current_pos_] = ms;
-
-    if (current_pos_ > 1) {
-      ms_between_[current_pos_ - 1] =
-          time_at_[current_pos_] - time_at_[current_pos_ - 1];
-      wpm_[current_pos_] = 12.0 * (current_pos_ / (ms / 1000.0));
-    }
-
-    if (current_pos_ > apm_window_) {
-      // time since 1 window ago
-      int t = time_at_[current_pos_] - time_at_[current_pos_ - apm_window_];
-      double apm = 12.0 * (apm_window_ / (t / 1000.0));
-      emit newWpm(current_pos_ - 1, wpm_[current_pos_], apm);
-    }
-  }
-
-  if (lcd == QStringRef(&text_->text())) {
-    finish();
-    QLOG_DEBUG() << "totalms: " << total_ms_;
-    return;
-  }
-
-  // Mistake handling
-  if (current_pos_ < currentText.length() &&
-      current_pos_ < text_->text().length()) {
-    if (direction < 0) {
-      QLOG_DEBUG() << "ignoring backspace.";
-      return;
-    }
-    if (currentText.length() - current_pos_ > 1) {
-      QLOG_DEBUG() << currentText.length() - current_pos_
-                   << "ignoring repeat error.";
-      return;
-    }
-    QLOG_DEBUG() << "Mistake" << currentText[current_pos_] << "for"
-                 << text_->text()[current_pos_] << "at" << current_pos_;
-    addMistake(current_pos_, text_->text()[current_pos_],
-               currentText[current_pos_]);
-    emit mistake(current_pos_);
-  }
+  return pos;
 }
 
-void Test::addMistake(int pos, const QChar& target, const QChar& mistake) {
-  mistakes_ << pos;
-  mistake_list_.append(qMakePair(target, mistake));
-}
+void Test::handleInput(const QString& input, int ms) {
+  if (finished_) return;
 
-void Test::processMistakes(QHash<QPair<QChar, QChar>, int>* mistakes) {
-  // ((targetChar, mistakenChar), count)
-  for (auto const& pair : mistake_list_) {
-    if (mistakes->contains(pair))
-      mistakes->insert(pair, mistakes->value(pair) + 1);
-    else
-      mistakes->insert(pair, 1);
+  if (!started_) {
+    if (require_space_) {
+      if (input.right(1) == " ") {
+        emit startKeyReceived();
+        start();
+      }
+      return;
+    }
+    else {
+      start();
+    }
   }
+
+  int direction = input.length() - last_input_length_;
+  last_input_length_ = input.length();
+  int pos = last_equal_position(input, text_->text());
+  int mistake_count = abs(pos - input.length() + 1);
+
+  emit positionChanged(pos + 1, input.length());
+  if (direction < 0 || mistake_count > 1) return;
+  if (!mistake_count && !input.isEmpty()) {
+    
+    time_at_[pos] = ms < 0 ? msElapsed() : ms;
+    if (pos > apm_window_) {
+      auto window_ms = time_at_[pos] - time_at_[pos - apm_window_];
+      emit newWpm(QPoint(pos, wpm(input.length(), time_at_[pos])),
+                  QPoint(pos, wpm(apm_window_, window_ms)));
+    }
+  } else if (mistake_count) {  // Mistake handling
+    QLOG_INFO() << "Mistake!"
+                << "input:" << input[pos + 1]
+                << "expected:" << text_->text()[pos + 1] << "at" << pos;
+    mistakes_.insert(pos + 1);
+    auto pair = make_pair(text_->text()[pos + 1], input[pos + 1]);
+    mistake_list_[pair] += 1;
+    emit mistake(pos);
+  }
+
+  // Completion
+  if (input == text_->text()) return finish();
 }
 
 void Test::prepareResult() {
-  double wpm = wpm_.back();
+  ms_between_.push_back(time_at_.front());
+  for (auto i = time_at_.begin() + 1; i != time_at_.end(); ++i)
+    ms_between_.push_back(*(i) - *(i - 1));
+
+  double wpm = this->wpm(text_->text().length(), time_at_.back());
   double accuracy =
-      1.0 - mistakeCount() / static_cast<double>(text_->text().length());
+      1.0 - mistakes_.size() / static_cast<double>(text_->text().length());
+  double viscosity =
+      time_and_viscosity_for_range(0, text_->text().length() - 1).second;
 
-  // viscocity
-  double seconds_per_char = (total_ms_ / 1000.0) / text_->text().length();
-  QVector<double> v;
+  ngram_stats time_values, visc_values;
+  ngram_count mistake_count;
+  processCharacters(mistake_count, time_values, visc_values);
+  processTrigrams(mistake_count, time_values, visc_values);
+  processWords(mistake_count, time_values, visc_values);
 
-  for (int value : ms_between_) {
-    v << qPow((((value / 1000.0) - seconds_per_char) / seconds_per_char), 2);
-  }
-
-  double sum = std::accumulate(v.begin(), v.end(), 0);
-  double viscosity = sum / text_->text().length();
-
-  // Generate statistics, the key is character/word/trigram
-  // stats are the time values, visc viscosity, mistakeCount values are
-  // positions in the text where a mistake occurred. mistakeCount.count(key)
-  // yields the amount of mistakes for a given key
-  QMultiHash<QStringRef, double> stats;
-  QMultiHash<QStringRef, double> visc;
-  QMultiHash<QStringRef, int> mistakeCount;
-  QHash<QPair<QChar, QChar>, int> mistakes;
-
-  processCharacters(&mistakeCount, &stats, &visc);
-  processTrigrams(&mistakeCount, &stats, &visc);
-  processWords(&mistakeCount, &stats, &visc);
-  processMistakes(&mistakes);
-
-  auto result = std::make_shared<TestResult>(
-      text_, QDateTime::currentDateTime(), wpm, accuracy, viscosity, stats,
-      visc, mistakeCount, mistakes);
+  auto result = make_shared<TestResult>(
+      text_, QDateTime::currentDateTime(), wpm, accuracy, viscosity,
+      time_values, visc_values, mistake_count, mistake_list_);
   emit resultReady(result);
 }
 
-void Test::processCharacters(QMultiHash<QStringRef, int>* mistakes,
-                             QMultiHash<QStringRef, double>* stats,
-                             QMultiHash<QStringRef, double>* visc) {
-  double avg_seconds_per_char = (total_ms_ / 1000.0) / text_->text().length();
-  // characters
+pair<double, double> Test::time_and_viscosity_for_range(int start,
+                                                             int end) const {
+  double n = static_cast<double>(max(1,abs(end - start)));
+  double total_time = accumulate(ms_between_.begin() + start,
+                                      ms_between_.begin() + end, 0.0);
+  double avg_ms = total_time / n;
+  double visc_sum = accumulate(
+      ms_between_.begin() + start, ms_between_.begin() + end, 0.0,
+      [&avg_ms](auto a, auto b) { return a + viscosity(b, avg_ms); });
+  return make_pair(avg_ms, visc_sum / n);
+}
+
+void Test::processCharacters(ngram_count& mistake_count,
+                             ngram_stats& time_values,
+                             ngram_stats& visc_values) {
+  double ms_per_char = time_at_.back() / text_->text().length();
+  int offset = require_space_ ? 0 : 1;
   for (int i = 0; i < text_->text().length(); ++i) {
-    QStringRef c(&(text_->text()), i, 1);
-    // add a time value and visc value for the key,
-    // time isn't valid for char 0
-    if (i > 0) {
-      stats->insert(c, ms_between_.at(i) / 1000.0);
-      visc->insert(c,
-                   qPow((((ms_between_.at(i) / 1000.0) - avg_seconds_per_char) /
-                         avg_seconds_per_char),
-                        2));
+    auto key = text_->text().mid(i, 1);
+    if (mistakes_.count(i)) mistake_count[key]++;
+    if (i >= offset) {
+      time_values[key].push_back(ms_between_[i] / 1000.0);
+      visc_values[key].push_back(viscosity(ms_between_[i], ms_per_char));
     }
-    if (mistakes_.contains(i)) mistakes->insert(c, i);
   }
 }
 
-void Test::processTrigrams(QMultiHash<QStringRef, int>* mistakes,
-                           QMultiHash<QStringRef, double>* stats,
-                           QMultiHash<QStringRef, double>* visc) {
-  // trigrams
+void Test::processTrigrams(ngram_count& mistake_count, ngram_stats& time_values,
+                           ngram_stats& visc_values) {
+  int offset = require_space_ ? 0 : 1;
   for (int i = 0; i < text_->text().length() - 2; ++i) {
-    QStringRef trigram(&(text_->text()), i, 3);
+    auto trigram = text_->text().mid(i, 3);
     int start = i;
     int end = i + 3;
-
-    double time_sum = 0;
-    double viscosity_sum = 0;
-    // for each character in the trigram
-    for (int j = start; j < end; ++j) {
-      if (mistakes_.contains(j)) mistakes->insert(trigram, j);
-      time_sum += ms_between_.at(j);
+    for (int char_position = start; char_position < end; ++char_position) {
+      if (mistakes_.count(char_position)) mistake_count[trigram]++;
     }
-    if (i > 0) {
-      double avg_time = (time_sum / static_cast<double>(end - start)) / 1000.0;
-      for (int j = start; j < end; ++j)
-        viscosity_sum +=
-            qPow(((ms_between_.at(j) / 1000.0 - avg_time) / avg_time), 2);
-
-      stats->insert(trigram, avg_time);
-      visc->insert(trigram, viscosity_sum / (end - start));
+    if (i >= offset) {  // time isn't valid for char 0
+      auto stats = time_and_viscosity_for_range(start, end);
+      time_values[trigram].push_back(stats.first / 1000.0);
+      visc_values[trigram].push_back(stats.second);
     }
   }
 }
 
-void Test::processWords(QMultiHash<QStringRef, int>* mistakes,
-                        QMultiHash<QStringRef, double>* stats,
-                        QMultiHash<QStringRef, double>* visc) {
-  // words
-  QRegularExpression re("(\\w|'(?![A-Z]))+(-\\w(\\w|')*)*",
+void Test::processWords(ngram_count& mistake_count, ngram_stats& time_values,
+                        ngram_stats& visc_values) {
+  QRegularExpression re("((\\w|'(?![A-Z]))+(-\\w(\\w|')*)*)",
                         QRegularExpression::UseUnicodePropertiesOption);
-  QRegularExpressionMatchIterator i = re.globalMatch(text_->text());
-  QRegularExpressionMatch match;
+  auto i = re.globalMatch(text_->text());
   while (i.hasNext()) {
-    match = i.next();
-    // ignore matches of 3characters of less
-    int length = match.capturedLength();
-    if (length <= 3) continue;
-    // start and end pos of the word in the original text
+    auto match = i.next();
+    if (match.capturedLength() <= 3) continue;
     int start = match.capturedStart();
     int end = match.capturedEnd();
-    QStringRef word(&(text_->text()), start, length);
-
-    double time_sum = 0;
-    double viscosity_sum = 0;
-    // for each character in the word
-    for (int j = start; j < end; ++j) {
-      if (mistakes_.contains(j)) mistakes->insert(word, j);
-      time_sum += ms_between_.at(j);
+    auto word = text_->text().mid(start, match.capturedLength());
+    for (int char_position = start; char_position < end; ++char_position) {
+      if (mistakes_.count(char_position)) mistake_count[word]++;
     }
-    double avg_time = (time_sum / static_cast<double>(end - start)) / 1000.0;
-    for (int j = start; j < end; ++j)
-      viscosity_sum +=
-          qPow(((ms_between_.at(j) / 1000.0 - avg_time) / avg_time), 2);
-
-    stats->insert(word, avg_time);
-    visc->insert(word, viscosity_sum / (end - start));
+    if (start == 0 && !require_space_) start = 1;
+    auto stats = time_and_viscosity_for_range(start, end);
+    time_values[word].push_back(stats.first / 1000.0);
+    visc_values[word].push_back(stats.second);
   }
 }

@@ -93,7 +93,7 @@ void TrainingGenWidget::generate() {
       layoutName + "::Generated Training " + now.toString("hh:mm:ss.zzz");
 
   Database db;
-  int sourceId = db.getSource(sourceName, 1, 1);
+  int sourceId = db.getSource(sourceName, amphetype::text_type::Lesson);
   db.addTexts(sourceId, bigList);
   bigList.clear();
 

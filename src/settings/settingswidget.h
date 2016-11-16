@@ -27,8 +27,9 @@ namespace Ui {
 class SettingsWidget;
 }
 
-class SettingsWidget : public QWidget {
+class SettingsWidget : public QWidget, public AmphetypeWindow {
   Q_OBJECT
+  Q_INTERFACES(AmphetypeWindow)
 
  public:
   explicit SettingsWidget(QWidget *parent = 0);
@@ -42,8 +43,9 @@ class SettingsWidget : public QWidget {
   void newKeyboard(amphetype::Layout, amphetype::Standard);
 
  public slots:
-  void loadSettings();
-  void saveSettings();
+  void onProfileChange() override {}
+  void loadSettings() override;
+  void saveSettings() override;
 
  private slots:
   void selectFont();
@@ -51,7 +53,6 @@ class SettingsWidget : public QWidget {
 
   void changeKeyboardLayout(int);
   void changeKeyboardStandard(int);
-  // void changeSelectMethod(int);
 };
 
 #endif  // SRC_SETTINGS_SETTINGSWIDGET_H_

@@ -36,47 +36,38 @@
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent),
-      settings_(std::make_unique<SettingsWidget>()),
-      statistics_(std::make_unique<StatisticsWidget>()),
-      library_(std::make_unique<Library>()),
-      performance_(std::make_unique<PerformanceHistory>()),
-      lesson_generator_(std::make_unique<LessonGenWidget>()),
-      training_generator_(std::make_unique<TrainingGenWidget>()),
-      ui(new Ui::MainWindow) {
+    : QMainWindow(parent), ui(std::make_unique<Ui::MainWindow>()) {
   ui->setupUi(this);
-
-  populateProfiles();
-  updateWindowTitle();
+  ui->menuView->addAction(ui->plotDock->toggleViewAction());
+  ui->menuTest->addAction(ui->quizzer->restartAction());
+  ui->menuTest->addAction(ui->quizzer->cancelAction());
+  ui->menuView->addAction(ui->mapDock->toggleViewAction());
 
   // Actions
   connect(ui->actionQuit, &QAction::triggered, this, &QWidget::close);
-  connect(ui->actionSettings, &QAction::triggered, settings_.get(),
-          &QWidget::show);
-  connect(ui->actionSettings, &QAction::triggered, settings_.get(),
+  connect(ui->actionSettings, &QAction::triggered, &settings_, &QWidget::show);
+  connect(ui->actionSettings, &QAction::triggered, &settings_,
           &QWidget::activateWindow);
-  connect(ui->actionLibrary, &QAction::triggered, library_.get(),
-          &QWidget::show);
-  connect(ui->actionLibrary, &QAction::triggered, library_.get(),
+  connect(ui->actionLibrary, &QAction::triggered, &library_, &QWidget::show);
+  connect(ui->actionLibrary, &QAction::triggered, &library_,
           &QWidget::activateWindow);
-  connect(ui->actionPerformance, &QAction::triggered, performance_.get(),
+  connect(ui->actionPerformance, &QAction::triggered, &performance_,
           &QWidget::show);
-  connect(ui->actionPerformance, &QAction::triggered, performance_.get(),
+  connect(ui->actionPerformance, &QAction::triggered, &performance_,
           &QWidget::activateWindow);
-  connect(ui->actionLesson_Generator, &QAction::triggered,
-          lesson_generator_.get(), &QWidget::show);
-  connect(ui->actionLesson_Generator, &QAction::triggered,
-          lesson_generator_.get(), &QWidget::activateWindow);
+  connect(ui->actionLesson_Generator, &QAction::triggered, &lesson_generator_,
+          &QWidget::show);
+  connect(ui->actionLesson_Generator, &QAction::triggered, &lesson_generator_,
+          &QWidget::activateWindow);
   connect(ui->actionTraining_Generator, &QAction::triggered,
-          training_generator_.get(), &QWidget::show);
+          &training_generator_, &QWidget::show);
   connect(ui->actionTraining_Generator, &QAction::triggered,
-          training_generator_.get(), &QWidget::activateWindow);
-  connect(ui->actionAnalysis, &QAction::triggered, statistics_.get(),
+          &training_generator_, &QWidget::activateWindow);
+  connect(ui->actionAnalysis, &QAction::triggered, &statistics_,
           &QWidget::show);
-  connect(ui->actionAnalysis, &QAction::triggered, statistics_.get(),
+  connect(ui->actionAnalysis, &QAction::triggered, &statistics_,
           &QWidget::activateWindow);
   connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::aboutDialog);
-
   connect(ui->actionGrindWords, &QAction::triggered, ui->quizzer,
           &Quizzer::actionGrindWords);
   connect(ui->actionGrindViscWords, &QAction::triggered, ui->quizzer,
@@ -85,129 +76,132 @@ MainWindow::MainWindow(QWidget* parent)
           &Quizzer::actionGrindInaccurateWords);
   connect(ui->actionGrindDamagingWords, &QAction::triggered, ui->quizzer,
           &Quizzer::actionGrindDamagingWords);
-
-  ui->menuView->addAction(ui->plotDock->toggleViewAction());
-
+  // Keyboard map
   connect(ui->mapComboBox, &QComboBox::currentTextChanged, ui->keyboardMap,
           &KeyboardMap::setData);
-  ui->keyboardMap->updateData();
-  ui->menuView->addAction(ui->mapDock->toggleViewAction());
-
   // Typer
-  connect(ui->quizzer, &Quizzer::newResult, performance_.get(),
-          &PerformanceHistory::refreshPerformance);
-  connect(ui->quizzer, &Quizzer::newResult, library_.get(),
-          &Library::refreshSource);
-  connect(ui->quizzer, &Quizzer::newStatistics, statistics_.get(),
-          &StatisticsWidget::update);
+  connect(ui->quizzer, &Quizzer::newResult, &performance_,
+          &PerformanceHistory::refresh);
+  connect(ui->quizzer, &Quizzer::newResult, &library_, &Library::refreshSource);
+  connect(ui->quizzer, &Quizzer::newStatistics, &statistics_,
+          &StatisticsWidget::populateStatistics);
   connect(ui->quizzer, &Quizzer::newStatistics, ui->keyboardMap,
           &KeyboardMap::updateData);
   // Live Plot
   connect(ui->quizzer, &Quizzer::newWpm, ui->plot, &LivePlot::addWpm);
-  connect(ui->quizzer, &Quizzer::testStarted, ui->plot,
-          &LivePlot::beginTest);
-
+  connect(ui->quizzer, &Quizzer::testStarted, ui->plot, &LivePlot::beginTest);
   // Library
-  connect(library_.get(), &Library::setText, ui->quizzer, &Quizzer::setText);
-  connect(library_.get(), &Library::sourcesChanged, performance_.get(),
+  connect(&library_, &Library::setText, ui->quizzer, &Quizzer::setText);
+  connect(&library_, &Library::sourcesChanged, &performance_,
           &PerformanceHistory::refreshSources);
-  connect(library_.get(), &Library::sourcesChanged, performance_.get(),
-          &PerformanceHistory::refreshPerformance);
-  connect(library_.get(), &Library::sourcesDeleted, ui->quizzer,
+  connect(&library_, &Library::sourcesChanged, &performance_,
+          &PerformanceHistory::refresh);
+  connect(&library_, &Library::sourcesDeleted, ui->quizzer,
           &Quizzer::checkSource);
-  connect(library_.get(), &Library::textsDeleted, ui->quizzer,
-          &Quizzer::checkText);
-  connect(library_.get(), &Library::textsChanged, ui->quizzer,
-          &Quizzer::checkText);
-
+  connect(&library_, &Library::textsDeleted, ui->quizzer, &Quizzer::checkText);
+  connect(&library_, &Library::textsChanged, ui->quizzer, &Quizzer::checkText);
   // Performance
-  connect(performance_.get(), &PerformanceHistory::setText, ui->quizzer,
+  connect(&performance_, &PerformanceHistory::setText, ui->quizzer,
           &Quizzer::setText);
-  connect(performance_.get(), &PerformanceHistory::settingsChanged, ui->plot,
+  connect(&performance_, &PerformanceHistory::settingsChanged, ui->plot,
           &LivePlot::updatePlotTargetLine);
-
   // Analysis
-  connect(statistics_.get(), &StatisticsWidget::newItems,
-          lesson_generator_.get(), &LessonGenWidget::addItems);
-  connect(statistics_.get(), &StatisticsWidget::newItems,
-          lesson_generator_.get(), &QWidget::show);
-  connect(statistics_.get(), &StatisticsWidget::newItems,
-          lesson_generator_.get(), &QWidget::activateWindow);
-
-  // Lesson Generator
-  connect(lesson_generator_.get(), &LessonGenWidget::newLesson, library_.get(),
-          &Library::refreshSources);
-  connect(lesson_generator_.get(), &LessonGenWidget::newLesson,
-          lesson_generator_.get(), &QWidget::close);
-  connect(lesson_generator_.get(), &LessonGenWidget::newLesson, library_.get(),
+  connect(&statistics_, &StatisticsWidget::newItems, &lesson_generator_,
+          &LessonGenWidget::addItems);
+  connect(&statistics_, &StatisticsWidget::newItems, &lesson_generator_,
           &QWidget::show);
-  connect(lesson_generator_.get(), &LessonGenWidget::newLesson, library_.get(),
+  connect(&statistics_, &StatisticsWidget::newItems, &lesson_generator_,
           &QWidget::activateWindow);
-  connect(lesson_generator_.get(), &LessonGenWidget::newLesson, library_.get(),
+  // Lesson Generator
+  connect(&lesson_generator_, &LessonGenWidget::newLesson, &library_,
+          &Library::refreshSources);
+  connect(&lesson_generator_, &LessonGenWidget::newLesson, &lesson_generator_,
+          &QWidget::close);
+  connect(&lesson_generator_, &LessonGenWidget::newLesson, &library_,
+          &QWidget::show);
+  connect(&lesson_generator_, &LessonGenWidget::newLesson, &library_,
+          &QWidget::activateWindow);
+  connect(&lesson_generator_, &LessonGenWidget::newLesson, &library_,
           &Library::selectSource);
-
   // Training Generator
-  connect(training_generator_.get(), &TrainingGenWidget::newTraining,
-          library_.get(), &Library::refreshSources);
-  connect(training_generator_.get(), &TrainingGenWidget::newTraining,
-          library_.get(), &QWidget::show);
-  connect(training_generator_.get(), &TrainingGenWidget::newTraining,
-          library_.get(), &QWidget::activateWindow);
-  connect(training_generator_.get(), &TrainingGenWidget::newTraining,
-          training_generator_.get(), &QWidget::close);
-  connect(training_generator_.get(), &TrainingGenWidget::newTraining,
-          library_.get(), &Library::selectSource);
-
+  connect(&training_generator_, &TrainingGenWidget::newTraining, &library_,
+          &Library::refreshSources);
+  connect(&training_generator_, &TrainingGenWidget::newTraining, &library_,
+          &QWidget::show);
+  connect(&training_generator_, &TrainingGenWidget::newTraining, &library_,
+          &QWidget::activateWindow);
+  connect(&training_generator_, &TrainingGenWidget::newTraining,
+          &training_generator_, &QWidget::close);
+  connect(&training_generator_, &TrainingGenWidget::newTraining, &library_,
+          &Library::selectSource);
   // Settings
-  connect(settings_.get(), &SettingsWidget::settingsChanged, ui->quizzer,
+  connect(&settings_, &SettingsWidget::settingsChanged, ui->quizzer,
           &Quizzer::loadSettings);
-  connect(settings_.get(), &SettingsWidget::settingsChanged, ui->plot,
+  connect(&settings_, &SettingsWidget::settingsChanged, ui->plot,
           &LivePlot::updatePlotTargetLine);
-  connect(settings_.get(), &SettingsWidget::settingsChanged, performance_.get(),
+  connect(&settings_, &SettingsWidget::settingsChanged, &performance_,
           &PerformanceHistory::loadSettings);
-  connect(settings_.get(), &SettingsWidget::newKeyboard, ui->keyboardMap,
+  connect(&settings_, &SettingsWidget::newKeyboard, ui->keyboardMap,
           &KeyboardMap::setKeyboard);
-
   // Profile Changed
-  connect(this, &MainWindow::profileChanged, ui->quizzer, &Quizzer::loadNewText);
-  connect(this, &MainWindow::profileChanged, library_.get(), &Library::reload);
-  connect(this, &MainWindow::profileChanged, performance_.get(),
-          &PerformanceHistory::refreshPerformance);
-  connect(this, &MainWindow::profileChanged, performance_.get(),
-          &PerformanceHistory::refreshSources);
-  connect(this, &MainWindow::profileChanged, statistics_.get(),
-          &StatisticsWidget::update);
+  connect(this, &MainWindow::profileChanged, ui->quizzer,
+          &Quizzer::onProfileChange);
+  connect(this, &MainWindow::profileChanged, &library_,
+          &Library::onProfileChange);
+  connect(this, &MainWindow::profileChanged, &performance_,
+          &PerformanceHistory::onProfileChange);
+  connect(this, &MainWindow::profileChanged, &statistics_,
+          &StatisticsWidget::onProfileChange);
+  connect(this, &MainWindow::profileChanged, this,
+          &MainWindow::onProfileChange);
   connect(this, &MainWindow::profileChanged, ui->keyboardMap,
-          &KeyboardMap::updateData);
-  connect(this, &MainWindow::profileChanged, this,
-          &MainWindow::updateWindowTitle);
-  connect(this, &MainWindow::profileChanged, this,
-          &MainWindow::populateProfiles);
+          &KeyboardMap::onProfileChange);
 
+  loadSettings();
+}
+
+MainWindow::~MainWindow() {}
+
+void MainWindow::loadSettings() {
   QSettings s;
   restoreState(s.value("mainWindow/windowState").toByteArray());
   restoreGeometry(s.value("mainWindow/windowGeometry").toByteArray());
-  performance_->restoreState(
+  performance_.restoreState(
       s.value("performanceWindow/windowState").toByteArray());
-  performance_->restoreGeometry(
+  performance_.restoreGeometry(
       s.value("performanceWindow/windowGeometry").toByteArray());
-  library_->restoreState(s.value("libraryWindow/windowState").toByteArray());
-  library_->restoreGeometry(
+  library_.restoreState(s.value("libraryWindow/windowState").toByteArray());
+  library_.restoreGeometry(
       s.value("libraryWindow/windowGeometry").toByteArray());
-
   changeProfile(s.value("profile", "default").toString());
 }
 
-MainWindow::~MainWindow() { delete ui; }
+void MainWindow::saveSettings() {
+  QSettings s;
+  s.setValue("mainWindow/windowState", saveState());
+  s.setValue("mainWindow/windowGeometry", saveGeometry());
+  s.setValue("performanceWindow/windowState", performance_.saveState());
+  s.setValue("performanceWindow/windowGeometry", performance_.saveGeometry());
+  s.setValue("libraryWindow/windowState", library_.saveState());
+  s.setValue("libraryWindow/windowGeometry", library_.saveGeometry());
+  settings_.saveSettings();
+  ui->quizzer->saveSettings();
+  performance_.saveSettings();
+  statistics_.saveSettings();
+}
+
+void MainWindow::onProfileChange() {
+  updateWindowTitle();
+  populateProfiles();
+}
 
 void MainWindow::populateProfiles() {
   ui->menuProfiles->clear();
 
-  auto create = ui->menuProfiles->addAction("Create New Profile");
-  connect(create, &QAction::triggered, this, &MainWindow::createProfile);
-
-  auto compress = ui->menuProfiles->addAction("Compress database");
-  connect(compress, &QAction::triggered, this, &MainWindow::compressDb);
+  auto a_create = ui->menuProfiles->addAction(tr("New profile"));
+  auto a_compress = ui->menuProfiles->addAction(tr("Compress database"));
+  connect(a_create, &QAction::triggered, this, &MainWindow::createProfile);
+  connect(a_compress, &QAction::triggered, this, [this] { db_->compress(); });
 
   ui->menuProfiles->addSeparator();
 
@@ -215,18 +209,13 @@ void MainWindow::populateProfiles() {
       QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
   while (it.hasNext()) {
     it.next();
-    QString file(it.fileName());
-    if (file.endsWith(".profile")) {
-      auto profile = ui->menuProfiles->addAction(file.split(".profile")[0]);
-      connect(profile, &QAction::triggered, this,
-              [this, profile] { changeProfile(profile->text()); });
+    if (it.fileName().endsWith(".profile")) {
+      auto name = it.fileName().split(".profile")[0];
+      auto a_profile = ui->menuProfiles->addAction(name);
+      connect(a_profile, &QAction::triggered, this,
+              [this, name] { changeProfile(name); });
     }
   }
-}
-
-void MainWindow::compressDb() {
-  Database db;
-  db.compress();
 }
 
 void MainWindow::updateWindowTitle() {
@@ -236,42 +225,23 @@ void MainWindow::updateWindowTitle() {
 }
 
 void MainWindow::createProfile() {
-  QAction* action = qobject_cast<QAction*>(sender());
-  if (!action) return;
-
   QLOG_DEBUG() << "new profile";
   bool ok;
-  QString newName = QInputDialog::getText(
-      this, tr("Create Profile"), tr("Name:"), QLineEdit::Normal, "", &ok);
-
-  if (ok && !newName.isEmpty()) {
-    changeProfile(newName);
-  }
-
+  auto newName = QInputDialog::getText(this, tr("Create Profile"), tr("Name:"),
+                                       QLineEdit::Normal, "", &ok);
+  if (ok && !newName.isEmpty()) changeProfile(newName);
 }
 void MainWindow::changeProfile(const QString& name) {
   QLOG_DEBUG() << "changeProfile" << name;
   QSettings s;
-  //if (s.value("profile", "default").toString() == name) return;
   s.setValue("profile", name);
-  Database db(name);
-  db.initDB();
+  db_.reset(new Database(name));
+  db_->initDB();
   emit profileChanged(name);
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
-  QSettings s;
-  QSize size = this->size();
-  s.setValue("mainWindow/windowState", saveState());
-  s.setValue("mainWindow/windowGeometry", saveGeometry());
-  s.setValue("performanceWindow/windowState", performance_->saveState());
-  s.setValue("performanceWindow/windowGeometry", performance_->saveGeometry());
-  s.setValue("libraryWindow/windowState", library_->saveState());
-  s.setValue("libraryWindow/windowGeometry", library_->saveGeometry());
-  settings_->saveSettings();
-  ui->quizzer->saveSettings();
-  performance_->saveSettings();
-  statistics_->saveSettings();
+  saveSettings();
   qApp->quit();
 }
 
@@ -281,3 +251,4 @@ void MainWindow::aboutDialog() {
                          .arg(amphetype2_VERSION_STRING_FULL)
                          .arg(QT_VERSION_STR));
 }
+    

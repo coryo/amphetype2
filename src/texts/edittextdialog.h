@@ -28,14 +28,15 @@ class EditTextDialog : public QDialog {
   Q_OBJECT
 
  public:
-  explicit EditTextDialog(const QString& title, const QString& text,
-                          QWidget* parent = Q_NULLPTR);
+  explicit EditTextDialog(const QString& title, QWidget* parent = Q_NULLPTR,
+                          Qt::WindowFlags f = Qt::WindowFlags());
 
  public slots:
   void verify();
 
  public:
   QString text() const;
+  void setText(const QString& text);
 
  private:
   QLabel* text_label_;

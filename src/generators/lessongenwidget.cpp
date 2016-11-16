@@ -80,7 +80,8 @@ void LessonGenWidget::generate() {
 
   Database db;
   int source = db.getSource(
-      QString("Lesson Gen: %1").arg(now.toString("MMM d hh:mm:ss.zzz")), 1, 1);
+      QString("Lesson Gen: %1").arg(now.toString("MMM d hh:mm:ss.zzz")),
+      amphetype::text_type::Lesson);
   db.addTexts(source, lessons);
   emit newLesson(source);
 }

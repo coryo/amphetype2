@@ -25,10 +25,17 @@
 
 #include "defs.h"
 
-class Text {
+class TextInterface {
  public:
-  Text(const QString& text = QString(), int id = -1,
-       int source = 0, const QString& sName = QString(), int tNum = -1);
+  virtual amphetype::text_type type() const = 0;
+  virtual amphetype::SelectionMethod nextTextSelectionPreference() const = 0;
+  virtual int saveFlags() const = 0;
+};
+
+class Text : public TextInterface {
+ public:
+  Text(const QString& text = QString(), int id = -1, int source = 0,
+       const QString& sName = QString(), int tNum = -1);
   Text(const Text& other);
 
   int id() const;
@@ -43,9 +50,10 @@ class Text {
       amphetype::SelectionMethod method = amphetype::SelectionMethod::Random,
       const Text* last = nullptr);
 
-  virtual amphetype::text_type type() const;
-  virtual amphetype::SelectionMethod nextTextSelectionPreference() const;
-  virtual int saveFlags() const;
+  virtual amphetype::text_type type() const override;
+  virtual amphetype::SelectionMethod nextTextSelectionPreference()
+      const override;
+  virtual int saveFlags() const override;
 
  private:
   int id_;
@@ -58,18 +66,18 @@ class Text {
 class Lesson : public Text {
  public:
   Lesson(const QString&, int, int, const QString&, int);
-  amphetype::text_type type() const;
-  amphetype::SelectionMethod nextTextSelectionPreference() const;
-  int saveFlags() const;
+  amphetype::text_type type() const override;
+  amphetype::SelectionMethod nextTextSelectionPreference() const override;
+  int saveFlags() const override;
 };
 
 class TextFromStats : public Text {
  public:
   TextFromStats(amphetype::statistics::Order statsType, const QString& text);
   TextFromStats(const TextFromStats& other);
-  amphetype::text_type type() const;
-  amphetype::SelectionMethod nextTextSelectionPreference() const;
-  int saveFlags() const;
+  amphetype::text_type type() const override;
+  amphetype::SelectionMethod nextTextSelectionPreference() const override;
+  int saveFlags() const override;
 
  private:
   amphetype::statistics::Order stats_type_;

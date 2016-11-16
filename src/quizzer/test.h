@@ -21,77 +21,75 @@
 
 #include <QDateTime>
 #include <QElapsedTimer>
-#include <QHash>
-#include <QKeyEvent>
-#include <QList>
-#include <QMetaType>
 #include <QObject>
-#include <QSet>
+#include <QPoint>
 #include <QString>
-#include <QVector>
-#include <QMetaType>
 
+#include <map>
 #include <memory>
+#include <set>
+#include <utility>
+#include <vector>
 
-#include "texts/text.h"
 #include "quizzer/testresult.h"
+#include "texts/text.h"
+
+using std::shared_ptr;
+using std::vector;
+using std::map;
+using std::set;
+using std::pair;
 
 class Test : public QObject {
   Q_OBJECT
 
  public:
-  Test(const std::shared_ptr<Text>&, QObject* parent = Q_NULLPTR);
-
-  void start();
-  int mistakeCount() const;
+  Test(const shared_ptr<Text>&, bool require_space = false,
+       QObject* parent = Q_NULLPTR);
   int msElapsed() const;
   double secondsElapsed() const;
-  void handleInput(const QString&, int, int);
-  void cancelTest();
-  void restartTest();
-  void abort();
-  const std::shared_ptr<Text>& text() const;
+  const shared_ptr<Text>& text() const;
+  bool started() const { return started_; }
+  bool finished() const { return finished_; }
+  void start();
+  static int last_equal_position(const QString& a, const QString& b);
+  /*! return the wpm for n characters over ms time. 1 word = 5 chars */
+  static double wpm(int nchars, int ms);
+  static double viscosity(double x, double avg);
+
+ public slots:
+  void handleInput(const QString& input, int ms = -1);
 
  signals:
   void testStarted(int);
-  void done(double, double, double);
-  void cancelled();
-  void restarted();
-
-  void resultReady(std::shared_ptr<TestResult>);
+  void resultReady(shared_ptr<TestResult>);
   void mistake(int);
-  void newWpm(double, double, double);
+  void newWpm(const QPoint&, const QPoint&);
   void positionChanged(int, int);
+  void startKeyReceived();
 
  private:
-  void processMistakes(QHash<QPair<QChar, QChar>, int>*);
   void finish();
-  void addMistake(int, const QChar&, const QChar&);
   void prepareResult();
-  void processCharacters(QMultiHash<QStringRef, int>*,
-                         QMultiHash<QStringRef, double>*,
-                         QMultiHash<QStringRef, double>*);
-  void processTrigrams(QMultiHash<QStringRef, int>*,
-                       QMultiHash<QStringRef, double>*,
-                       QMultiHash<QStringRef, double>*);
-  void processWords(QMultiHash<QStringRef, int>*,
-                    QMultiHash<QStringRef, double>*,
-                    QMultiHash<QStringRef, double>*);
+  pair<double, double> time_and_viscosity_for_range(int start,
+                                                         int end) const;
+  void processCharacters(ngram_count&, ngram_stats&, ngram_stats&);
+  void processTrigrams(ngram_count&, ngram_stats&, ngram_stats&);
+  void processWords(ngram_count&, ngram_stats&, ngram_stats&);
 
  private:
-  std::shared_ptr<Text> text_;
-  bool started_;
-  bool finished_;
-  int current_pos_;
+  bool started_ = false;
+  bool finished_ = false;
+  bool require_space_ = false;
+  int last_input_length_ = 0;
+  int apm_window_ = 5;
+  shared_ptr<Text> text_;
   QDateTime start_time_;
-  int total_ms_;
-  QVector<int> ms_between_;
-  QVector<int> time_at_;
-  QVector<double> wpm_;
-  QSet<int> mistakes_;
-  QList<QPair<QChar, QChar>> mistake_list_;
+  vector<int> ms_between_;
+  vector<int> time_at_;
+  set<int> mistakes_;
+  map<mistake_t, int> mistake_list_;
   QElapsedTimer timer_;
-  int apm_window_;
 };
 
 #endif  // SRC_QUIZZER_TEST_H_

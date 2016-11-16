@@ -21,50 +21,52 @@
 
 #include <QChar>
 #include <QDateTime>
-#include <QMultiHash>
+#include <QMetaType>
 #include <QObject>
 #include <QStringRef>
-#include <QMetaType>
 
+#include <map>
 #include <memory>
+#include <utility>
 
 #include "texts/text.h"
+
+using std::shared_ptr;
+using std::map;
+using std::pair;
+using std::vector;
+
+typedef map<QString, vector<double>> ngram_stats;
+typedef map<QString, int> ngram_count;
+typedef pair<QChar, QChar> mistake_t;
 
 class TestResult : public QObject {
   Q_OBJECT
 
  public:
-   TestResult(const std::shared_ptr<Text>& text, const QDateTime& when,
-     double wpm, double accuracy, double viscosity,
-     const QMultiHash<QStringRef, double>& statsValues,
-     const QMultiHash<QStringRef, double>& viscValues,
-     const QMultiHash<QStringRef, int>& mistakeCounts,
-     const QHash<QPair<QChar, QChar>, int>& mistakes,
-     QObject* parent = Q_NULLPTR);
-
+  TestResult(const shared_ptr<Text>& text, const QDateTime& when,
+             double wpm, double accuracy, double viscosity,
+             const ngram_stats& statsValues, const ngram_stats& viscValues,
+             const ngram_count& mistakeCounts,
+             const map<mistake_t, int>& mistakes,
+             QObject* parent = Q_NULLPTR);
+  const QDateTime when;
+  const shared_ptr<Text> text;
+  const double wpm;
+  const double viscosity;
+  const double accuracy;
+  ngram_stats stats_values;
+  ngram_stats viscosity_values;
+  ngram_count mistake_counts;
+  map<mistake_t, int> mistakes;
   void save();
-  double wpm() const;
-  double accuracy() const;
-  double viscosity() const;
-  const QMultiHash<QStringRef, double> statsValues() const;
-  const QMultiHash<QStringRef, double> viscosityValues() const;
-  const QMultiHash<QStringRef, int> mistakeCounts() const;
-  const QHash<QPair<QChar, QChar>, int> mistakes() const;
-  const std::shared_ptr<Text>& text() const;
-  const QDateTime& when() const;
 
- private:
-  QDateTime now_;
-  std::shared_ptr<Text> text_;
-  double wpm_;
-  double viscosity_;
-  double accuracy_;
-  QMultiHash<QStringRef, double> stats_values_;
-  QMultiHash<QStringRef, double> viscosity_values_;
-  QMultiHash<QStringRef, int> mistake_counts_;
-  QHash<QPair<QChar, QChar>, int> mistakes_;
+ signals:
+  void savedResult(int source);
+  void savedStatistics();
+  void savedMistakes();
 };
 
-Q_DECLARE_METATYPE(std::shared_ptr<TestResult>)
+Q_DECLARE_METATYPE(shared_ptr<TestResult>)
 
 #endif  // SRC_QUIZZER_TESTRESULT_H_

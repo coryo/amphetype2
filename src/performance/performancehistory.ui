@@ -158,6 +158,9 @@
       <property name="contextMenuPolicy">
        <enum>Qt::CustomContextMenu</enum>
       </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
       <property name="alternatingRowColors">
        <bool>true</bool>
       </property>
@@ -379,20 +382,7 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="7">
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="0" column="5">
+       <item row="0" column="4">
         <widget class="QCheckBox" name="dampenCheckBox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -405,6 +395,13 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="3">
+        <widget class="QCheckBox" name="lineCheckBox">
+         <property name="text">
+          <string>Hide Line</string>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="2">
         <widget class="QCheckBox" name="timeScaleCheckBox">
          <property name="text">
@@ -412,24 +409,7 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="4">
-        <widget class="QCheckBox" name="lineCheckBox">
-         <property name="text">
-          <string>Hide Line</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="3">
-        <widget class="QCheckBox" name="fullRangeYCheckBox">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>Full Y</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="6">
+       <item row="0" column="5">
         <widget class="QSpinBox" name="smaWindowSpinBox">
          <property name="minimumSize">
           <size>
@@ -451,7 +431,7 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="8">
+       <item row="0" column="7">
         <widget class="QComboBox" name="plotSelector">
          <item>
           <property name="text">
@@ -469,6 +449,19 @@
           </property>
          </item>
         </widget>
+       </item>
+       <item row="0" column="6">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </item>

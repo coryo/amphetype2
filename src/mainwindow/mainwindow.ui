@@ -84,7 +84,13 @@
     <addaction name="actionGrindInaccurateWords"/>
     <addaction name="actionGrindDamagingWords"/>
    </widget>
+   <widget class="QMenu" name="menuTest">
+    <property name="title">
+     <string>&amp;Test</string>
+    </property>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menuTest"/>
    <addaction name="menuView"/>
    <addaction name="menu_Grind"/>
    <addaction name="menuProfiles"/>

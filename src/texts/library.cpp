@@ -22,10 +22,9 @@
 #include <QCursor>
 #include <QFile>
 #include <QFileDialog>
-#include <QHeaderView>
 #include <QInputDialog>
-#include <QItemSelectionModel>
 #include <QMenu>
+#include <QMessageBox>
 #include <QModelIndex>
 #include <QProgressBar>
 #include <QProgressDialog>
@@ -44,142 +43,160 @@
 #include "texts/edittextdialog.h"
 #include "texts/lessonminer.h"
 #include "texts/lessonminercontroller.h"
-#include "texts/sourcemodel.h"
 #include "texts/text.h"
-#include "texts/textmodel.h"
 #include "ui_library.h"
 
 Library::Library(QWidget* parent)
-    : QMainWindow(parent),
-      ui(new Ui::Library),
-      text_model_(new TextModel(this)),
-      source_model_(new SourceModel(this)) {
+    : QMainWindow(parent), ui(std::make_unique<Ui::Library>()) {
   ui->setupUi(this);
-
-  //QSettings s;
-
   ui->actionAdd_Text->setEnabled(false);
-
-  //ui->sourcesTable->setModel(source_model_);
-  //ui->textsTable->setModel(text_model_);
+  ui->sourcesTable->setItemDelegate(new DatabaseItemDelegate(this));
+  ui->textsTable->setItemDelegate(new DatabaseItemDelegate(this));
 
   connect(ui->actionImport_Texts, &QAction::triggered, this,
           &Library::addFiles);
   connect(ui->actionImport_XML, &QAction::triggered, this,
           &Library::importSource);
-
   connect(ui->actionAdd_Source, &QAction::triggered, this, &Library::addSource);
   connect(ui->actionAdd_Text, &QAction::triggered, this, &Library::addText);
-
-  connect(ui->textsTable, &QTableView::clicked, this,
-          &Library::textsTableClickHandler);
-
   connect(ui->textsTable, &QTableView::doubleClicked, this,
-          &Library::textsTableDoubleClickHandler);
-
+          [this](const QModelIndex& index) {
+            emit setText(db_->getText(index.data(Qt::UserRole).toInt()));
+          });
   connect(ui->sourcesTable, &QWidget::customContextMenuRequested, this,
           &Library::sourcesContextMenu);
-
   connect(ui->textsTable, &QWidget::customContextMenuRequested, this,
           &Library::textsContextMenu);
-
   connect(ui->actionClose, &QAction::triggered, this, &QWidget::close);
-
-  //connect(ui->sourcesTable->selectionModel(),
-  //        &QItemSelectionModel::selectionChanged, this,
-  //        &Library::sourceSelectionChanged);
-
-  //source_model_->refresh();
 }
 
-Library::~Library() {
-  delete ui;
-  //delete text_model_;
-  //delete source_model_;
-}
+Library::~Library() {}
 
 void Library::sourceSelectionChanged(const QItemSelection& a,
                                      const QItemSelection& b) {
   if (!ui->sourcesTable->selectionModel()->hasSelection()) {
     ui->actionAdd_Text->setEnabled(false);
-    TextModel* old = text_model_;
-    text_model_ = new TextModel;
-    ui->textsTable->setModel(text_model_);
-    delete old;
+    db_text_model_->setPageSize(0);
+    db_text_model_->clear();
   } else {
     ui->actionAdd_Text->setEnabled(true);
-    auto indexes = a.indexes();
-    if (indexes.isEmpty()) return;
-    int source = indexes[0].data(Qt::UserRole).toInt();
-    text_model_->setSource(source);
+    if (a.indexes().isEmpty()) return;
+    int source = a.indexes()[0].data(Qt::UserRole).toInt();
+    db_text_model_->setPageSize(20);
+    db_text_model_->setSource(source);
+    db_text_model_->clear();
   }
 }
 
-void Library::reload() {
-  TextModel* old_tm = text_model_;
-  SourceModel* old_sm = source_model_;
-  text_model_ = new TextModel(this);
-  source_model_ = new SourceModel(this);
-  ui->sourcesTable->setModel(source_model_);
-  ui->textsTable->setModel(text_model_);
-  delete old_tm;
-  delete old_sm;
+void Library::onProfileChange() {
+  db_.reset(new Database);
 
-  // Set resize mode on both tables, stretch 1st col, resize the rest
-  auto sourceHeader = ui->sourcesTable->horizontalHeader();
-  auto textHeader = ui->textsTable->horizontalHeader();
-  sourceHeader->setSectionResizeMode(0, QHeaderView::Stretch);
-  for (int col = 1; col < sourceHeader->count(); col++)
-    sourceHeader->setSectionResizeMode(col, QHeaderView::ResizeToContents);
-  textHeader->setSectionResizeMode(0, QHeaderView::Stretch);
-  for (int col = 1; col < textHeader->count(); col++)
-    textHeader->setSectionResizeMode(col, QHeaderView::ResizeToContents);
-
+  db_source_model_.reset(new DatabaseModel("source"));
+  db_source_model_->setHorizontalHeaderLabels(
+      QStringList() << "id" << tr("Name") << tr("Texts") << tr("Results")
+                    << tr("WPM") << "disabled"
+                    << "type");
+  db_source_model_->populate();
+  ui->sourcesTable->setModel(db_source_model_.get());
   connect(ui->sourcesTable->selectionModel(),
           &QItemSelectionModel::selectionChanged, this,
           &Library::sourceSelectionChanged);
+  ui->sourcesTable->setColumnHidden(0, true);
+  ui->sourcesTable->setColumnHidden(5, true);
+  ui->sourcesTable->setColumnHidden(6, true);
 
-  source_model_->refresh();
+  db_text_model_.reset(new TextPagedDatabaseModel("text", -1, 0));
+  db_text_model_->setHorizontalHeaderLabels(
+      QStringList() << "id" << tr("Text") << tr("Length") << tr("Results")
+                    << tr("WPM") << tr("Disabled") << "source");
+  ui->textsTable->setModel(db_text_model_.get());
+  ui->textsTable->setColumnHidden(0, true);
+  ui->textsTable->setColumnHidden(6, true);
+
+  auto sourceHeader = ui->sourcesTable->horizontalHeader();
+  auto textHeader = ui->textsTable->horizontalHeader();
+  sourceHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
+  sourceHeader->setSectionResizeMode(1, QHeaderView::Stretch);
+  textHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
+  textHeader->setSectionResizeMode(1, QHeaderView::Stretch);
 }
 
 void Library::sourcesContextMenu(const QPoint& pos) {
+  auto selected = ui->sourcesTable->selectionModel()->selectedRows();
+  QList<int> sources;
+  for (const auto& idx : selected) sources << idx.data(Qt::UserRole).toInt();
+
   QMenu menu(this);
+  QAction* a_delete = menu.addAction(tr("Delete"));
+  QAction* a_enable = menu.addAction(tr("Enable all texts"));
+  QAction* a_disable = menu.addAction(tr("Disable all texts"));
+  QAction* a_export = menu.addAction(tr("Export as XML..."));
 
-  auto selectedRows = ui->sourcesTable->selectionModel()->selectedRows();
-  int selectedCount = selectedRows.size();
-
-  QAction* deleteAction = menu.addAction("delete");
-  connect(deleteAction, &QAction::triggered, this, &Library::deleteSource);
-
-  QAction* enableAction = menu.addAction("enable");
-  connect(enableAction, &QAction::triggered, this, &Library::enableSource);
-
-  QAction* disableAction = menu.addAction("disable");
-  connect(disableAction, &QAction::triggered, this, &Library::disableSource);
-
-  QAction* exportAction = menu.addAction("export as xml...");
-  connect(exportAction, &QAction::triggered, this, &Library::exportSource);
+  connect(a_delete, &QAction::triggered, this, [this, sources, selected] {
+    QMessageBox msgBox(QMessageBox::Warning, tr("Confirm"),
+                       tr("Confirm delete source(s)."),
+                       QMessageBox::Ok | QMessageBox::Cancel);
+    msgBox.setInformativeText(
+        tr("Deleting a source will delete all associated results."));
+    if (msgBox.exec() == QMessageBox::Cancel) return;
+    db_source_model_->removeIndexes(selected);
+    db_text_model_->setPageSize(0);
+    db_text_model_->clear();
+    emit sourcesDeleted(sources);
+    emit sourcesChanged();
+  });
+  connect(a_enable, &QAction::triggered, this, [this, sources] {
+    db_->enableSource(sources);
+    db_text_model_->clear();
+  });
+  connect(a_disable, &QAction::triggered, this, [this, sources] {
+    db_->disableSource(sources);
+    db_text_model_->clear();
+  });
+  connect(a_export, &QAction::triggered, this, &Library::exportSource);
 
   menu.exec(QCursor::pos());
 }
 
 void Library::textsContextMenu(const QPoint& pos) {
+  auto selected = ui->textsTable->selectionModel()->selectedRows();
+  QList<int> texts;
+  for (const auto& row : selected) texts << row.data(Qt::UserRole).toInt();
+
   QMenu menu(this);
+  QAction* a_enable = menu.addAction(tr("Enable"));
+  QAction* a_disable = menu.addAction(tr("Disable"));
+  QAction* a_delete = menu.addAction(tr("Delete"));
 
-  auto selectedRows = ui->textsTable->selectionModel()->selectedRows();
-  int selectedCount = selectedRows.size();
-
-  if (selectedCount == 1) {
-    QAction* testAction = menu.addAction("Send to Typer");
-    testAction->setData(selectedRows[0].data(Qt::UserRole));
-    connect(testAction, &QAction::triggered, this, &Library::actionSendToTyper);
-
-    QAction* editAction = menu.addAction("edit");
-    connect(editAction, &QAction::triggered, this, &Library::actionEditText);
+  if (texts.count() == 1) {
+    QAction* a_send = menu.addAction(tr("Send to Typer"));
+    QAction* a_edit = menu.addAction(tr("Edit"));
+    const int id = texts[0];
+    const auto idx = ui->textsTable->selectionModel()->selectedRows(1)[0];
+    connect(a_send, &QAction::triggered, this,
+            [this, id] { emit setText(db_->getText(id)); });
+    connect(a_edit, &QAction::triggered, this,
+            [this, idx] { ui->textsTable->edit(idx); });
   }
 
-  QAction* deleteAction = menu.addAction("delete");
-  connect(deleteAction, &QAction::triggered, this, &Library::actionDeleteTexts);
+  connect(a_enable, &QAction::triggered, this, [this, selected, texts] {
+    db_->enableText(texts);
+    db_text_model_->refreshIndexes(selected);
+  });
+  connect(a_disable, &QAction::triggered, this, [this, selected, texts] {
+    db_->disableText(texts);
+    db_text_model_->refreshIndexes(selected);
+  });
+  connect(a_delete, &QAction::triggered, this, [this, selected, texts] {
+    db_text_model_->removeIndexes(selected);
+    if (ui->sourcesTable->selectionModel()->hasSelection()) {
+      auto source = ui->sourcesTable->selectionModel()->selectedRows()[0];
+      db_source_model_->refreshIndex(source);
+      ui->sourcesTable->update(source);
+      emit sourceChanged(source.data(Qt::UserRole).toInt());
+    }
+    emit textsDeleted(texts);
+  });
 
   menu.exec(QCursor::pos());
 }
@@ -192,8 +209,6 @@ void Library::exportSource() {
                                                   tr("XML files (*.xml)"));
   QLOG_DEBUG() << fileName;
 
-  Database db;
-
   QFile file(fileName);
   if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) return;
 
@@ -203,11 +218,11 @@ void Library::exportSource() {
   stream.writeStartElement("sources");
   for (const auto& index : indexes) {
     int source = index.data(Qt::UserRole).toInt();
-    auto sourceData = db.getSourceData(source);
+    auto sourceData = db_->getSourceData(source);
     stream.writeStartElement("source");
     stream.writeAttribute("name", sourceData[1].toString());
     if (sourceData[6].toInt() == 1) stream.writeAttribute("type", "lesson");
-    QStringList texts = db.getAllTexts(source);
+    QStringList texts = db_->getAllTexts(source);
     for (const QString& text : texts) {
       stream.writeTextElement("text", text);
     }
@@ -227,211 +242,102 @@ void Library::importSource() {
   if (!this->validateXml(&file)) return;
   file.open(QIODevice::ReadOnly | QIODevice::Text);
 
-  Database db;
   QXmlStreamReader xml(&file);
   while (!xml.atEnd()) {
     xml.readNext();
     if (xml.name() == "source") {
-      if (xml.attributes().value("name").isEmpty()) {
-        continue;
-      }
+      if (xml.attributes().value("name").isEmpty()) continue;
 
       QStringList texts;
-      int type = 0;
-      int discount = -1;
+      auto type = amphetype::text_type::Standard;
 
       if (xml.attributes().value("type") == "lesson") {
-        type = 1;
-        discount = 1;
+        type = amphetype::text_type::Lesson;
       }
 
-      int source = db.getSource(xml.attributes().value("name").toString(),
-                                discount, type);
+      int source =
+          db_->getSource(xml.attributes().value("name").toString(), type);
       while (!xml.atEnd()) {
         xml.readNext();
         if (xml.isEndElement()) {
-          if (!texts.isEmpty()) {
-            db.addTexts(source, texts);
-          }
+          if (!texts.isEmpty()) db_->addTexts(source, texts);
           break;
         }
         if (xml.name() == "text") {
           QString text(xml.readElementText());
-          if (!text.isEmpty()) {
-            texts << text;
-          }
+          if (!text.isEmpty()) texts << text;
         }
       }
     }
   }
+  if (xml.hasError()) return;
 
-  if (xml.hasError()) {
-    return;
-  }
-
-  refreshSources();
+  db_source_model_->rowAdded();
   emit sourcesChanged();
 }
 
-void Library::actionEditText(bool checked) {
-  auto indexes = ui->textsTable->selectionModel()->selectedRows();
-  if (!ui->textsTable->selectionModel()->hasSelection() || indexes.size() > 1)
-    return;
-  int id = indexes[0].data(Qt::UserRole).toInt();
-
-  Database db;
-  auto t = db.getText(id);
-
-  EditTextDialog dialog(tr("Edit Text:"), t->text());
-
-  if (dialog.exec() == QDialog::Accepted) {
-    db.updateText(id, dialog.text());
-    QLOG_DEBUG() << id << dialog.text();
-    text_model_->refreshText(indexes[0]);
-    emit textsChanged(QList<int>() << id);
-  }
-}
-
-void Library::actionDeleteTexts(bool checked) {
-  if (!ui->textsTable->selectionModel()->hasSelection()) return;
-  auto indexes = ui->textsTable->selectionModel()->selectedRows();
-
-  QList<int> text_ids;
-  for (const auto& index : indexes) {
-    text_ids << index.data(Qt::UserRole).toInt();
-  }
-  Database db;
-  db.deleteText(text_ids);
-
-  if (ui->sourcesTable->selectionModel()->hasSelection()) {
-    auto sourceIndex = ui->sourcesTable->selectionModel()->selectedRows()[0];
-    source_model_->refreshSource(sourceIndex);
-    emit sourceChanged(sourceIndex.data(Qt::UserRole).toInt());
-  }
-
-  text_model_->removeIndexes(indexes);
-  emit textsDeleted(text_ids);
-}
-
-void Library::actionSendToTyper(bool checked) {
-  auto sender = reinterpret_cast<QAction*>(this->sender());
-  const QVariant& id = sender->data();
-
-  if (!id.isValid()) return;
-
-  QLOG_DEBUG() << id.toInt();
-  Database db;
-  auto t = db.getText(id.toInt());
-  emit setText(t);
-}
-
-void Library::textsTableDoubleClickHandler(const QModelIndex& index) {
-  QVariant text_id = index.data(Qt::UserRole);
-  if (!text_id.isValid()) return;
-
-  QLOG_DEBUG() << text_id.toInt();
-
-  Database db;
-  auto t = db.getText(text_id.toInt());
-  emit setText(t);
-}
-
-void Library::textsTableClickHandler(const QModelIndex& index) {
-  QLOG_DEBUG() << index.data(Qt::UserRole);
-}
-
-void Library::enableSource() {
-  auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
-  for (const auto& index : indexes) source_model_->enableSource(index);
-}
-
-void Library::disableSource() {
-  auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
-  for (const QModelIndex& index : indexes) source_model_->disableSource(index);
-}
-
 void Library::addText() {
+  if (!ui->sourcesTable->selectionModel()->hasSelection()) return;
   auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
-  if (indexes.isEmpty()) return;
 
   bool ok;
   QString text = QInputDialog::getMultiLineText(this, tr("Add Text:"),
                                                 tr("Text:"), "", &ok);
-
   if (ok && !text.isEmpty()) {
-    int source = indexes[0].data(Qt::UserRole).toInt();
-    Database db;
-    db.addText(source, text);
-    source_model_->refreshSource(indexes[0]);
-    text_model_->refresh();
+    db_->addText(indexes[0].data(Qt::UserRole).toInt(), text);
+    db_source_model_->refreshIndex(indexes[0]);
+    db_text_model_->rowAdded();
   }
 }
 
 void Library::addSource() {
   bool ok;
-  QString sourceName = QInputDialog::getText(
-      this, tr("Add Source:"), tr("Source name:"), QLineEdit::Normal, "", &ok);
-
-  if (ok && !sourceName.isEmpty()) {
-    source_model_->addSource(sourceName);
+  auto name =
+      QInputDialog::getText(this, tr("Add Source"), tr("Source name") + ":",
+                            QLineEdit::Normal, "", &ok);
+  if (ok && !name.isEmpty()) {
+    db_->getSource(name);
+    db_source_model_->rowAdded();
     emit sourcesChanged();
   }
 }
 
-void Library::deleteSource() {
-  auto indexes = ui->sourcesTable->selectionModel()->selectedRows();
-  QList<int> sources;
-  for (const auto& index : indexes) sources << index.data(Qt::UserRole).toInt();
-
-  source_model_->removeIndexes(indexes);
-  emit sourcesDeleted(sources);
-  emit sourcesChanged();
-}
-
-void Library::refreshSources() { source_model_->refresh(); }
+void Library::refreshSources() { db_source_model_->populate(); }
 
 void Library::refreshSource(int source) {
-  source_model_->refreshSource(source);
+  db_source_model_->refreshItem(qMakePair<QString, QVariant>("id", source));
 }
 
 void Library::selectSource(int source) {
-  for (int i = 0; i < source_model_->rowCount(); i++) {
-    auto index = source_model_->index(i, 0);
-    if (index.data(Qt::UserRole) == source) {
-      ui->sourcesTable->setCurrentIndex(index);
-      return;
-    }
+  for (int i = 0; i < db_source_model_->rowCount(); i++) {
+    auto index = db_source_model_->index(i, 0);
+    if (index.data(Qt::UserRole) == source)
+      return ui->sourcesTable->setCurrentIndex(index);
   }
 }
 
 void Library::addFiles() {
-  files_ = QFileDialog::getOpenFileNames(
+  auto files = QFileDialog::getOpenFileNames(
       this, tr("Import"), ".", tr("UTF-8 text files (*.txt);;All files (*)"));
-  if (files_.isEmpty()) return;
+  if (files.isEmpty()) return;
 
-  lmc_ = new LessonMinerController;
-  connect(lmc_, SIGNAL(workDone()), this, SLOT(processNextFile()));
+  auto lmc = new LessonMinerController(files);
+  auto progress = new QProgressDialog("Importing...", "Abort", 0, 100);
+  progress->setMinimumDuration(0);
+  progress->setAutoClose(false);
 
-  progress_ = new QProgressDialog("Importing...", "Abort", 0, 100);
-  progress_->setMinimumDuration(0);
-  progress_->setAutoClose(false);
-  connect(lmc_, &LessonMinerController::progressUpdate, progress_,
+  connect(lmc, &LessonMinerController::progressUpdate, progress,
           &QProgressDialog::setValue);
-
-  processNextFile();
-}
-
-void Library::processNextFile() {
-  if (files_.isEmpty()) {
-    refreshSources();
+  connect(lmc, &LessonMinerController::done, this, [this] {
+    db_source_model_->populate();
     emit sourcesChanged();
-    delete progress_;
-    delete lmc_;
-    return;
-  }
-  progress_->setLabelText(files_.front());
-  lmc_->operate(files_.front());
-  files_.pop_front();
+  });
+  connect(lmc, &LessonMinerController::done, lmc,
+          &LessonMinerController::deleteLater);
+  connect(lmc, &LessonMinerController::done, progress,
+          &QProgressDialog::deleteLater);
+
+  lmc->start();
 }
 
 bool Library::validateXml(QFile* file) {
@@ -450,10 +356,8 @@ bool Library::validateXml(QFile* file) {
   if (schema.isValid()) {
     QXmlSchemaValidator validator(schema);
     v = validator.validate(file, QUrl::fromLocalFile(file->fileName()));
-    if (v)
-      QLOG_DEBUG() << "validateXml: document is valid." << file->fileName();
-    else
-      QLOG_DEBUG() << "validateXml: document is invalid." << file->fileName();
+    QLOG_DEBUG() << "validateXml: document is" << (v ? "valid." : "invalid.")
+                 << file->fileName();
   } else {
     QLOG_DEBUG() << "validateXml: schema is invalid." << schemaFile.fileName();
   }

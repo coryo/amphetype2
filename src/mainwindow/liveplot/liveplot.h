@@ -19,10 +19,14 @@
 #ifndef SRC_LIVEPLOT_LIVEPLOT_H_
 #define SRC_LIVEPLOT_LIVEPLOT_H_
 
+#include <QPoint>
+#include <QColor>
+
 #include <qcustomplot.h>
 
-#define APM_PLOT 0
-#define WPM_PLOT 1
+namespace liveplot {
+enum plot { apm, wpm };
+}
 
 class LivePlot : public QCustomPlot {
   Q_OBJECT
@@ -47,7 +51,7 @@ class LivePlot : public QCustomPlot {
  public slots:
   void beginTest(int);
   void updatePlotRangeY();
-  void addWpm(double, double, double);
+  void addWpm(const QPoint&, const QPoint&);
   void clearPlotData();
   void showGraphs();
   void setPlotVisible(int);

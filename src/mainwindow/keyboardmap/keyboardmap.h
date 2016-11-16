@@ -19,6 +19,7 @@
 #ifndef SRC_ANALYSIS_KEYBOARDMAP_H_
 #define SRC_ANALYSIS_KEYBOARDMAP_H_
 
+#include <QColor>
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QList>
@@ -26,8 +27,11 @@
 #include <QResizeEvent>
 #include <QSize>
 #include <QStringList>
-#include <QColor>
 
+#include <map>
+#include <memory>
+
+#include "database/db.h"
 #include "defs.h"
 
 class KeyboardMap : public QGraphicsView {
@@ -39,6 +43,9 @@ class KeyboardMap : public QGraphicsView {
  public:
   explicit KeyboardMap(QWidget* parent = Q_NULLPTR);
   ~KeyboardMap();
+
+ public slots:
+  void onProfileChange();
   void setKeyboard(amphetype::Layout, amphetype::Standard);
   void setLayout(amphetype::Layout);
   void setStandard(amphetype::Standard);
@@ -48,28 +55,28 @@ class KeyboardMap : public QGraphicsView {
   void updateData();
 
  protected:
-  void resizeEvent(QResizeEvent*);
-  void mousePressEvent(QMouseEvent*);
-  void mouseReleaseEvent(QMouseEvent*);
+  void resizeEvent(QResizeEvent*) override;
+  void mousePressEvent(QMouseEvent*) override;
+  void mouseReleaseEvent(QMouseEvent*) override;
 
  private:
   qreal scaleToRange(qreal, qreal, qreal min = 0, qreal max = 1);
   qreal scaleToRange2(qreal, qreal, qreal min = 0, qreal max = 1,
                       qreal factor = 10);
-  void drawKeyboard(const QHash<QChar, QHash<QString, QVariant>>&,
-                    amphetype::Modifier modifier, qreal min = 0.0,
-                    qreal max = 100.0, qreal x = 0, qreal y = 0);
+  void draw_keyboard(amphetype::Modifier modifier, qreal min = 0.0,
+                     qreal max = 100.0, qreal x = 0, qreal y = 0);
   void loadLayout(amphetype::Layout);
 
  private:
-  QHash<QChar, QHash<QString, QVariant>> statsData;
-  QGraphicsScene* keyboardScene;
-  amphetype::Layout keyboardLayout;
-  amphetype::Standard keyboardStandard;
-  QList<QStringList> keyboardKeys;
-  int keySpacing;
-  int keySize;
-  QString dataToMap;
+  std::map<QChar, std::map<QString, QVariant>> data_;
+  std::unique_ptr<Database> db_;
+  QGraphicsScene keyboard_scene_;
+  amphetype::Layout keyboard_layout_;
+  amphetype::Standard keyboard_standard_;
+  QList<QStringList> keyboard_keys_;
+  int key_spacing_;
+  int key_size_;
+  QString display_;
   QColor foregroundColor;
   QColor deadKeyColor;
   QColor mapColor;

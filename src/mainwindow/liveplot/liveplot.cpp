@@ -29,7 +29,7 @@ LivePlot::LivePlot(QWidget* parent)
   this->addLayer("lineLayer", this->layer("grid"), QCustomPlot::limAbove);
   this->addGraph();
   this->addGraph();
-  this->graph(WPM_PLOT)->setLayer("topLayer");
+  this->graph(liveplot::plot::wpm)->setLayer("topLayer");
   this->xAxis->setVisible(false);
   connect(this, &LivePlot::colorChanged, this, &LivePlot::updateColors);
   connect(this, &LivePlot::colorChanged, this, &LivePlot::updatePlotTargetLine);
@@ -43,34 +43,36 @@ void LivePlot::beginTest(int length) {
 
 void LivePlot::updatePlotRangeY() {
   bool ok;
-  auto range = this->graph(APM_PLOT)->getValueRange(ok);
-  auto range2 = this->graph(WPM_PLOT)->getValueRange(ok);
+  auto range = this->graph(liveplot::plot::apm)->getValueRange(ok);
+  auto range2 = this->graph(liveplot::plot::wpm)->getValueRange(ok);
   this->yAxis->setRange(range.expanded(range2));
 }
 
 void LivePlot::clearPlotData() {
-  this->graph(WPM_PLOT)->data()->clear();
-  this->graph(APM_PLOT)->data()->clear();
+  this->graph(liveplot::plot::wpm)->data()->clear();
+  this->graph(liveplot::plot::apm)->data()->clear();
 }
 
-void LivePlot::addWpm(double x, double y1, double y2) {
-  this->graph(WPM_PLOT)->addData(x, y1);
-  this->graph(APM_PLOT)->addData(x, y2);
+void LivePlot::addWpm(const QPoint& wpm, const QPoint& apm) {
+  this->graph(liveplot::plot::wpm)->data()->remove(wpm.x());
+  this->graph(liveplot::plot::apm)->data()->remove(apm.x());
+  this->graph(liveplot::plot::wpm)->addData(wpm.x(), wpm.y());
+  this->graph(liveplot::plot::apm)->addData(apm.x(), apm.y());
   this->updatePlotRangeY();
   this->replot();
 }
 
 void LivePlot::showGraphs() {
-  this->graph(WPM_PLOT)->setVisible(true);
-  this->graph(APM_PLOT)->setVisible(true);
+  this->graph(liveplot::plot::wpm)->setVisible(true);
+  this->graph(liveplot::plot::apm)->setVisible(true);
   this->replot();
 }
 
 void LivePlot::setPlotVisible(int s) { this->setVisible(s > 0); }
 
 void LivePlot::updateColors() {
-  this->graph(WPM_PLOT)->setPen(QPen(wpmLineColor, 3));
-  this->graph(APM_PLOT)->setPen(QPen(apmLineColor, 2));
+  this->graph(liveplot::plot::wpm)->setPen(QPen(wpmLineColor, 3));
+  this->graph(liveplot::plot::apm)->setPen(QPen(apmLineColor, 2));
   this->setBackground(QBrush(plotBackgroundColor));
 
   this->yAxis->setBasePen(QPen(plotForegroundColor, 1));

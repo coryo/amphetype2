@@ -21,25 +21,24 @@
 
 #include <QFile>
 #include <QItemSelection>
+#include <QList>
 #include <QMainWindow>
 #include <QModelIndex>
-#include <QProgressDialog>
 
 #include <memory>
 
-#include "texts/lessonminercontroller.h"
-#include "texts/sourcemodel.h"
+#include "database/databasemodel.h"
+#include "database/db.h"
 #include "texts/text.h"
-#include "texts/textmodel.h"
-
 #include "defs.h"
 
 namespace Ui {
 class Library;
 }
 
-class Library : public QMainWindow {
+class Library : public QMainWindow, public AmphetypeWindow {
   Q_OBJECT
+  Q_INTERFACES(AmphetypeWindow)
 
  public:
   explicit Library(QWidget* parent = Q_NULLPTR);
@@ -56,38 +55,27 @@ class Library : public QMainWindow {
   void textsDeleted(const QList<int>&);
 
  public slots:
-  void reload();
+  void onProfileChange() override;
   void refreshSource(int);
   void refreshSources();
   void selectSource(int source);
   void sourceSelectionChanged(const QItemSelection&, const QItemSelection&);
 
  private slots:
-  void textsTableDoubleClickHandler(const QModelIndex&);
-  void textsTableClickHandler(const QModelIndex&);
   bool validateXml(QFile* file);
   void addFiles();
-  void processNextFile();
-  void addSource();
-  void deleteSource();
   void addText();
-  void enableSource();
-  void disableSource();
+  void addSource();
   void exportSource();
   void importSource();
-  void actionDeleteTexts(bool checked);
-  void actionEditText(bool checked);
-  void actionSendToTyper(bool checked);
   void sourcesContextMenu(const QPoint& pos);
   void textsContextMenu(const QPoint& pos);
 
  private:
-  Ui::Library* ui;
-  TextModel* text_model_;
-  SourceModel* source_model_;
-  QProgressDialog* progress_;
-  QStringList files_;
-  LessonMinerController* lmc_;
+  std::unique_ptr<Ui::Library> ui;
+  std::unique_ptr<Database> db_;
+  std::unique_ptr<DatabaseModel> db_source_model_;
+  std::unique_ptr<TextPagedDatabaseModel> db_text_model_;
 };
 
 #endif  // SRC_TEXTS_LIBRARY_H_

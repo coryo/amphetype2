@@ -215,7 +215,7 @@ void LessonMiner::doWork(const QString& fname) {
   QFileInfo fi(fname);
 
   Database db;
-  int id = db.getSource(fi.fileName(), -1);
+  int id = db.getSource(fi.fileName());
   db.addTexts(id, lessons);
 
   // done

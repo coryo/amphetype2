@@ -20,9 +20,11 @@
 #define SRC_TEXTS_LESSONMINERCONTROLLER_H_
 
 #include <QObject>
-#include <QThread>
-#include <QStringList>
 #include <QString>
+#include <QStringList>
+#include <QThread>
+
+#include <memory>
 
 #include "texts/lessonminer.h"
 
@@ -30,33 +32,38 @@ class LessonMinerController : public QObject {
   Q_OBJECT
 
  public:
-  LessonMinerController() {
-    miner = new LessonMiner();
-    miner->moveToThread(&lessonMinerThread);
-    connect(this, &LessonMinerController::operate, miner, &LessonMiner::doWork);
-    connect(miner, &LessonMiner::resultReady, this,
-            &LessonMinerController::handleResults);
-    connect(miner, &LessonMiner::progress, this,
+  LessonMinerController(const QStringList& files)
+      : files_(files), miner_(std::make_unique<LessonMiner>()) {
+    miner_->moveToThread(&thread_);
+    connect(this, &LessonMinerController::operate, miner_.get(),
+            &LessonMiner::doWork);
+    connect(miner_.get(), &LessonMiner::resultReady, this, [this] {
+      if (files_.isEmpty())
+        emit done();
+      else
+        emit operate(files_.takeFirst());
+    });
+    connect(miner_.get(), &LessonMiner::progress, this,
             &LessonMinerController::progressUpdate);
-    lessonMinerThread.start();
+    thread_.start();
   }
+
   ~LessonMinerController() {
-    lessonMinerThread.quit();
-    lessonMinerThread.wait();
-    delete miner;
+    thread_.quit();
+    thread_.wait();
   }
 
  private:
-  LessonMiner* miner;
-  QThread lessonMinerThread;
+  QStringList files_;
+  std::unique_ptr<LessonMiner> miner_;
+  QThread thread_;
 
  public slots:
-  void handleResults() { emit workDone(); }
-  void progress(int p) { emit progressUpdate(p); }
+  void start() { emit operate(files_.takeFirst()); }
 
  signals:
   void operate(const QString&);
-  void workDone();
+  void done();
   void progressUpdate(int);
 };
 

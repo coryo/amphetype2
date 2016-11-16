@@ -33,13 +33,16 @@
 #include "settings/settingswidget.h"
 #include "texts/library.h"
 #include "texts/text.h"
+#include "database/db.h"
+#include "defs.h"
 
 namespace Ui {
 class MainWindow;
 }
 
-class MainWindow : public QMainWindow {
+class MainWindow : public QMainWindow, public AmphetypeWindow {
   Q_OBJECT
+  Q_INTERFACES(AmphetypeWindow)
 
  public:
   explicit MainWindow(QWidget* parent = Q_NULLPTR);
@@ -49,24 +52,27 @@ class MainWindow : public QMainWindow {
   void profileChanged(QString);
 
  private slots:
+  void loadSettings() override;
+  void saveSettings() override;
+  void onProfileChange() override;
   void createProfile();
   void changeProfile(const QString& = QString());
   void updateWindowTitle();
   void aboutDialog();
   void populateProfiles();
-  void compressDb();
 
  protected:
-  void closeEvent(QCloseEvent* event);
+  void closeEvent(QCloseEvent* event) override;
 
  private:
-  Ui::MainWindow* ui;
-  std::unique_ptr<SettingsWidget> settings_;
-  std::unique_ptr<StatisticsWidget> statistics_;
-  std::unique_ptr<PerformanceHistory> performance_;
-  std::unique_ptr<Library> library_;
-  std::unique_ptr<LessonGenWidget> lesson_generator_;
-  std::unique_ptr<TrainingGenWidget> training_generator_;
+  std::unique_ptr<Ui::MainWindow> ui;
+  std::unique_ptr<Database> db_;
+  SettingsWidget settings_;
+  StatisticsWidget statistics_;
+  PerformanceHistory performance_;
+  Library library_;
+  LessonGenWidget lesson_generator_;
+  TrainingGenWidget training_generator_;
 };
 
 #endif  // SRC_MAINWINDOW_MAINWINDOW_H_

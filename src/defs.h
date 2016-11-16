@@ -20,6 +20,15 @@
 #define SRC_DEFS_H_
 
 #include <QMetaType>
+#include <QtPlugin>
+
+class AmphetypeWindow {
+public:
+  virtual void onProfileChange() = 0;
+  virtual void loadSettings() {}
+  virtual void saveSettings() {}
+};
+Q_DECLARE_INTERFACE(AmphetypeWindow, "AmphetypeWindow")
 
 namespace amphetype {
 
