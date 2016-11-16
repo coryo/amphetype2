@@ -32,6 +32,7 @@
 #include <QtGlobal>
 
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include <memory>
 
