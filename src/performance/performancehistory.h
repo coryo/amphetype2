@@ -32,6 +32,9 @@
 #include "defs.h"
 #include "texts/text.h"
 
+using std::shared_ptr;
+using std::unique_ptr;
+
 namespace performance {
 enum plot { wpm, accuracy, viscosity, sma1, sma2 };
 }
@@ -58,7 +61,7 @@ class PerformanceHistory : public QMainWindow, public AmphetypeWindow {
   ~PerformanceHistory();
 
  signals:
-  void setText(std::shared_ptr<Text>);
+  void setText(shared_ptr<Text>);
   void colorChanged();
   void settingsChanged();
  
@@ -87,8 +90,8 @@ class PerformanceHistory : public QMainWindow, public AmphetypeWindow {
                                  const QDateTime& now);
 
  private:
-  std::unique_ptr<Ui::PerformanceHistory> ui;
-  std::unique_ptr<Database> db_;
+  unique_ptr<Ui::PerformanceHistory> ui;
+  unique_ptr<Database> db_;
   QStandardItemModel model_;
   QColor wpm_line_;
   QColor acc_line_;

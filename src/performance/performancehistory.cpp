@@ -34,8 +34,10 @@
 #include "ui_performancehistory.h"
 #include "util/datetime.h"
 
+using std::make_unique;
+
 PerformanceHistory::PerformanceHistory(QWidget* parent)
-    : QMainWindow(parent), ui(std::make_unique<Ui::PerformanceHistory>()) {
+    : QMainWindow(parent), ui(make_unique<Ui::PerformanceHistory>()) {
   ui->setupUi(this);
 
   ui->menuView->addAction(ui->plotDock->toggleViewAction());
@@ -74,7 +76,8 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
   updateColors();
 
   connect(ui->tableView, &QTableView::doubleClicked, this, [this](auto idx) {
-    emit setText(db_->getText(model_.index(idx.row(), 1).data().toInt()));
+    auto t = db_->getText(model_.index(idx.row(), 1).data().toInt());
+    emit setText(t);
   });
 
   auto QComboBoxCurrentIndexChangedInt =
