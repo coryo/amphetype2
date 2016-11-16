@@ -75,10 +75,11 @@ PerformanceHistory::PerformanceHistory(QWidget* parent)
   loadSettings();
   updateColors();
 
-  connect(ui->tableView, &QTableView::doubleClicked, this, [this](auto idx) {
-    auto t = db_->getText(model_.index(idx.row(), 1).data().toInt());
-    emit setText(t);
-  });
+  connect(ui->tableView, &QTableView::doubleClicked, this,
+          [this](const QModelIndex& idx) {
+            auto t = db_->getText(model_.index(idx.row(), 1).data().toInt());
+            emit setText(t);
+          });
 
   auto QComboBoxCurrentIndexChangedInt =
       static_cast<void (QComboBox::*)(int index)>(
