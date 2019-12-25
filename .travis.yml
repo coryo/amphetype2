@@ -49,7 +49,7 @@ after_success:
 deploy:
   skip_cleanup: true
   provider: releases
-  api_key: $GITHUB_OAUTH_TOKEN
+  api_key: 7d756b89974072896fad1605fb535197766c3a04
   file: $DEPLOYFILE
   on:
     repo: mekthejacker/amphetype2
