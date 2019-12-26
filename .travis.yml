@@ -52,5 +52,5 @@ deploy:
   on: 
     repo: mekthejacker/amphetype2
     branch: mekthejacker-patch-test
-      -master: mekthejacker/amphetype2
+      
 
