@@ -45,6 +45,7 @@ before_deploy:
       - git config --local user.email "shae.roberts@gmail.com"
 
 deploy:
+  skip cleanup: true
   provider: releases
   api_key:
     secure: qBv3FkHM1DPMxomEpPi6CbEKd8ODfLuC+OYwd6GhAU7mpyaQ6RvD3/gaQMbrxsDkag9Lh+6Fi6Z4jwxIGUDmywNsc7RdzRjUSyIIe96FfVI7it5HK0Q0BjlIwFeAQqcUgM6kO26qEsAPA2Wmhu9cEMd+fGh65NpOnC04E40KO4FRx0m2wrYqMeGley0B7DNRdlPzOn+LhZcUar2cwbBT9VfhrGkiJ48APy82EzUjyMNm47chF2S1n0JLMHmc4fe7bM1ZJek1/J9CcHPP7FpCbh4O6lLe0py+Q2fG1/Au64QExmPPZOJrMA7T8LbqPIOEW17NBhQQhYIHbKAYLz3frwegNvHsXQ4LiJBILCAiadsd8n1LKhx59DqE0LOmsPpfCzeu2RYjO6Y47MtCv2Ti3Bmj/wCY91YIMYpOe02/n+K6FP+jL3SOt9/6RrAK9PGHCfq5xpPbRbyH5lvh7QtK0LTRAwAKi7ptoIa/gt72sHYV3d1KkR2v7INGMM8pv01mCYIsahAmka2HuEttwWPanXZ7v7J/UuuY2tIOnqY+01VDAEFIDmcsReUNtEUm89hCtZ/Mg3TZFMSnXo2JC79HpeT5/Mki3O8L42kc6Yra8sk/74kYfbNpyMDPcuPalm78DYYZM55YqHeGqHOR0exw/5KBOU/LFpgL7VbM8tqejTQ=
@@ -52,5 +53,6 @@ deploy:
   on: 
     repo: mekthejacker/amphetype2
     branch: mekthejacker-patch-test
-    - master: mekthejacker/amphetype2  
+    tags: true
+   
 
