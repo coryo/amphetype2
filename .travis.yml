@@ -53,4 +53,5 @@ deploy:
   file: $DEPLOYFILE
   on:
     repo: mekthejacker/amphetype2
+    branch: mekthejacker-permission-patch
     tags: true
