@@ -43,8 +43,6 @@ before_deploy:
       # Set up git user name and tag this commit
       - git config --local user.name "mekthejacker"
       - git config --local user.email "shae.roberts@gmail.com"
-      - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
-      - git tag $TRAVIS_TAG
 
 deploy:
   provider: releases
@@ -53,3 +51,6 @@ deploy:
   file: "$DEPLOYFILE"
   on: 
     repo: mekthejacker/amphetype2
+    branch: mekthejacker-permissions-patch
+      -master: mekthejacker/amphetype2
+
