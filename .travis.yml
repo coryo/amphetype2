@@ -7,9 +7,6 @@ matrix:
       sudo: required
       compiler: gcc
       env: CMAKE_BUILD_TYPE=Release
-    - os: osx
-      env: CMAKE_BUILD_TYPE=Release
-      osx_image: xcode8
 
 addons:
   apt:
@@ -20,13 +17,10 @@ addons:
     - g++-4.9
 
 before_install:
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update                                                 ; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo add-apt-repository -y ppa:levi-armstrong/qt-libraries-trusty; sudo add-apt-repository -y ppa:levi-armstrong/ppa; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update && sudo apt-get install qt57creator-plugin-ros; fi
 
 install:
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install qt5                                     ; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export QTDIR=/usr/local/Cellar/qt5/5.7.0             ; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install qt57base qt57tools qt57xmlpatterns qt57multimedia --force-yes; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then source /opt/qt57/bin/qt57-env.sh                   ; fi
 - cmake --version
@@ -38,7 +32,6 @@ before_script:
 
 script:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then CXX=g++-4.9 cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTDIR} . ; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DQTROOT=${QTDIR} .               ; fi
 - make
 - ctest -V
 
@@ -46,12 +39,17 @@ after_success:
 - chmod +x ./.travis/deploy.sh
 - source ./.travis/deploy.sh
 
+before_deploy:
+      # Set up git user name and tag this commit
+      - git config --local user.name "mekthejacker"
+      - git config --local user.email "shae.roberts@gmail.com"
+      - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
+      - git tag $TRAVIS_TAG
+
 deploy:
-  skip_cleanup: true
   provider: releases
   api_key:
-    secure: mK5A0dEGqx+15G9d26JqKarMuCioscx4iGZb1TqA//uv+jMvGngxcPejiC7YwhVwyFhDvBjOVPgOoUkAHS18jfdXgEqwdbFMsQY9UZyCWK3Q8GRUMuck7pV+V9FkytuCucR2N/nOymppUpvaXXjfcL56xuUsjk9iLQmvgjfgCtV+uQ7v9xUP/27ZbWcCABRKH5Q4ls9PbCDypo49Ek4ifHiScJPikbUF/osklnC2twPGyfiJL75yoMSRQPXPjUNLJoN4Nrg6wNakwFNVPA1IHwp9LiZ3wrxs+Y58sNZWfEx+zxpVyaNYuTRVFxcFOC2DBvEk8SBtqA4RLHjWU7KsSTLoKLayQK3vSVAmfRFXGbfbw4eXF5BzJoroRBnTDZyTXTh9EOixAhKAl+6nd/yaTxMhl6wgsrUYQuDhkbckCCeIIkx93UMXYWUgpeE8UuzpsO6TFxKwtq+klnDErT2T6ZAzbCylEXw4x7gln3H7vb3DG7TWvOQoALkeTNAia2ICoC+kVHZAo+lcD2e2th+eTu2G5/LiEayNYZ1DGhqMOhGRm1YeibZdqGnPnC8VVGjcpcF9kTMC+f1Uj4i5UsqsNpBCNPTB+fQaPxS3uIxPmywEtD94jM+exjJ0qGQN2NnfyZ0IudSfNnadPWoe1o70RB3+A6zShy/ya0Z2ndz8pzs=
-  file: $DEPLOYFILE
-  on:
+    secure: qBv3FkHM1DPMxomEpPi6CbEKd8ODfLuC+OYwd6GhAU7mpyaQ6RvD3/gaQMbrxsDkag9Lh+6Fi6Z4jwxIGUDmywNsc7RdzRjUSyIIe96FfVI7it5HK0Q0BjlIwFeAQqcUgM6kO26qEsAPA2Wmhu9cEMd+fGh65NpOnC04E40KO4FRx0m2wrYqMeGley0B7DNRdlPzOn+LhZcUar2cwbBT9VfhrGkiJ48APy82EzUjyMNm47chF2S1n0JLMHmc4fe7bM1ZJek1/J9CcHPP7FpCbh4O6lLe0py+Q2fG1/Au64QExmPPZOJrMA7T8LbqPIOEW17NBhQQhYIHbKAYLz3frwegNvHsXQ4LiJBILCAiadsd8n1LKhx59DqE0LOmsPpfCzeu2RYjO6Y47MtCv2Ti3Bmj/wCY91YIMYpOe02/n+K6FP+jL3SOt9/6RrAK9PGHCfq5xpPbRbyH5lvh7QtK0LTRAwAKi7ptoIa/gt72sHYV3d1KkR2v7INGMM8pv01mCYIsahAmka2HuEttwWPanXZ7v7J/UuuY2tIOnqY+01VDAEFIDmcsReUNtEUm89hCtZ/Mg3TZFMSnXo2JC79HpeT5/Mki3O8L42kc6Yra8sk/74kYfbNpyMDPcuPalm78DYYZM55YqHeGqHOR0exw/5KBOU/LFpgL7VbM8tqejTQ=
+  file: "$DEPLOYFILE"
+  on: 
     repo: mekthejacker/amphetype2
-    tags: true
